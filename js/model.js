@@ -78,8 +78,45 @@ function sample(){
   add(2,newDev('mcb',m,{In:16,curve:'B',poles:1,icn:6},{kind:'bojler',P:2,cable:2.5,ph:'L3'},'Podgrzewacz wody'));
   add(2,newDev('mcb',m,{In:16,curve:'C',poles:3,icn:6},{kind:'pc',P:5,cable:2.5,len:18},'Pompa ciepła'));
 }
+/* Dane projektu (trafiają do pliku i historii cofania) w odróżnieniu od stanu widoku (sel, active, mfr, tab, q, wires, wf). */
+const DATA_KEYS=['name','enc','set','rows','dev'];
+const TABS=['aparat','kontrola','bilans','struktura','kable','bom'];
+const FILE_APP='projektant-rozdzielnic',FILE_VERSION=1;
+const num=(v,d)=>{v=+v;return isFinite(v)?v:d;};
+const oneOf=(v,a)=>a.indexOf(v)>=0?v:a[0];
+/* Czy obiekt ma strukturę projektu: rzędy z istniejącymi, niepowtórzonymi aparatami znanych typów. */
+function valid(s){try{
+  if(!s||typeof s!=='object'||!Array.isArray(s.rows)||!s.rows.length||!s.dev||typeof s.dev!=='object'||!s.enc||!ENC[s.enc.mfr])return false;
+  const seen={};return s.rows.every(r=>Array.isArray(r)&&r.every(id=>{const d=s.dev[id];
+    if(!d||seen[id]||d.id!==id||!/^d\d+$/.test(id)||!TNAME[d.t]||!d.p||typeof d.p!=='object')return false;
+    seen[id]=1;return !isCirc(d)||!!(d.c&&typeof d.c==='object');}));
+  }catch(e){return false;}}
+/* Sprowadza pola aparatu do dozwolonych wartości (plik projektu może pochodzić z zewnątrz). */
+function cleanDev(d){const p=d.p;d.name=String(d.name==null?TNAME[d.t]:d.name);if(!MFR[d.m])d.m='hager';
+  ['In','poles','idn','icn','W','ph'].forEach(k=>{if(k in p)p[k]=num(p[k],k==='poles'?1:k==='In'?16:0);});
+  if(isCirc(d))p.curve=oneOf(p.curve,['B','C','D']);
+  if(d.t==='rcd'||d.t==='rcbo')p.kind=oneOf(p.kind,['A','AC','F','B']);
+  if(d.t==='rcd')p.sel=!!p.sel;
+  if(d.t==='meter')p.mid=!!p.mid;
+  if(d.t==='spd'){p.cls=oneOf(p.cls,['T1+T2','T2']);p.sys=oneOf(p.sys,['3P+N','1P+N']);}
+  if(isCirc(d)){const c=d.c;c.kind=KINDS[c.kind]?c.kind:'inne';c.P=Math.max(0,num(c.P,0));c.cable=num(c.cable,2.5);c.ph=oneOf(c.ph,['L1','L2','L3']);if(c.len!=null)c.len=Math.max(0,num(c.len,15));}}
+/* Uzupełnia brakujące pola wartościami domyślnymi (zgodność wstecz) i porządkuje odwołania. Wymaga valid(s). */
+function normalize(s){
+  s.name=typeof s.name==='string'?s.name:'Projekt';
+  const set=Object.assign({moc:22,przedl:32,ks:0.5,cos:0.95,siec:'TN-C-S'},s.set||{});
+  s.set={moc:num(set.moc,22)||22,przedl:num(set.przedl,32)||32,ks:num(set.ks,0.5)||0.5,cos:num(set.cos,0.95)||0.95,siec:oneOf(set.siec,['TN-C-S','TN-S','TT'])};
+  const list=ENC[s.enc.mfr];s.enc={mfr:s.enc.mfr,series:list.some(e=>e.id===s.enc.series)?s.enc.series:list[0].id,rows:s.rows.length};
+  const used={};s.rows.forEach(r=>r.forEach(id=>used[id]=1));Object.keys(s.dev).forEach(id=>{if(!used[id])delete s.dev[id];});
+  Object.values(s.dev).forEach(d=>{cleanDev(d);if(d.t==='mcb'&&!(d.rcd&&s.dev[d.rcd]&&s.dev[d.rcd].t==='rcd'))d.rcd=null;});
+  if(!s.sel||!s.dev[s.sel])s.sel=null;
+  s.active=Math.max(0,Math.min(num(s.active,0),s.rows.length-1));
+  if(!MFR[s.mfr])s.mfr='hager';
+  s.tab=oneOf(s.tab,TABS);if(typeof s.q!=='string')s.q='';s.wires=!!s.wires;
+  return s;}
+/* Licznik id musi być większy od każdego istniejącego 'dN'. */
+function fixUid(s,u){let m=num(u,1);Object.keys(s.dev).forEach(id=>{const n=+id.slice(1);if(n>=m)m=n+1;});return m;}
 function save(){try{localStorage.setItem('rozdz-v1',JSON.stringify({S,uid}));}catch(e){}}
-function load(){try{const j=JSON.parse(localStorage.getItem('rozdz-v1'));if(j&&j.S&&j.S.rows){S=j.S;uid=j.uid||999;return true;}}catch(e){}return false;}
+function load(){try{const j=JSON.parse(localStorage.getItem('rozdz-v1'));if(j&&valid(j.S)){S=normalize(j.S);uid=fixUid(S,j.uid);return true;}}catch(e){}return false;}
 
 /* ---------- calculations ---------- */
 function designations(){const cnt={},map={};S.rows.forEach(r=>r.forEach(id=>{const d=S.dev[id];const pf=PREFIX[d.t];cnt[pf]=(cnt[pf]||0)+1;map[id]='-'+pf+cnt[pf];}));return map;}

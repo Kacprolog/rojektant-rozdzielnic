@@ -24,8 +24,15 @@
       <button class="btn danger" id="bClear">Wyczyść</button>
     </div>
   </header>
+  <div class="projbar" id="projbar">
+    <div class="pgroup">
+      <button class="btn sm" id="bSave" title="Pobierz projekt jako plik .rozdz.json">Zapisz projekt</button>
+      <button class="btn sm" id="bOpen" title="Wczytaj plik .rozdz.json (można też przeciągnąć plik na stronę)">Otwórz projekt</button>
+      <input type="file" id="fOpen" accept=".json,application/json" hidden>
+    </div>
+  </div>
   <div class="confirm" id="confirm" hidden>
-    <span>Usunąć wszystkie aparaty z obudowy? Tej operacji nie można cofnąć.</span>
+    <span id="cMsg">Usunąć wszystkie aparaty z obudowy? Tej operacji nie można cofnąć.</span>
     <button class="btn sm pri" id="cYes">Usuń wszystko</button>
     <button class="btn sm" id="cNo">Anuluj</button>
   </div>

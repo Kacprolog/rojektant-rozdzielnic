@@ -16,6 +16,30 @@ function copy(text,label){const done=()=>toast(label+' skopiowano do schowka');
   const fallback=()=>{$('#copyOut').innerHTML=`<p class="note">Schowek jest niedostępny. Zaznacz tekst i skopiuj ręcznie.</p><textarea class="copyarea" id="copyTa" readonly></textarea>`;const ta=$('#copyTa');ta.value=text;ta.focus();ta.select();};
   try{navigator.clipboard.writeText(text).then(done,fallback);}catch(e){fallback();}}
 
+/* ---------- plik projektu (.rozdz.json) ---------- */
+function fileName(){return (S.name||'').replace(/[\\/:*?"<>|]+/g,' ').trim().slice(0,60)||'projekt';}
+function exportData(){const o={app:FILE_APP,version:FILE_VERSION,saved:new Date().toISOString(),uid:uid,S:{}};DATA_KEYS.forEach(k=>o.S[k]=S[k]);return o;}
+function saveFile(){const a=document.createElement('a'),url=URL.createObjectURL(new Blob([JSON.stringify(exportData(),null,1)],{type:'application/json'}));
+  a.href=url;a.download=fileName()+'.rozdz.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);toast('Zapisano plik '+a.download);}
+/* Zwraca '' albo komunikat błędu. Poprawny plik zastępuje dane bieżącego projektu. */
+function importData(text){let j;try{j=JSON.parse(text);}catch(e){return 'Plik nie jest poprawnym plikiem JSON.';}
+  if(!j||j.app!==FILE_APP)return 'To nie jest plik Projektanta Rozdzielnic.';
+  if(!(j.version>=1))return 'Plik nie ma numeru wersji.';
+  if(j.version>FILE_VERSION)return 'Plik pochodzi z nowszej wersji aplikacji (wersja pliku '+j.version+').';
+  if(!valid(j.S))return 'Plik projektu jest uszkodzony lub niepełny.';
+  /* migracje starszych wersji pliku: tutaj, gdy FILE_VERSION wzrośnie */
+  openData(normalize(j.S),j.uid);return '';}
+function openData(s,u){S=s;uid=fixUid(s,u);render();}
+function readFile(f){if(!f)return;const r=new FileReader();
+  r.onload=()=>{const err=importData(String(r.result));toast(err||'Wczytano projekt „'+S.name+'”');};
+  r.onerror=()=>toast('Nie udało się odczytać pliku.');r.readAsText(f);}
+$('#bSave').addEventListener('click',saveFile);
+$('#bOpen').addEventListener('click',()=>$('#fOpen').click());
+$('#fOpen').addEventListener('change',e=>{readFile(e.target.files[0]);e.target.value='';});
+const hasFiles=e=>!!e.dataTransfer&&Array.prototype.indexOf.call(e.dataTransfer.types||[],'Files')>=0;
+document.addEventListener('dragover',e=>{if(hasFiles(e))e.preventDefault();});
+document.addEventListener('drop',e=>{if(!hasFiles(e))return;e.preventDefault();readFile(e.dataTransfer.files[0]);});
+
 /* ---------- events ---------- */
 $('#pname').addEventListener('input',e=>{S.name=e.target.value;save();});
 $('#encMfr').addEventListener('change',e=>{S.enc.mfr=e.target.value;S.enc.series=ENC[S.enc.mfr][0].id;fixRows();render();});
