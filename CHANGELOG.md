@@ -43,3 +43,16 @@ Każdy wpis odpowiada jednemu commitowi. Format: co zrobiono, dlaczego, jak spra
 - Testy: pełny scenariusz listy z przeładowaniem strony, usunięcie ostatniego projektu, migracja v1 → v2
   (zaktualizowane testy dymne starego i uszkodzonego stanu).
 - Sprawdzenie: `npm test` → 42/42.
+
+### P0.4 Cofnij / Ponów
+- Przyciski „↶ Cofnij” i „↷ Ponów” oraz skróty Ctrl+Z, Ctrl+Shift+Z, Ctrl+Y (Cmd na Macu).
+  W polach tekstowych skróty zostają przy natywnym cofaniu przeglądarki.
+- `js/model.js`: stos migawek `HIST` (limit 50). Migawka to dane projektu (`name, enc, set, rows, dev`) i licznik `uid`;
+  zmiany widoku (zakładka, zaznaczenie, okablowanie, filtr żył, wyszukiwanie) nie tworzą kroków.
+  Migawka powstaje w `save()`, więc każda istniejąca akcja jest cofalna bez zmian w jej kodzie.
+- Pisanie w jednym polu (nazwa, opis, moc, długość) skleja się w jeden krok (`histTag`, okno 1,5 s).
+- Historia jest osobna dla każdego projektu i nie jest zapisywana (znika po przeładowaniu strony).
+- „Wyczyść” i „Wczytaj przykład” da się teraz cofnąć; komunikat potwierdzenia nie straszy już nieodwracalnością.
+- Testy: przyciski, skróty, pomijanie zmian widoku, sklejanie pisania, kasowanie „Ponów” po nowej zmianie, limit 50,
+  identyczny model po cofnięciu „Wyczyść”.
+- Sprawdzenie: `npm test` → 57/57.

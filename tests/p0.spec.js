@@ -109,6 +109,14 @@ test.describe('lista projektów', () => {
     await expect(opts.nth(1)).toHaveText('Garaż');
   });
 
+  test('historia cofania jest osobna dla każdego projektu', async ({ page }) => {
+    await page.goto('/');
+    await page.locator('.libitem', { hasText: 'MCB B16 1P' }).click();
+    await expect(page.locator('#bUndo')).toBeEnabled();
+    await page.click('#bNew');
+    await expect(page.locator('#bUndo')).toBeDisabled();
+  });
+
   test('usunięcie ostatniego projektu zostawia pusty projekt', async ({ page }) => {
     await page.goto('/');
     await page.click('#bDel');
@@ -116,5 +124,76 @@ test.describe('lista projektów', () => {
     await expect(page.locator('#projSel option')).toHaveCount(1);
     await expect(page.locator('.slot')).toHaveCount(0);
     await expect(page.locator('#pname')).toHaveValue('Nowy projekt');
+  });
+});
+
+test.describe('cofnij / ponów', () => {
+  test('przyciski cofają i ponawiają zmiany danych, a zmiany widoku pomijają', async ({ page }) => {
+    await page.goto('/');
+    const undo = page.locator('#bUndo'), redo = page.locator('#bRedo'), slots = page.locator('.slot');
+    await expect(undo).toBeDisabled();
+    await expect(redo).toBeDisabled();
+
+    // Zmiany widoku: okablowanie, zakładka, zaznaczenie, filtr żył, wyszukiwanie.
+    await page.click('[data-view="wires"]');
+    await page.click('[data-wf="N"]');
+    await page.click('[data-tab="bilans"]');
+    await slots.first().click();
+    await page.fill('#libSearch', 'B16');
+    await page.fill('#libSearch', '');
+    await expect(undo).toBeDisabled();
+
+    await page.locator('.libitem', { hasText: 'MCB B16 1P' }).click();
+    await expect(slots).toHaveCount(22);
+    await page.keyboard.press('Delete');
+    await expect(slots).toHaveCount(21);
+
+    await undo.click();
+    await expect(slots).toHaveCount(22);
+    await undo.click();
+    await expect(slots).toHaveCount(21);
+    await expect(undo).toBeDisabled();
+    await redo.click();
+    await expect(slots).toHaveCount(22);
+    await redo.click();
+    await expect(slots).toHaveCount(21);
+    await expect(redo).toBeDisabled();
+  });
+
+  test('skróty klawiszowe, cofnięcie „Wyczyść” i przywrócenie identycznego modelu', async ({ page }) => {
+    await page.goto('/');
+    const before = await derived(page);
+    await page.click('#bClear');
+    await page.click('#cYes');
+    await expect(page.locator('.slot')).toHaveCount(0);
+    await page.locator('body').click({ position: { x: 2, y: 2 } });
+    await page.keyboard.press('Control+z');
+    await expect(page.locator('.slot')).toHaveCount(21);
+    expect(await derived(page)).toBe(before);
+    await page.keyboard.press('Control+Shift+Z');
+    await expect(page.locator('.slot')).toHaveCount(0);
+    await page.keyboard.press('Control+z');
+    await page.keyboard.press('Control+y');
+    await expect(page.locator('.slot')).toHaveCount(0);
+  });
+
+  test('pisanie w polu to jeden krok cofania; nowa zmiana kasuje „Ponów”', async ({ page }) => {
+    await page.goto('/');
+    await page.locator('.slot').nth(8).click();
+    const name = await page.inputValue('#iName');
+    await page.locator('#iName').pressSequentially(' abc');
+    await page.locator('body').click({ position: { x: 2, y: 2 } });
+    await page.click('#bUndo');
+    await expect(page.locator('#iName')).toHaveValue(name);
+    await expect(page.locator('#bUndo')).toBeDisabled();
+    await expect(page.locator('#bRedo')).toBeEnabled();
+    await page.click('#bBalance');
+    await expect(page.locator('#bRedo')).toBeDisabled();
+  });
+
+  test('stos ma limit 50 kroków', async ({ page }) => {
+    await page.goto('/');
+    const n = await page.evaluate(() => { for (let i = 0; i < 60; i++) { S.set.moc = 10 + i; render(); } return HIST.u.length; });
+    expect(n).toBe(50);
   });
 });

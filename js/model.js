@@ -120,7 +120,23 @@ const KEY='rozdz-v2',KEY1='rozdz-v1';
 const PR={cur:null,list:[]};
 function pid(){return 'p'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
 function blankS(){return {name:'Nowy projekt',enc:{mfr:'hager',series:'volta',rows:3},set:{moc:22,przedl:32,ks:0.5,cos:0.95,siec:'TN-C-S'},rows:[[],[],[]],dev:{}};}
-function save(){try{const cur=PR.list.find(x=>x.id===PR.cur);if(cur){cur.S=S;cur.uid=uid;cur.mod=Date.now();}
+/* Cofnij / Ponów: stos migawek danych projektu (DATA_KEYS + uid), limit 50. Zmiany widoku nie tworzą migawek.
+   histTag ustawiony przed save() skleja serię zmian tego samego pola (pisanie w polu) w jeden krok. */
+const HIST={u:[],r:[],cur:null,t:0,tag:null},HIST_MAX=50;
+let histTag=null;
+function snap(){const o={uid:uid};DATA_KEYS.forEach(k=>o[k]=S[k]);return JSON.stringify(o);}
+function histReset(){HIST.u=[];HIST.r=[];HIST.cur=snap();HIST.t=0;HIST.tag=null;histTag=null;}
+function histTrack(){const s=snap(),tag=histTag,now=Date.now();histTag=null;
+  if(HIST.cur===null){HIST.cur=s;return;}
+  if(s===HIST.cur)return;
+  if(!(tag&&tag===HIST.tag&&now-HIST.t<1500)){HIST.u.push(HIST.cur);if(HIST.u.length>HIST_MAX)HIST.u.shift();}
+  HIST.cur=s;HIST.r=[];HIST.t=now;HIST.tag=tag;}
+function histApply(s){const o=JSON.parse(s);uid=o.uid;DATA_KEYS.forEach(k=>S[k]=o[k]);
+  if(S.sel&&!S.dev[S.sel])S.sel=null;if(S.active>=S.rows.length)S.active=S.rows.length-1;
+  HIST.cur=s;HIST.tag=null;render();}
+function undo(){if(!HIST.u.length)return;HIST.r.push(HIST.cur);histApply(HIST.u.pop());toast('Cofnięto zmianę');}
+function redo(){if(!HIST.r.length)return;HIST.u.push(HIST.cur);histApply(HIST.r.pop());toast('Ponowiono zmianę');}
+function save(){histTrack();try{const cur=PR.list.find(x=>x.id===PR.cur);if(cur){cur.S=S;cur.uid=uid;cur.mod=Date.now();}
   localStorage.setItem(KEY,JSON.stringify({version:2,cur:PR.cur,list:PR.list}));}catch(e){}}
 function load(){PR.list=[];PR.cur=null;
   try{const j=JSON.parse(localStorage.getItem(KEY));if(j&&Array.isArray(j.list)){PR.list=j.list.filter(x=>x&&typeof x.id==='string'&&valid(x.S));PR.cur=j.cur;}}catch(e){}
