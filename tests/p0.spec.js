@@ -19,7 +19,7 @@ test.describe('plik projektu', () => {
     const j = JSON.parse(text);
     expect(j.app).toBe('projektant-rozdzielnic');
     expect(j.version).toBe(1);
-    expect(Object.keys(j.S).sort()).toEqual(['dev', 'enc', 'name', 'rows', 'set']);
+    expect(Object.keys(j.S).sort()).toEqual(['conn', 'dev', 'enc', 'name', 'rows', 'set', 'wmode']);
 
     await page.click('#bClear');
     await page.click('#cYes');

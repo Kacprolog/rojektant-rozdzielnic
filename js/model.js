@@ -56,7 +56,7 @@ function newDev(t,m,p,c,name){const d={id:'d'+(uid++),t,m,p:{...p},name:name||TN
 function enc(){return ENC[S.enc.mfr].find(e=>e.id===S.enc.series)||ENC[S.enc.mfr][0];}
 function sample(){
   uid=1;S={name:'Dom jednorodzinny – rozdzielnica RG',enc:{mfr:'hager',series:'volta',rows:3},
-    set:{moc:22,przedl:32,ks:0.5,cos:0.95,siec:'TN-C-S'},rows:[[],[],[]],dev:{},sel:null,active:1,mfr:'hager',tab:'aparat',q:''};
+    set:{moc:22,przedl:32,ks:0.5,cos:0.95,siec:'TN-C-S'},rows:[[],[],[]],dev:{},wmode:'auto',conn:[],sel:null,active:1,mfr:'hager',tab:'aparat',q:''};
   const add=(r,d)=>{S.dev[d.id]=d;S.rows[r].push(d.id);return d;};
   const m='hager';
   add(0,newDev('sw',m,{In:63,poles:3},null,'Rozłącznik główny'));
@@ -79,7 +79,8 @@ function sample(){
   add(2,newDev('mcb',m,{In:16,curve:'C',poles:3,icn:6},{kind:'pc',P:5,cable:2.5,len:18},'Pompa ciepła'));
 }
 /* Dane projektu (trafiają do pliku i historii cofania) w odróżnieniu od stanu widoku (sel, active, mfr, tab, q, wires, wf). */
-const DATA_KEYS=['name','enc','set','rows','dev'];
+const DATA_KEYS=['name','enc','set','rows','dev','wmode','conn'];
+const own=(o,k)=>Object.prototype.hasOwnProperty.call(o,k);
 const TABS=['aparat','kontrola','bilans','struktura','kable','bom'];
 const FILE_APP='projektant-rozdzielnic',FILE_VERSION=1;
 const num=(v,d)=>{v=+v;return isFinite(v)?v:d;};
@@ -101,6 +102,12 @@ function cleanDev(d){const p=d.p;d.name=String(d.name==null?TNAME[d.t]:d.name);i
   if(d.t==='spd'){p.cls=oneOf(p.cls,['T1+T2','T2']);p.sys=oneOf(p.sys,['3P+N','1P+N']);}
   if(isCirc(d)){const c=d.c;c.kind=KINDS[c.kind]?c.kind:'inne';c.P=Math.max(0,num(c.P,0));c.cable=num(c.cable,2.5);c.ph=oneOf(c.ph,['L1','L2','L3']);if(c.len!=null)c.len=Math.max(0,num(c.len,15));}}
 /* Uzupełnia brakujące pola wartościami domyślnymi (zgodność wstecz) i porządkuje odwołania. Wymaga valid(s). */
+function cleanEp(s,e){if(!e||typeof e!=='object')return null;
+  if(e.k==='dev')return own(s.dev,e.id)&&(e.side==='top'||e.side==='bot')&&typeof e.i==='number'&&e.i>=0&&e.i<8?{k:'dev',id:e.id,side:e.side,i:Math.floor(e.i)}:null;
+  if(e.k==='bar'){const b=String(e.bar);return b==='PE'||b==='N'||(b.slice(0,2)==='N:'&&own(s.dev,b.slice(2)))?{k:'bar',bar:b}:null;}
+  if(e.k==='wlz')return ['L1','L2','L3','N','PE'].indexOf(e.ph)>=0?{k:'wlz',ph:e.ph}:null;
+  return null;}
+function cleanConn(s){const out=[],seen={};(Array.isArray(s.conn)?s.conn:[]).forEach(w=>{if(!w||!/^w\d+$/.test(w.id)||seen[w.id])return;const a=cleanEp(s,w.a),b=cleanEp(s,w.b);if(a&&b){seen[w.id]=1;out.push({id:w.id,a:a,b:b});}});return out;}
 function normalize(s){
   s.name=typeof s.name==='string'?s.name:'Projekt';
   const set=Object.assign({moc:22,przedl:32,ks:0.5,cos:0.95,siec:'TN-C-S'},s.set||{});
@@ -108,18 +115,19 @@ function normalize(s){
   const list=ENC[s.enc.mfr];s.enc={mfr:s.enc.mfr,series:list.some(e=>e.id===s.enc.series)?s.enc.series:list[0].id,rows:s.rows.length};
   const used={};s.rows.forEach(r=>r.forEach(id=>used[id]=1));Object.keys(s.dev).forEach(id=>{if(!used[id])delete s.dev[id];});
   Object.values(s.dev).forEach(d=>{cleanDev(d);if(d.t==='mcb'&&!(d.rcd&&s.dev[d.rcd]&&s.dev[d.rcd].t==='rcd'))d.rcd=null;});
+  s.wmode=oneOf(s.wmode,['auto','manual']);s.conn=cleanConn(s);
   if(!s.sel||!s.dev[s.sel])s.sel=null;
   s.active=Math.max(0,Math.min(num(s.active,0),s.rows.length-1));
   if(!MFR[s.mfr])s.mfr='hager';
   s.tab=oneOf(s.tab,TABS);if(typeof s.q!=='string')s.q='';s.wires=!!s.wires;
   return s;}
 /* Licznik id musi być większy od każdego istniejącego 'dN'. */
-function fixUid(s,u){let m=num(u,1);Object.keys(s.dev).forEach(id=>{const n=+id.slice(1);if(n>=m)m=n+1;});return m;}
+function fixUid(s,u){let m=num(u,1);Object.keys(s.dev).concat((s.conn||[]).map(w=>w.id)).forEach(id=>{const n=+id.slice(1);if(n>=m)m=n+1;});return m;}
 /* Lista projektów: localStorage['rozdz-v2'] = { version:2, cur:<id>, list:[{ id, S, uid, mod }] }. S to zawsze projekt PR.cur. */
 const KEY='rozdz-v2',KEY1='rozdz-v1';
 const PR={cur:null,list:[]};
 function pid(){return 'p'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
-function blankS(){return {name:'Nowy projekt',enc:{mfr:'hager',series:'volta',rows:3},set:{moc:22,przedl:32,ks:0.5,cos:0.95,siec:'TN-C-S'},rows:[[],[],[]],dev:{}};}
+function blankS(){return {name:'Nowy projekt',enc:{mfr:'hager',series:'volta',rows:3},set:{moc:22,przedl:32,ks:0.5,cos:0.95,siec:'TN-C-S'},rows:[[],[],[]],dev:{},wmode:'auto',conn:[]};}
 /* Cofnij / Ponów: stos migawek danych projektu (DATA_KEYS + uid), limit 50. Zmiany widoku nie tworzą migawek.
    histTag ustawiony przed save() skleja serię zmian tego samego pola (pisanie w polu) w jeden krok. */
 const HIST={u:[],r:[],cur:null,t:0,tag:null},HIST_MAX=50;
@@ -133,7 +141,7 @@ function histTrack(){const s=snap(),tag=histTag,now=Date.now();histTag=null;
   HIST.cur=s;HIST.r=[];HIST.t=now;HIST.tag=tag;}
 function histApply(s){const o=JSON.parse(s);uid=o.uid;DATA_KEYS.forEach(k=>S[k]=o[k]);
   if(S.sel&&!S.dev[S.sel])S.sel=null;if(S.active>=S.rows.length)S.active=S.rows.length-1;
-  HIST.cur=s;HIST.tag=null;render();}
+  wirePick=wireSel=null;HIST.cur=s;HIST.tag=null;render();}
 function undo(){if(!HIST.u.length)return;HIST.r.push(HIST.cur);histApply(HIST.u.pop());toast('Cofnięto zmianę');}
 function redo(){if(!HIST.r.length)return;HIST.u.push(HIST.cur);histApply(HIST.r.pop());toast('Ponowiono zmianę');}
 function save(){histTrack();try{const cur=PR.list.find(x=>x.id===PR.cur);if(cur){cur.S=S;cur.uid=uid;cur.mod=Date.now();}
@@ -185,5 +193,6 @@ function checks(){const out=[],D=designations(),e=enc(),T=totals(),devs=Object.v
   const L=phaseLoads(),mx=Math.max(L.L1,L.L2,L.L3),mn=Math.min(L.L1,L.L2,L.L3);
   if(mx>5&&(mx-mn)/mx>0.25)add('warn',`Asymetria obciążenia faz ${fmt((mx-mn)/mx*100,0)}% (L1 ${fmt(L.L1)} A, L2 ${fmt(L.L2)} A, L3 ${fmt(L.L3)} A).`,'Użyj „Rozłóż fazy” albo zmień fazy obwodów ręcznie.');
   if(T.cap&&(T.cap-T.used)/T.cap<0.2)add('info',`Rezerwa miejsca ${fmt(Math.max(0,T.cap-T.used))} mod. to mniej niż 20%.`,'Zostaw miejsce na rozbudowę instalacji.');
+  wireCheck().out.forEach(x=>out.push(x));
   return out;}
 

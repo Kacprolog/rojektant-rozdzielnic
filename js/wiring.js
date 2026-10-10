@@ -16,7 +16,95 @@ function wlzMm(){const t=[[20,4],[25,6],[40,10],[63,16],[80,25],[100,35]];return
 function wlzType(){const m=fmt(wlzMm());return S.set.siec==='TN-C-S'?`YKY 4×${m} mm² (PEN)`:`YKY 5×${m} mm²`;}
 function inMm(I){return I<=20?4:I<=25?6:I<=40?10:I<=63?16:25;}
 function cableType(d){const c=+d.c.cable,cs=fmt(c);return is3(d)?(c<=4?'YDYp 5×':'YDY 5×')+cs:(c<=4?'YDYp 3×':'YDY 3×')+cs;}
-function buildConns(){const C=[],combs=[],devs=S.rows.flat().map(id=>S.dev[id]),P=S.set.przedl;
+/* ---------- okablowanie ręczne ---------- */
+/* S.wmode: 'auto' (połączenia wylicza autoConns) albo 'manual' (przewody S.conn dodaje użytkownik; szyny grzebieniowe
+   i ich zworki nadal wynikają z ustawienia aparatów). Zapisany koniec przewodu: {k:'dev',id,side,i} (i = numer zacisku
+   od lewej, więc zmiana fazy obwodu nie przepina przewodu), {k:'bar',bar}, {k:'wlz',ph}. */
+let wirePick=null,wireSel=null;
+const epPh=e=>e.k==='bar'?(e.bar==='PE'?'PE':'N'):e.ph;
+const epKey=e=>e.k==='dev'?e.id+'/'+e.side+'/'+e.ph:e.k==='bar'?'bar/'+e.bar:e.k==='comb'?'comb/'+e.rcd+'/'+e.ph:'wlz/'+e.ph;
+/* Zapisany koniec → koniec z nazwą żyły; null, gdy zacisk już nie istnieje (usunięty aparat, mniej biegunów). */
+function epLive(e){
+  if(e.k==='dev'){const d=S.dev[e.id];if(!d)return null;const ph=terms(d)[e.side][e.i];return ph?{k:'dev',id:e.id,side:e.side,ph}:null;}
+  if(e.k==='bar'){const r=S.dev[e.bar.slice(2)];return (e.bar==='PE'||e.bar==='N'||(r&&r.t==='rcd'))?{k:'bar',bar:e.bar}:null;}
+  return (e.ph==='N'&&S.set.siec==='TN-C-S')?null:{k:'wlz',ph:e.ph};}
+function epStore(e){return e.k==='dev'?{k:'dev',id:e.id,side:e.side,i:terms(S.dev[e.id])[e.side].indexOf(e.ph)}:e.k==='bar'?{k:'bar',bar:e.bar}:{k:'wlz',ph:e.ph};}
+/* Przekrój przewodu dodanego ręcznie: te same zasady co w autoConns (docs/DOMAIN.md). */
+function userMm(a,b){const P=S.set.przedl,E=[a,b],ds=E.filter(e=>e.k==='dev').map(e=>S.dev[e.id]);
+  if(E.some(e=>e.k==='wlz')||(a.k==='bar'&&b.k==='bar'))return wlzMm();
+  if(ds.some(d=>d.t==='lamp'||d.t==='relay'))return 1.5;
+  const spd=ds.find(d=>d.t==='spd');if(spd)return spd.p.cls==='T1+T2'?(E.some(e=>e.k==='dev'&&e.ph==='PE')?16:10):6;
+  if(ds.some(d=>d.t==='sw')&&E.some(e=>e.k==='bar'))return wlzMm();
+  const r=E.find(e=>e.k==='dev'&&e.side==='bot'&&S.dev[e.id].t==='rcd');
+  return inMm(r?Math.min(S.dev[r.id].p.In,P):P);}
+function userConns(){const out=[];(S.conn||[]).forEach(w=>{let a=epLive(w.a),b=epLive(w.b);if(!a||!b)return;
+  if(b.k==='wlz'||(b.k==='bar'&&b.bar==='PE'&&a.k!=='wlz')){const t=a;a=b;b=t;}
+  const pen=a.k==='bar'&&a.bar==='PE'&&epPh(b)==='N';
+  out.push({id:w.id,user:1,a,b,ph:pen?'N':(a.k==='bar'?epPh(b):epPh(a)),mm:userMm(a,b),kind:pen?'mostek':a.k==='wlz'?'wlz':'wire'});});return out;}
+function buildConns(){const A=autoConns();if(S.wmode!=='manual')return A;
+  return {C:A.C.filter(c=>c.kind==='jumper').concat(userConns()),combs:A.combs};}
+/* Kontrola okablowania ręcznego. Zwraca { out: uwagi jak w checks(), bad: {idPrzewodu: 'crit'|'warn'}, why: {idPrzewodu: komunikat} }. */
+function wireCheck(){const out=[],bad={},why={};if(S.wmode!=='manual')return {out,bad,why};
+  const {C,combs}=buildConns(),D=designations(),devs=S.rows.flat().map(id=>S.dev[id]),U=C.filter(c=>c.user),tncs=S.set.siec==='TN-C-S',sw=devs.find(d=>d.t==='sw');
+  const add=(sev,msg,ref,id,c)=>{out.push({sev,msg,ref,id});if(c&&bad[c.id]!=='crit'){bad[c.id]=sev;why[c.id]=msg;}};
+  if(!U.length){add('info','Okablowanie ręczne jest puste.','W widoku Okablowanie kliknij zacisk, a potem drugi, aby połączyć je przewodem, albo użyj „Przejmij automatyczne”.');return {out,bad,why};}
+  const isL=p=>p.charAt(0)==='L',devId=c=>c.a.k==='dev'?c.a.id:c.b.k==='dev'?c.b.id:undefined;
+  const zn=z=>z==='pre'?'przed rozłącznikiem głównym':z==='main'?'przed różnicówkami':'za różnicówką '+D[z];
+  /* Strefa zacisku: 'pre' przed rozłącznikiem, 'main' za nim, id różnicówki za jej wyjściem; null = nie dotyczy. */
+  const zone=e=>{const p=epPh(e);if(p==='PE')return null;const swHas=!!sw&&terms(sw).top.indexOf(p)>=0;
+    if(e.k==='wlz')return swHas?'pre':'main';
+    if(e.k==='bar')return e.bar==='N'?'main':e.bar.slice(2);
+    const d=S.dev[e.id];
+    if(d===sw)return e.side==='top'?'pre':'main';
+    if(d.t==='rcd')return e.side==='top'?'main':d.id;
+    if(isCirc(d)&&e.side==='bot')return null;
+    if(d.t==='mcb')return (d.rcd&&S.dev[d.rcd])?d.rcd:'main';
+    return 'main';};
+  U.forEach(c=>{const pa=epPh(c.a),pb=epPh(c.b),nm='Przewód <b>'+esc(epName(c.a,D))+' → '+esc(epName(c.b,D))+'</b>',id=devId(c);
+    if(c.kind==='mostek'){
+      if(!tncs)add('crit',nm+' łączy N z PE w układzie '+esc(S.set.siec)+'.','W tym układzie przewody N i PE muszą być rozdzielone w całej instalacji (PN-HD 60364-5-54).',id,c);
+      else if(!(c.b.k==='bar'&&c.b.bar==='N')&&!(c.b.k==='dev'&&S.dev[c.b.id]===sw&&c.b.side==='top'))add('crit',nm+' łączy N z PE poza punktem podziału PEN.','Za punktem podziału (listwa PE → główna listwa N) przewodów N i PE nie wolno ponownie łączyć (PN-HD 60364-5-54 p. 543.4).',id,c);
+      return;}
+    if(pa!==pb){const m=isL(pa)&&isL(pb)?'łączy dwie różne fazy ('+pa+' i '+pb+'): zwarcie międzyfazowe 400 V.':(pa==='PE'||pb==='PE')?(isL(pa)||isL(pb)?'łączy fazę z PE: zwarcie doziemne.':'łączy N z PE poza punktem podziału PEN.'):'łączy fazę z przewodem neutralnym: zwarcie.';
+      add('crit',nm+' '+m,'Przewód musi łączyć zaciski tej samej żyły (oznaczenia wg PN-EN 60445). Usuń go i poprowadź do właściwego zacisku.',id,c);return;}
+    if([c.a,c.b].some(e=>e.k==='dev'&&e.side==='bot'&&isCirc(S.dev[e.id]))){add('warn',nm+' jest wpięty w zacisk odejścia obwodu.','Dolne zaciski wyłączników obwodowych są przeznaczone na kabel obwodowy.',id,c);return;}
+    const za=zone(c.a),zb=zone(c.b);if(!za||!zb||za===zb)return;
+    if(za==='pre'||zb==='pre')add('crit',nm+' omija rozłącznik główny.','Aparaty zasilaj z wyjścia rozłącznika, inaczej nie da się odłączyć całej instalacji (PN-HD 60364-5-53).',id,c);
+    else if(pa==='N')add('crit',nm+' łączy przewody N z różnych stref ('+zn(za)+' / '+zn(zb)+').','Wspólny N powoduje błędne wyzwalanie albo brak zadziałania RCD. N obwodów za różnicówką prowadź tylko z jej wyjścia i jej listwy N.',id,c);
+    else add('crit',nm+' łączy tory z różnych stref ('+zn(za)+' / '+zn(zb)+').','Obwód przypisany do różnicówki musi być zasilany z jej wyjścia; inaczej omija ochronę różnicowoprądową (PN-HD 60364-4-41).',id,c);});
+  /* Ciągłość: każdy zacisk wejściowy musi mieć połączenie z WLZ (przewody + tory wewnątrz aparatów + szyny grzebieniowe). */
+  const par={},find=k=>{while(par[k]&&par[k]!==k)k=par[k];return k;},uni=(a,b)=>{a=find(a);b=find(b);if(a!==b)par[a]=b;};
+  C.forEach(c=>uni(epKey(c.a),epKey(c.b)));
+  devs.forEach(d=>{if(['sw','rcd','mcb','rcbo'].indexOf(d.t)<0)return;const t=terms(d);t.top.forEach(p=>{if(t.bot.indexOf(p)>=0)uni(d.id+'/top/'+p,d.id+'/bot/'+p);});});
+  combs.forEach(cb=>cb.ids.forEach(id=>terms(S.dev[id]).top.forEach(p=>{if(cb.phs.indexOf(p)>=0)uni('comb/'+cb.rcd+'/'+p,id+'/top/'+p);})));
+  const src={};['L1','L2','L3','N','PE'].forEach(p=>src[find('wlz/'+p)]=1);
+  const live=k=>!!src[find(k)];
+  devs.forEach(d=>{const miss=terms(d).top.filter(p=>!live(d.id+'/top/'+p)).map(p=>'wej. '+p);
+    if(d.t==='spd'&&!live(d.id+'/bot/PE'))miss.push('wyj. PE');
+    if(miss.length)add('crit','<b>'+D[d.id]+' '+esc(d.name)+'</b>: brak połączenia z zasilaniem na zaciskach '+miss.join(', ')+'.','Poprowadź przewód od wyjścia aparatu poprzedzającego albo od właściwej listwy.',d.id);});
+  if(!live('bar/PE'))add('crit','<b>Listwa PE</b> nie jest połączona z przewodem ochronnym zasilania (WLZ).','PN-HD 60364-5-54.');
+  if(!live('bar/N'))add('warn','<b>Listwa N</b> nie jest zasilona.',tncs?'W układzie TN-C-S połącz ją mostkiem z listwą PE (punkt podziału PEN).':'Połącz ją z przewodem N zasilania.');
+  devs.filter(d=>d.t==='rcd').forEach(r=>{if(devs.some(m=>m.t==='mcb'&&m.rcd===r.id)&&!live('bar/N:'+r.id))add('warn','<b>Listwa N '+D[r.id]+'</b> nie jest połączona z wyjściem N różnicówki.','Obwody za tą różnicówką nie mają przewodu neutralnego.',r.id);});
+  return {out,bad,why};}
+/* Akcje okablowania ręcznego (wołane z app.js). */
+function setWmode(m){if(S.wmode===m)return;S.wmode=m;wirePick=wireSel=null;render();toast(m==='manual'?'Okablowanie ręczne: Kontrola sprawdza teraz Twoje połączenia':'Okablowanie automatyczne');}
+function wireAdopt(){S.conn=autoConns().C.filter(c=>c.kind!=='jumper').map(c=>({id:'w'+(uid++),a:epStore(c.a),b:epStore(c.b)}));wirePick=wireSel=null;render();toast('Przejęto '+S.conn.length+' przewodów z okablowania automatycznego');}
+function wireDel(){if(!wireSel)return;S.conn=S.conn.filter(w=>w.id!==wireSel);wireSel=null;render();toast('Usunięto przewód');}
+function wireAct(a){
+  if(a==='adopt'){if(S.conn.length)ask('Zastąpić ręczne okablowanie ('+S.conn.length+' przewodów) automatycznym?','Zastąp',wireAdopt);else wireAdopt();}
+  if(a==='clear'&&S.conn.length)ask('Usunąć wszystkie ręcznie dodane przewody ('+S.conn.length+')?','Usuń przewody',()=>{S.conn=[];wirePick=wireSel=null;render();toast('Usunięto przewody');});
+  if(a==='del')wireDel();}
+/* Kliknięcie zacisku: pierwsze wybiera początek, drugie dodaje przewód i od razu zgłasza złe podłączenie. */
+function wireClick(ep){const k=JSON.stringify(ep);wireSel=null;
+  if(!wirePick){wirePick=ep;render(true);return;}
+  const a=wirePick,ka=JSON.stringify(a);wirePick=null;
+  if(ka===k){render(true);return;}
+  if(S.conn.some(w=>{const x=JSON.stringify(w.a),y=JSON.stringify(w.b);return (x===ka&&y===k)||(x===k&&y===ka);})){render(true);toast('Taki przewód już istnieje');return;}
+  const id='w'+(uid++);S.conn.push({id,a,b:ep});render();
+  const wc=wireCheck();
+  if(wc.bad[id]){const t=document.createElement('div');t.innerHTML=wc.why[id];toast((wc.bad[id]==='crit'?'Złe podłączenie: ':'Uwaga: ')+t.textContent,7000,true);}
+  else toast('Dodano przewód');}
+function autoConns(){const C=[],combs=[],devs=S.rows.flat().map(id=>S.dev[id]),P=S.set.przedl;
   const E=(id,side,ph)=>({k:'dev',id,side,ph}),B=bar=>({k:'bar',bar}),W=ph=>({k:'wlz',ph});
   const add=(a,b,ph,mm,kind)=>C.push({a,b,ph,mm,kind});
   const sw=devs.find(d=>d.t==='sw'),wl=wlzMm(),tncs=S.set.siec==='TN-C-S';
@@ -60,6 +148,7 @@ function drawWires(){const cab=$('#board');
   cab.style.paddingLeft=cab.style.paddingRight=cab.style.paddingTop=cab.style.paddingBottom='';
   if(!S.wires)return;
   const {C,combs}=buildConns(),D=designations(),n=S.rows.length,SP=6;
+  const man=S.wmode==='manual',wc=man?wireCheck():{bad:{},why:{}};
   const wf=S.wf||{L1:1,L2:1,L3:1,N:1,PE:1};
   // 1. logiczny przydział torów: każdy przewód dostaje własny tor w korytku i własny pion
   const chOf=e=>e.k==='dev'?(e.side==='top'?rowOf(e.id):rowOf(e.id)+1):e.k==='bar'?n:0;
@@ -100,9 +189,12 @@ function drawWires(){const cab=$('#board');
     return {x:x0+8+ord[e.ph]*SP,y:0};};
   const touches=c=>!S.sel||[c.a,c.b].some(e=>e.id===S.sel||e.rcd===S.sel||e.bar==='N:'+S.sel);
   const shown=c=>wf[(c.kind==='mostek')?'PE':c.ph];
-  const paint=(d,ph,mm,title,pe,dim)=>{const w=mm>=10?3:2.2;let s=`<g opacity="${dim?.16:1}"><path d="${d}" fill="none" stroke="var(--cabinet)" stroke-width="${w+3}" stroke-linejoin="round"/>`;
-    if(pe)s+=`<path d="${d}" fill="none" stroke="var(--pe2)" stroke-width="${w}" stroke-linejoin="round"/><path class="w" d="${d}" fill="none" stroke="var(--pe)" stroke-width="${w}" stroke-dasharray="5 5" stroke-linejoin="round"><title>${esc(title)}</title></path>`;
-    else s+=`<path class="w" d="${d}" fill="none" stroke="var(--${ph.toLowerCase()})" stroke-width="${w}" stroke-linejoin="round"><title>${esc(title)}</title></path>`;return s+'</g>';};
+  /* c (opcjonalnie): przewód dodany ręcznie – dostaje data-w do zaznaczania oraz obwódkę błędu / zaznaczenia. */
+  const paint=(d,ph,mm,title,pe,dim,c)=>{const w=mm>=10?3:2.2,u=c&&c.user,bad=u?wc.bad[c.id]:'',sel=u&&wireSel===c.id,at=u?` data-w="${c.id}"`:'';
+    if(bad){const t=document.createElement('div');t.innerHTML=wc.why[c.id];title+=' · '+(bad==='crit'?'ZŁE PODŁĄCZENIE: ':'UWAGA: ')+t.textContent;}
+    let s=`<g opacity="${dim&&!sel&&!bad?.16:1}">`+(bad||sel?`<path class="halo" d="${d}" fill="none" stroke="var(--${sel?'accent':bad==='crit'?'crit':'warn'})" stroke-width="${w+7}" stroke-linejoin="round" opacity=".6"/>`:'')+`<path d="${d}" fill="none" stroke="var(--cabinet)" stroke-width="${w+3}" stroke-linejoin="round"/>`;
+    if(pe)s+=`<path d="${d}" fill="none" stroke="var(--pe2)" stroke-width="${w}" stroke-linejoin="round"/><path class="w"${at} d="${d}" fill="none" stroke="var(--pe)" stroke-width="${w}" stroke-dasharray="5 5" stroke-linejoin="round"><title>${esc(title)}</title></path>`;
+    else s+=`<path class="w"${at} d="${d}" fill="none" stroke="var(--${ph.toLowerCase()})" stroke-width="${w}" stroke-linejoin="round"><title>${esc(title)}</title></path>`;return s+'</g>';};
   let out='';
   // listwy
   out+=`<rect x="${x0}" y="${peY-4}" width="${x1-x0}" height="8" rx="2" fill="var(--pe)"/><rect x="${x0}" y="${peY-1}" width="${x1-x0}" height="2" fill="var(--pe2)"/><text x="${x0}" y="${peY+20}" font-size="10.5" font-weight="600" fill="var(--ink)">Listwa PE${S.set.siec==='TN-C-S'?' · punkt podziału PEN':''}</text>`;
@@ -114,7 +206,10 @@ function drawWires(){const cab=$('#board');
   const srcCount={},key=e=>e.k==='dev'?e.id+e.side+e.ph:'';
   routed.forEach(c=>{const k=key(c.a);if(k)srcCount[k]=(srcCount[k]||0)+1;});
   const dots=[];
-  C.filter(c=>c.kind==='mostek'&&c.a.k==='bar'&&c.b.k==='bar').forEach(c=>{if(!shown(c))return;const x=barX('PE',x0,x0,x1);if(slots[segs[0].k])slots[segs[0].k].add(x);out+=paint(`M${x} ${peY}V${nY}`,'N',c.mm,'Mostek PEN: listwa PE → listwa N',true,!touches(c));});
+  /* połączenia listwa–listwa: mostek PEN (pion) albo ręczny mostek między listwami N (łuk nad listwami) */
+  C.filter(c=>c.a.k==='bar'&&c.b.k==='bar').forEach(c=>{if(!shown(c))return;const A=pt(c.a),B=pt(c.b,A),pen=c.kind==='mostek';
+    const d=A.y===B.y?`M${A.x} ${A.y}v-10H${B.x}v10`:A.x===B.x?`M${A.x} ${A.y}V${B.y}`:`M${A.x} ${A.y}V${(A.y+B.y)/2}H${B.x}V${B.y}`;
+    out+=paint(d,'N',c.mm,pen&&c.b.bar==='N'?'Mostek PEN: listwa PE → listwa N':`${epName(c.a,D)} → ${epName(c.b,D)} · ${fmt(c.mm)} mm²`,pen,!touches(c),c);});
   routed.forEach(c=>{let A,B;
     if(c.a.k==='bar'){B=pt(c.b);A=pt(c.a,B);}else{A=pt(c.a);B=pt(c.b,A);}
     let d;const ya=lane(c._ca);
@@ -122,7 +217,7 @@ function drawWires(){const cab=$('#board');
     else{const yb=lane(c._cb),rx=c._side==='R'?railR+14+c._r*SP:24+c._r*SP;d=`M${A.x} ${A.y}V${ya}H${rx}V${yb}H${B.x}V${B.y}`;}
     if(!shown(c))return;
     const dim=!touches(c),pe=c.ph==='PE'||c.kind==='mostek';
-    out+=paint(d,c.ph,c.mm,`${epName(c.a,D)} → ${epName(c.b,D)} · ${c.kind==='mostek'?'mostek PEN':PHN[c.ph]} · ${fmt(c.mm)} mm²`,pe,dim);
+    out+=paint(d,c.ph,c.mm,`${epName(c.a,D)} → ${epName(c.b,D)} · ${c.kind==='mostek'?'mostek PEN':PHN[c.ph]} · ${fmt(c.mm)} mm²`,pe,dim,c);
     if(srcCount[key(c.a)]>1)dots.push(`<circle cx="${A.x}" cy="${ya}" r="3" fill="var(--${pe?'pe':c.ph.toLowerCase()})" stroke="var(--cabinet)" stroke-width="1.2" opacity="${dim?.16:1}"/>`);});
   out+=dots.join('');
   // szyny grzebieniowe i zworki
@@ -139,6 +234,13 @@ function drawWires(){const cab=$('#board');
       g+=`<path d="M${x} ${e.b-7}V${yb}" stroke="${col}" stroke-width="2" fill="none"/><path d="M${x-3} ${yb-3}L${x} ${yb+1}L${x+3} ${yb-3}" stroke="${col}" stroke-width="1.6" fill="none"/>`;});
     const ct=cableType(d).split(' ')[1];g+=`<text x="${e.l+e.w/2}" y="${yb+11}" font-size="8.5" text-anchor="middle" fill="var(--ink)" font-family="JetBrains Mono, monospace">${ct}<title>${esc(D[id]+' '+d.name+': '+cableType(d)+', '+(clen(d))+' m')}</title></text>`;
     out+=`<g opacity="${dim?.25:1}">${g}</g>`;}));
+  /* tryb ręczny: klikalne zaciski aparatów, listew i WLZ (data-ep = zapisany koniec przewodu) */
+  if(man){const on=wirePick?JSON.stringify(wirePick):'';
+    const tp=(e,x,y,t,r)=>{const s=JSON.stringify(e);return `<circle class="tp${s===on?' on':''}" data-ep="${esc(s)}" cx="${x}" cy="${y}" r="${r}"><title>${esc(t)}</title></circle>`;};
+    S.rows.flat().forEach(id=>{const t=terms(S.dev[id]);['top','bot'].forEach(side=>t[side].forEach((ph,i)=>{const e={k:'dev',id,side,ph},P=pt(e);out+=tp({k:'dev',id,side,i},P.x,P.y,'Zacisk '+epName(e,D),6);}));});
+    const bt=(bar,xa,xb,y,lab)=>{const s=JSON.stringify({k:'bar',bar});out+=`<rect class="tp${s===on?' on':''}" data-ep="${esc(s)}" x="${xa}" y="${y-7}" width="${xb-xa}" height="14" rx="3"><title>${esc(lab)}</title></rect>`;};
+    segs.forEach(s=>bt(s.k,s.x0,s.x1,nY,'Listwa '+s.lab));bt('PE',x0,x1,peY,'Listwa PE');
+    ['L1','L2','L3','N','PE'].forEach(ph=>{if(ph==='N'&&S.set.siec==='TN-C-S')return;const e={k:'wlz',ph};out+=tp(e,pt(e).x,6+(ord[ph]%2)*11,'WLZ '+(ph==='PE'&&S.set.siec==='TN-C-S'?'PEN':ph),5);});}
   const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('class','wires');svg.setAttribute('width',W);svg.setAttribute('height',H);
   svg.setAttribute('viewBox',`0 0 ${W} ${H}`);svg.setAttribute('aria-label','Schemat połączeń w rozdzielnicy');svg.innerHTML=out;cab.appendChild(svg);}
 

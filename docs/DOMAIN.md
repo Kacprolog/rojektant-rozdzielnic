@@ -44,6 +44,27 @@ Tabela Iz [A] (A1, Cu, PVC):
 | uwaga | Asymetria faz > 25% | – |
 | info | Rezerwa miejsca < 20% | dobra praktyka |
 
+## Kontrola okablowania ręcznego (`wireCheck()`)
+
+Działa tylko w trybie „Ręczne”. Każdy zacisk ma żyłę (`L1 L2 L3 N PE`) i strefę: `pre` przed rozłącznikiem głównym, `main` za nim, albo id różnicówki za jej wyjściem (wyjście RCD, jej listwa N, wejścia MCB przypisanych do niej).
+
+| Poziom | Reguła | Podstawa |
+|---|---|---|
+| błąd | Przewód łączy dwie różne fazy | zwarcie międzyfazowe 400 V |
+| błąd | Przewód łączy fazę z N albo fazę z PE | zwarcie / zwarcie doziemne |
+| błąd | N–PE poza punktem podziału PEN (dozwolone tylko: listwa PE → główna listwa N albo wejście N rozłącznika, w TN-C-S) | PN-HD 60364-5-54 p. 543.4 |
+| błąd | Jakiekolwiek połączenie N–PE w TN-S / TT | PN-HD 60364-5-54 |
+| błąd | Przewód łączy strefę `pre` z inną (omija rozłącznik główny) | PN-HD 60364-5-53 |
+| błąd | Przewód fazowy łączy różne strefy (obwód omija swoją różnicówkę albo łączy dwie różnicówki) | PN-HD 60364-4-41 |
+| błąd | Przewód N łączy różne strefy (wspólny N za różnicówkami) | błędne wyzwalanie lub brak zadziałania RCD |
+| uwaga | Przewód w dolnym zacisku wyłącznika obwodowego | zacisk odejścia na kabel obwodowy |
+| błąd | Zacisk wejściowy aparatu (albo PE ogranicznika) bez ciągłości do WLZ | – |
+| błąd | Listwa PE bez połączenia z przewodem ochronnym WLZ | PN-HD 60364-5-54 |
+| uwaga | Główna listwa N niezasilona; listwa N za różnicówką z obwodami niepołączona z jej wyjściem N | – |
+| info | Tryb ręczny bez żadnego przewodu | – |
+
+Ciągłość liczona jest po grafie: przewody + tory wewnątrz rozłącznika, RCD, MCB, RCBO (wejście ↔ wyjście tej samej żyły) + szyny grzebieniowe.
+
 ## Przekroje przewodów w rozdzielnicy
 
 | Połączenie | Przekrój |

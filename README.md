@@ -10,7 +10,9 @@ Interaktywny konfigurator rozdzielnic modułowych działający w przeglądarce: 
 |---|---|
 | Układanie aparatów | Przeciągnij z biblioteki na szynę albo kliknij (trafi do aktywnego rzędu) |
 | Kontrola projektu | Zakładka „Kontrola”: 19 reguł, klik przenosi do aparatu |
-| Okablowanie | Przełącznik „Front / Okablowanie” nad obudową |
+| Okablowanie | Przełącznik „Front / Okablowanie” nad obudową; tryb „Automatyczne” rysuje przewody sam |
+| Własne przewody | W okablowaniu wybierz „Ręczne”: kliknij zacisk, potem drugi. Kliknij przewód i Delete, żeby usunąć. „Przejmij automatyczne” daje gotowy punkt wyjścia |
+| Alerty złego podłączenia | W trybie ręcznym: czerwony komunikat od razu, obwódka na przewodzie i wpis w „Kontroli” (zwarcia, ominięta różnicówka, wspólny N, brak zasilania) |
 | Wiele projektów | Lista „Projekt” oraz „Nowy”, „Duplikuj”, „Usuń”; nazwa to tytuł w nagłówku |
 | Plik projektu | „Zapisz projekt” pobiera `.rozdz.json`; „Otwórz projekt” albo przeciągnięcie pliku na stronę |
 | Cofanie | „Cofnij” / „Ponów”, Ctrl+Z, Ctrl+Shift+Z, Ctrl+Y (50 kroków) |

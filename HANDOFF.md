@@ -1,6 +1,6 @@
 # Przekazanie projektu: Projektant Rozdzielnic
 
-Stan na 10.10.2026, wersja 0.5.0. Projekt powstał w czacie z Claude jako pojedyncza strona (artefakt claude.ai), został podzielony na pliki i jest rozwijany w Claude Code jako zwykła strona w przeglądarce. Wersja 0.5.0 zamyka zadania P0 (1–5 w całości, 6 przygotowane, czeka na decyzję o hostingu). Szczegóły każdej zmiany: `CHANGELOG.md`.
+Stan na 10.10.2026, wersja 0.6.0. Projekt powstał w czacie z Claude jako pojedyncza strona (artefakt claude.ai), został podzielony na pliki i jest rozwijany w Claude Code jako zwykła strona w przeglądarce. Wersja 0.5.0 zamyka zadania P0 (1–5 w całości, 6 przygotowane, czeka na decyzję o hostingu). Szczegóły każdej zmiany: `CHANGELOG.md`.
 
 ![Widok frontu](docs/front.png)
 
@@ -8,7 +8,7 @@ Stan na 10.10.2026, wersja 0.5.0. Projekt powstał w czacie z Claude jako pojedy
 
 Narzędzie dla elektryka lub projektanta do wstępnego zaprojektowania rozdzielnicy mieszkaniowej / małej komercyjnej: dobór obudowy, rozmieszczenie aparatów różnych producentów, kontrola zgodności z podstawowymi wymaganiami PN-HD 60364, okablowanie wnętrza i zestawienie materiałów do zamówienia.
 
-## Co działa (zweryfikowane testami, `npm test`, 63/63: 21 testów × desktop, telefon, safari)
+## Co działa (zweryfikowane testami, `npm test`, 90/90: 30 testów × desktop, telefon, safari)
 
 **Obudowa i aparaty**
 - 5 producentów: Hager, Schneider Electric, ABB, Eaton, Legrand; 9 serii obudów (12–24 mod./rząd, 1–6 rzędów, IP40–IP65).
@@ -38,6 +38,7 @@ Narzędzie dla elektryka lub projektanta do wstępnego zaprojektowania rozdzieln
 - Każdy przewód we własnym torze, korytka po obu stronach, osobne zaciski na listwach, kropki rozgałęzień.
 - Szyny grzebieniowe automatycznie dla obwodów stojących za swoją różnicówką.
 - Listwa PE (podział PEN dla TN-C-S), główna N, osobna N za każdą różnicówką.
+- Tryb **Automatyczne / Ręczne** (0.6.0): w ręcznym kliknięcie dwóch zacisków dodaje przewód, a `wireCheck()` zgłasza złe podłączenia (lista reguł w `docs/DOMAIN.md`). Opis w `CHANGELOG.md`.
 - Filtr żył L1/L2/L3/N/PE, wyróżnianie przewodów zaznaczonego aparatu, opis przewodu po najechaniu.
 
 **Inne**

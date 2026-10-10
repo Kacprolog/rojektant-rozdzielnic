@@ -6,12 +6,13 @@ function autoRcd(d,row,idx){if(d.t!=='mcb')return;const r=S.rows[row];for(let i=
 function addPreset(i,row,idx){const p=PRESETS[i];const d=newDev(p.t,S.mfr,p.p,p.c,p.name);S.dev[d.id]=d;
   if(idx==null)idx=S.rows[row].length;S.rows[row].splice(idx,0,d.id);autoRcd(d,row,idx);S.sel=d.id;S.active=row;S.tab='aparat';render();toast(`Dodano ${desc(d)} do rzędu ${row+1}`);}
 function moveDev(id,row,idx){const fr=rowOf(id),fi=S.rows[fr].indexOf(id);S.rows[fr].splice(fi,1);if(fr===row&&fi<idx)idx--;S.rows[row].splice(Math.max(0,Math.min(idx,S.rows[row].length)),0,id);render();}
-function delDev(id){const r=rowOf(id);if(r<0)return;S.rows[r].splice(S.rows[r].indexOf(id),1);delete S.dev[id];Object.values(S.dev).forEach(d=>{if(d.rcd===id)d.rcd=null;});if(S.sel===id)S.sel=null;render();}
+function delDev(id){const r=rowOf(id);if(r<0)return;S.rows[r].splice(S.rows[r].indexOf(id),1);delete S.dev[id];Object.values(S.dev).forEach(d=>{if(d.rcd===id)d.rcd=null;});
+  S.conn=(S.conn||[]).filter(w=>[w.a,w.b].every(e=>!(e.k==='dev'&&e.id===id)&&!(e.k==='bar'&&e.bar==='N:'+id)));if(S.sel===id)S.sel=null;render();}
 function balance(){const L={L1:0,L2:0,L3:0};const devs=Object.values(S.dev).filter(isCirc);
   devs.filter(is3).forEach(d=>{const i=ib(d);L.L1+=i;L.L2+=i;L.L3+=i;});
   devs.filter(d=>!is3(d)).sort((a,b)=>ib(b)-ib(a)).forEach(d=>{const p=Object.keys(L).sort((a,b)=>L[a]-L[b])[0];d.c.ph=p;L[p]+=ib(d);});
   render();toast('Obwody jednofazowe rozłożone na L1–L3');}
-let tt;function toast(m){let t=$('.toast');if(!t){t=document.createElement('div');t.className='toast';t.setAttribute('role','status');document.body.appendChild(t);}t.textContent=m;t.hidden=false;clearTimeout(tt);tt=setTimeout(()=>t.hidden=true,2200);}
+let tt;function toast(m,ms,alert){let t=$('.toast');if(!t){t=document.createElement('div');t.setAttribute('role','status');document.body.appendChild(t);}t.className='toast'+(alert?' alert':'');t.textContent=m;t.hidden=false;clearTimeout(tt);tt=setTimeout(()=>t.hidden=true,ms||2200);}
 function copy(text,label){const done=()=>toast(label+' skopiowano do schowka');
   const fallback=()=>{$('#copyOut').innerHTML=`<p class="note">Schowek jest niedostępny. Zaznacz tekst i skopiuj ręcznie.</p><textarea class="copyarea" id="copyTa" readonly></textarea>`;const ta=$('#copyTa');ta.value=text;ta.focus();ta.select();};
   try{navigator.clipboard.writeText(text).then(done,fallback);}catch(e){fallback();}}
@@ -31,7 +32,7 @@ function importData(text){let j;try{j=JSON.parse(text);}catch(e){return 'Plik ni
   projAdd(j.S,j.uid);return '';}
 
 /* ---------- lista projektów ---------- */
-function projUse(p){PR.cur=p.id;S=normalize(p.S);uid=fixUid(S,p.uid);histReset();$('#confirm').hidden=true;render();}
+function projUse(p){wirePick=wireSel=null;PR.cur=p.id;S=normalize(p.S);uid=fixUid(S,p.uid);histReset();$('#confirm').hidden=true;render();}
 function projAdd(s,u){save();const p={id:pid(),S:s,uid:u};PR.list.push(p);projUse(p);}
 function projDup(){projAdd(Object.assign(JSON.parse(JSON.stringify(S)),{name:S.name+' (kopia)'}),uid);toast('Utworzono kopię projektu');}
 function projDel(){ask('Usunąć projekt „'+S.name+'” z tej przeglądarki? Tej operacji nie można cofnąć. Kopię możesz wcześniej pobrać przyciskiem „Zapisz projekt”.','Usuń projekt',()=>{
@@ -66,7 +67,10 @@ $('#libSearch').addEventListener('input',e=>{S.q=e.target.value;renderLib();});
 $('#libList').addEventListener('click',e=>{const b=e.target.closest('[data-preset]');if(b)addPreset(+b.dataset.preset,S.active);});
 $('#libList').addEventListener('dragstart',e=>{const b=e.target.closest('[data-preset]');if(!b)return;dragInfo={preset:+b.dataset.preset};e.dataTransfer.setData('text/plain','preset');e.dataTransfer.effectAllowed='copy';});
 const board=$('#board');
-board.addEventListener('click',e=>{const s=e.target.closest('.slot');if(s){S.sel=s.dataset.id;S.active=rowOf(s.dataset.id);S.tab='aparat';render();return;}
+board.addEventListener('click',e=>{
+  const tp=e.target.closest('[data-ep]');if(tp){wireClick(JSON.parse(tp.getAttribute('data-ep')));return;}
+  const wp=e.target.closest('[data-w]');if(wp){wireSel=wp.getAttribute('data-w');wirePick=null;render(true);return;}
+  const s=e.target.closest('.slot');if(s){S.sel=s.dataset.id;S.active=rowOf(s.dataset.id);S.tab='aparat';render();return;}
   const r=e.target.closest('[data-row]');if(r){S.active=+r.dataset.row;render(true);}});
 board.addEventListener('dragstart',e=>{const s=e.target.closest('.slot');if(!s)return;dragInfo={id:s.dataset.id};e.dataTransfer.setData('text/plain','move');e.dataTransfer.effectAllowed='move';});
 function dropIndex(rail,x){const slots=[...rail.querySelectorAll('.slot')].filter(s=>s.dataset.id!==(dragInfo&&dragInfo.id));let idx=slots.length,pos=null;
@@ -113,6 +117,8 @@ panel.addEventListener('change',e=>{const t=e.target,d=S.dev[S.sel];
   render();});
 document.addEventListener('keydown',e=>{const inField=/INPUT|TEXTAREA/.test(document.activeElement.tagName);
   if((e.ctrlKey||e.metaKey)&&!e.altKey&&!inField){const k=e.key.toLowerCase();if(k==='z'||k==='y'){e.preventDefault();if(k==='y'||e.shiftKey)redo();else undo();return;}}
+  if(e.key==='Escape'&&(wirePick||wireSel)){wirePick=wireSel=null;render(true);return;}
+  if((e.key==='Delete'||e.key==='Backspace')&&wireSel&&!/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)){e.preventDefault();wireDel();return;}
   if((e.key==='Delete'||e.key==='Backspace')&&S.sel&&!/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)){e.preventDefault();delDev(S.sel);}});
 $('#bSample').addEventListener('click',()=>{sample();render();toast('Wczytano przykładowy projekt domu jednorodzinnego');});
 $('#bBalance').addEventListener('click',balance);
@@ -120,7 +126,9 @@ $('#bPrint').addEventListener('click',printView);
 window.addEventListener('afterprint',()=>{const pv=$('#print');if(pv)pv.innerHTML='';});
 $('#bUndo').addEventListener('click',undo);
 $('#bRedo').addEventListener('click',redo);
-$('#wireFilter').addEventListener('click',e=>{const b=e.target.closest('[data-wf]');if(b){S.wf[b.dataset.wf]=S.wf[b.dataset.wf]?0:1;render(true);return;}
+$('#wireFilter').addEventListener('click',e=>{const wm=e.target.closest('[data-wmode]');if(wm){setWmode(wm.dataset.wmode);return;}
+  const wa=e.target.closest('[data-wact]');if(wa){wireAct(wa.dataset.wact);return;}
+  const b=e.target.closest('[data-wf]');if(b){S.wf[b.dataset.wf]=S.wf[b.dataset.wf]?0:1;render(true);return;}
   if(e.target.closest('[data-wsel]')){S.sel=null;render();}});
 $('#viewSeg').addEventListener('click',e=>{const b=e.target.closest('[data-view]');if(!b)return;S.wires=b.dataset.view==='wires';render(true);});
 $('#bClear').addEventListener('click',()=>ask('Usunąć wszystkie aparaty z obudowy?','Usuń wszystko',()=>{S.rows=S.rows.map(()=>[]);S.dev={};S.sel=null;render();toast('Obudowa wyczyszczona');}));

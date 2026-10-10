@@ -40,7 +40,10 @@ function face(d){const w=width(d);switch(d.t){
 function screwsFor(d,side){const w=width(d),t=terms(d);let n=t[side].length||(side==='bot'&&t.top.length?0:Math.ceil(w));if(!n)return '';return screws(Math.min(n,Math.max(1,Math.floor(w*34/10))));}
 function renderWireFilter(){const f=$('#wireFilter');f.hidden=!S.wires;if(!S.wires)return;const wf=S.wf||(S.wf={L1:1,L2:1,L3:1,N:1,PE:1});
   const bg={L1:'var(--l1)',L2:'var(--l2)',L3:'var(--l3)',N:'var(--n)',PE:'linear-gradient(90deg,var(--pe) 50%,var(--pe2) 50%)'};
-  f.innerHTML='<span class="encsub" style="align-self:center">Pokaż żyły:</span>'+Object.keys(bg).map(k=>`<button class="chip" data-wf="${k}" aria-pressed="${!!wf[k]}"><span class="dot" style="background:${bg[k]}"></span>${k}</button>`).join('')
+  const man=S.wmode==='manual',wsel=man&&wireSel?buildConns().C.find(c=>c.id===wireSel):null,Dn=designations();
+  f.innerHTML='<span class="seg" role="group" aria-label="Tryb okablowania"><button data-wmode="auto" aria-pressed="'+!man+'" title="Przewody wylicza program">Automatyczne</button><button data-wmode="manual" aria-pressed="'+man+'" title="Przewody dodajesz sam, a Kontrola je sprawdza">Ręczne</button></span>'
+    +(man?'<button class="chip" data-wact="adopt">Przejmij automatyczne</button><button class="chip" data-wact="clear">Usuń przewody</button>'+(wsel?'<button class="chip" data-wact="del" aria-pressed="true">Usuń przewód: '+esc(epName(wsel.a,Dn)+' → '+epName(wsel.b,Dn))+' ✕</button>':'<span class="encsub" id="wireHelp" style="align-self:center">'+(wirePick?'Kliknij drugi zacisk (Esc anuluje).':'Kliknij zacisk, potem drugi, aby dodać przewód. Kliknij przewód, aby go zaznaczyć i usunąć.')+'</span>'):'')
+    +'<span class="encsub" style="align-self:center">Pokaż żyły:</span>'+Object.keys(bg).map(k=>`<button class="chip" data-wf="${k}" aria-pressed="${!!wf[k]}"><span class="dot" style="background:${bg[k]}"></span>${k}</button>`).join('')
     +(S.sel&&S.dev[S.sel]?`<button class="chip" data-wsel="1" aria-pressed="true">Wyróżnione: ${designations()[S.sel]} ✕</button>`:'');}
 function renderBoard(){const e=enc(),D=designations(),M=34;$('#board').className='cabinet'+(S.wires?' wiring':'');
   $('#viewSeg').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String((b.dataset.view==='wires')===!!S.wires)));$('#wireHint').hidden=!S.wires;renderWireFilter();
@@ -159,7 +162,7 @@ function printView(){let pv=$('#print');if(!pv){pv=document.createElement('div')
   const b=$('#board'),keep={wires:S.wires,sel:S.sel,wf:S.wf},PW=1040,PH=570;
   const shot=w=>{S.wires=w;renderBoard();const sc=Math.min(1,PW/b.offsetWidth,PH/b.offsetHeight);
     return `<div class="pfit" style="width:${Math.ceil(b.offsetWidth*sc)}px;height:${Math.ceil(b.offsetHeight*sc)}px"><div class="${b.className}" style="${esc(b.getAttribute('style')||'')};width:${b.offsetWidth}px;min-width:0;transform:scale(${sc.toFixed(4)});transform-origin:0 0">${b.innerHTML}</div></div>`;};
-  S.sel=null;S.wf={L1:1,L2:1,L3:1,N:1,PE:1};
+  S.sel=null;S.wf={L1:1,L2:1,L3:1,N:1,PE:1};wirePick=wireSel=null;
   let front,wires;
   try{front=shot(false);wires=shot(true);}finally{S.wires=keep.wires;S.sel=keep.sel;S.wf=keep.wf;renderBoard();}
   const e=enc(),T=totals(),date=new Date().toLocaleDateString('pl-PL'),noId=h=>h.replace(/ id="[^"]*"/g,'');

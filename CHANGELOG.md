@@ -2,6 +2,33 @@
 
 Każdy wpis odpowiada jednemu commitowi. Format: co zrobiono, dlaczego, jak sprawdzono.
 
+## 0.6.0 (10.10.2026) — okablowanie ręczne i alerty złego podłączenia
+
+Powód: użytkownik zgłosił, że nie może sam dodawać przewodów ani dostać ostrzeżenia o złym podłączeniu
+(dotąd przewody wyliczał wyłącznie program).
+
+- Widok „Okablowanie” ma przełącznik **Automatyczne / Ręczne**. W trybie ręcznym każdy zacisk aparatu, każda listwa
+  i każda żyła WLZ jest klikalna: kliknięcie zacisku, potem drugiego, dodaje przewód. Kliknięcie przewodu zaznacza go,
+  Delete albo przycisk „Usuń przewód” go usuwa, Esc anuluje wybór.
+- „Przejmij automatyczne” kopiuje wyliczone okablowanie jako punkt wyjścia do poprawek; „Usuń przewody” czyści
+  (oba z potwierdzeniem, oba cofalne). Szyny grzebieniowe nadal wynikają z ustawienia aparatów.
+- **Alerty** (`wireCheck()` w `js/wiring.js`): czerwony komunikat od razu po dodaniu przewodu, obwódka na rysunku,
+  opis po najechaniu i wpis w zakładce Kontrola (liczony do licznika błędów w nagłówku). Wykrywane:
+  zwarcie międzyfazowe, faza–N, faza–PE, N–PE poza punktem podziału PEN (albo w TN-S/TT), ominięcie rozłącznika głównego,
+  ominięcie różnicówki, wspólny N różnych stref RCD, przewód w zacisku odejścia obwodu, aparat bez połączenia z zasilaniem,
+  niepodłączona listwa PE, niezasilona listwa N, listwa N za różnicówką bez jej wyjścia N.
+- Koniec przewodu na aparacie jest zapisany jako numer zacisku, więc zmiana fazy obwodu albo „Rozłóż fazy” nie przepina
+  przewodów, tylko ujawnia złą fazę.
+- Dane: nowe pola projektu `wmode` (`auto`/`manual`) i `conn` (lista przewodów) w `DATA_KEYS`, czyli w pliku
+  `.rozdz.json`, w historii cofania i w `localStorage`. Stare projekty i pliki wczytują się jako `auto` z pustą listą;
+  wersja pliku zostaje 1 (pola są dodatkowe). Końce przewodów z pliku przechodzą przez `cleanConn()`.
+- W trybie ręcznym lista połączeń, materiały przewodów, zestawienie i wydruk biorą Twoje przewody.
+- Testy `tests/okablowanie.spec.js` (9): klikanie zacisków, 10 rodzajów złych podłączeń, braki zasilania, zmiana fazy
+  i układu sieci, przejęcie automatycznego bez żadnych uwag i z identycznymi materiałami, cofanie, plik, przeładowanie.
+- Sprawdzenie: `npm test` → 90/90 (30 testów × desktop, telefon, safari); ręcznie w przeglądarce (alert, wpis w Kontroli).
+- Ograniczenia: przekroju przewodu nie ustawia się ręcznie (wynika z reguł w `docs/DOMAIN.md`); nie ma jeszcze
+  kontroli liczby przewodów w jednym zacisku ani okablowania liczników i styczników.
+
 ## 0.5.0 (10.10.2026) — zadania P0 z HANDOFF.md
 
 ### Przygotowanie środowiska

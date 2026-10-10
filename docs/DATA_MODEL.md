@@ -84,6 +84,8 @@ Oznaczenia są liczone, nie zapisywane: `designations()` numeruje aparaty w kole
 
 ## Połączenia (`buildConns()` w `js/wiring.js`)
 
+**Tryby.** `S.wmode === 'auto'`: połączenia wylicza `autoConns()` (reguły niżej). `S.wmode === 'manual'`: `buildConns()` zwraca zworki szyn grzebieniowych z `autoConns()` oraz przewody użytkownika z `S.conn` (`userConns()`, każdy z `user: 1` i `id`). Zapisany przewód: `{ id: 'w12', a, b }`, gdzie koniec to `{k:'dev', id, side, i}` (`i` = numer zacisku od lewej), `{k:'bar', bar}` albo `{k:'wlz', ph}`. `epLive()` zamienia zapisany koniec na koniec z nazwą żyły i odrzuca przewody do nieistniejących zacisków. Kontrola: `wireCheck()` (reguły w `docs/DOMAIN.md`). Stan przejściowy poza `S`: `wirePick` (wybrany pierwszy zacisk), `wireSel` (zaznaczony przewód).
+
 `terms(d)` zwraca zaciski `{ top:[...], bot:[...] }` z nazwami żył (`L1 L2 L3 N PE`). Aparaty bez zacisków mocy (licznik, stycznik, zasilacz, gniazdo, przekaźnik czasowy) nie są na razie okablowane.
 
 `buildConns()` zwraca:

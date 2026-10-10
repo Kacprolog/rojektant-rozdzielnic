@@ -12,7 +12,7 @@ Szczegóły przekazania, znane problemy i plan prac: `HANDOFF.md`. Dziennik zmia
 npm start            # serwer statyczny bez zależności: http://localhost:4173
 npm install          # tylko dla testów (@playwright/test)
 npx playwright install chromium webkit   # raz, jeśli nie ma przeglądarek
-npm test             # 21 testów × 3 projekty: desktop 1600 px i telefon 390 px (Chromium), safari (WebKit)
+npm test             # 30 testów × 3 projekty: desktop 1600 px i telefon 390 px (Chromium), safari (WebKit)
 node scripts/podglad-druku.js            # PDF i zrzuty stron wydruku w test-results/druk/
 ```
 
@@ -35,6 +35,7 @@ js/app.js           akcje (dodaj/przenieś/usuń/rozłóż fazy/kopiuj), plik pr
 scripts/serve.js    serwer statyczny (Node, bez zależności)
 scripts/podglad-druku.js   PDF i zrzuty stron wydruku (Playwright)
 tests/smoke.spec.js testy dymne: start, okablowanie, zakładki, migracja starego stanu
+tests/okablowanie.spec.js   okablowanie ręczne i alerty złego podłączenia
 tests/p0.spec.js    plik projektu, lista projektów, cofanie, druk
 .github/workflows/pages.yml   CI: testy w 3 silnikach, potem publikacja na GitHub Pages
 ```
@@ -44,7 +45,7 @@ Skrypty są **klasyczne** i ładowane po kolei. Wszystkie `const`/`function` z n
 ## Jak działa aplikacja
 
 - **Jeden obiekt stanu `S`** (+ licznik `uid`). Każda zmiana: zmodyfikuj `S`, wywołaj `render()` (albo `render(true)`, żeby nie przerysowywać panelu bocznego, np. podczas pisania w polu). `render()` woła `save()`, które dopisuje migawkę do historii cofania i zapisuje listę projektów do `localStorage` pod kluczem `rozdz-v2`.
-- **Dane a widok.** `DATA_KEYS` (`name, enc, set, rows, dev`) to dane projektu: trafiają do pliku `.rozdz.json` i do historii cofania. Reszta `S` (`sel, active, mfr, tab, q, wires, wf`) to stan widoku. Nowe pole danych dopisz do `DATA_KEYS` i do `normalize()`.
+- **Dane a widok.** `DATA_KEYS` (`name, enc, set, rows, dev, wmode, conn`) to dane projektu: trafiają do pliku `.rozdz.json` i do historii cofania. Reszta `S` (`sel, active, mfr, tab, q, wires, wf`) to stan widoku. Nowe pole danych dopisz do `DATA_KEYS` i do `normalize()`.
 - **Lista projektów `PR`**: `S` to zawsze projekt `PR.cur`. Przełączaj tylko przez `projUse()` (normalizuje stan i resetuje historię).
 - **Cofanie** działa samo dla każdej akcji, która kończy się `render()` albo `save()`. Dla pól pisanych znak po znaku ustaw wcześniej `histTag`, żeby seria zmian była jednym krokiem.
 - **Pełne przerysowanie przez `innerHTML`** + delegacja zdarzeń na kontenerach (`#board`, `#panel`, `#libList`, `#tabs`). Nie podpinaj nasłuchiwaczy do elementów, które są przerysowywane.
