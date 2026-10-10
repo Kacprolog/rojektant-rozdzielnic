@@ -1,12 +1,13 @@
 {
   "name": "projektant-rozdzielnic",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "private": true,
   "description": "Interaktywny konfigurator rozdzielnic modułowych (DIN TH35) z widokiem okablowania, kontrolą projektu i zestawieniem materiałów.",
   "scripts": {
     "start": "node scripts/serve.js 4173",
     "test": "playwright test --reporter=list",
-    "test:ui": "playwright test --ui"
+    "test:ui": "playwright test --ui",
+    "druk": "node scripts/podglad-druku.js"
   },
   "devDependencies": {
     "@playwright/test": "1.56.0"

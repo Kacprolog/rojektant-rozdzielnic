@@ -1,6 +1,6 @@
 # Przekazanie projektu: Projektant Rozdzielnic
 
-Stan na 10.10.2026, wersja 0.4.0. Projekt powstał w czacie z Claude jako pojedyncza strona (artefakt claude.ai) i został podzielony na pliki, żeby dalej rozwijać go w Claude Code i uruchamiać jako zwykłą stronę w przeglądarce.
+Stan na 10.10.2026, wersja 0.5.0. Projekt powstał w czacie z Claude jako pojedyncza strona (artefakt claude.ai), został podzielony na pliki i jest rozwijany w Claude Code jako zwykła strona w przeglądarce. Wersja 0.5.0 zamyka zadania P0 (1–5 w całości, 6 przygotowane, czeka na decyzję o hostingu). Szczegóły każdej zmiany: `CHANGELOG.md`.
 
 ![Widok frontu](docs/front.png)
 
@@ -8,13 +8,20 @@ Stan na 10.10.2026, wersja 0.4.0. Projekt powstał w czacie z Claude jako pojedy
 
 Narzędzie dla elektryka lub projektanta do wstępnego zaprojektowania rozdzielnicy mieszkaniowej / małej komercyjnej: dobór obudowy, rozmieszczenie aparatów różnych producentów, kontrola zgodności z podstawowymi wymaganiami PN-HD 60364, okablowanie wnętrza i zestawienie materiałów do zamówienia.
 
-## Co działa (zweryfikowane testami, `npm test`, 16/16)
+## Co działa (zweryfikowane testami, `npm test`, 63/63: 21 testów × desktop, telefon, safari)
 
 **Obudowa i aparaty**
 - 5 producentów: Hager, Schneider Electric, ABB, Eaton, Legrand; 9 serii obudów (12–24 mod./rząd, 1–6 rzędów, IP40–IP65).
 - 26 presetów aparatów: rozłączniki, SPD, kontrolki, RCD (A/B, 30/300 mA, S), RCBO, MCB B/C, liczniki MID, styczniki, przekaźniki, zasilacz, gniazdo.
 - Przeciąganie z biblioteki i między rzędami (mysz), kliknięcie dodaje do aktywnego rzędu, Delete usuwa, przyciski ← → duplikuj.
 - Front aparatów w skali (1 moduł = 34 px), opisówka z oznaczeniem i kropkami faz, rezerwa i przekroczenie szyny.
+
+**Projekty** (nowe w 0.5.0)
+- Lista projektów w przeglądarce: wybór, „Nowy”, „Duplikuj”, „Usuń” z potwierdzeniem na stronie; nazwa to tytuł w nagłówku.
+- Plik projektu `.rozdz.json`: „Zapisz projekt” (pobranie), „Otwórz projekt” (wybór pliku albo przeciągnięcie na stronę), walidacja, komunikaty błędów, sprowadzanie wartości do dozwolonych. Wczytany plik jest nowym projektem.
+- Cofnij / Ponów: przyciski i Ctrl+Z, Ctrl+Shift+Z, Ctrl+Y; 50 kroków; tylko zmiany danych projektu.
+- Druk / PDF: A4 poziomo; front, okablowanie, struktura z kontrolą, zestawienie z listami kabli i połączeń.
+- Zapis automatyczny w `localStorage` (`rozdz-v2`), migracja z `rozdz-v1`, awaryjny start z przykładem przy uszkodzonym zapisie.
 
 **Panel boczny (6 zakładek)**
 - Aparat: parametry aparatu, obwód (rodzaj, moc, przekrój, faza, długość kabla, przypisanie RCD), Ib/In/Iz, dane techniczne.
@@ -35,7 +42,7 @@ Narzędzie dla elektryka lub projektanta do wstępnego zaprojektowania rozdzieln
 
 **Inne**
 - Jasny i ciemny motyw (systemowy), układ od 390 px szerokości.
-- Zapis automatyczny w `localStorage` (`rozdz-v1`), migracja starszego stanu, awaryjny start z przykładem przy uszkodzonym zapisie.
+- CI: `.github/workflows/pages.yml` (testy w Chromium, WebKit i Firefox, potem publikacja na GitHub Pages). Plik jest gotowy, ale **nie był jeszcze uruchomiony**: projekt nie ma zdalnego repozytorium.
 
 ## Historia decyzji
 
@@ -49,37 +56,46 @@ Narzędzie dla elektryka lub projektanta do wstępnego zaprojektowania rozdzieln
 | Usunięcie `?.` i `??` | Po wersji 3 użytkownik zgłosił „nie ładuje się”. Nie udało się odtworzyć w Chromium; podejrzenie: stary Safari/WebKit. |
 | Potwierdzenia na stronie zamiast `confirm()` | Ograniczenie artefaktu; zostaje jako lepszy UX. |
 | Brak numerów katalogowych i cen | Nie podajemy danych katalogowych z pamięci; czekamy na cenniki od użytkownika. |
+| Wszystkie projekty w jednym kluczu `rozdz-v2` | Jedna operacja zapisu, prosta migracja z `rozdz-v1`. Ograniczenie: limit `localStorage` (ok. 5 MB) na wszystkie projekty razem; jeden projekt to kilka kB. |
+| Wczytany plik to nowy projekt, a nie podmiana bieżącego | Otwarcie pliku nigdy nie niszczy pracy. |
+| Historia cofania jako migawki JSON tworzone w `save()` | Każda akcja jest cofalna bez zmian w jej kodzie. Koszt: do 50 kopii danych projektu w pamięci (pomijalny). |
+| Druk przez kopię HTML obudowy w `#print` | Rysunek przewodów zależy od pomiaru DOM na ekranie; kopia z zachowanymi wymiarami i skalą daje identyczny rysunek (sprawdza to test). |
+| Firefox tylko w CI | Firefox z Playwright nie startuje na komputerze użytkownika (Windows Insider, błąd SideBySide). Użytkownik pracuje w Operze (Chromium). |
 
 ## Znane problemy i ograniczenia
 
-1. **Niepotwierdzona przyczyna „nie ładuje się”** (zgłoszenie z wersji w claude.ai). Do sprawdzenia w WebKit/Safari i Firefox (dodać projekty w `playwright.config.js`). Nie wiadomo, na jakim urządzeniu użytkownik otwierał stronę.
+1. **Niepotwierdzona przyczyna „nie ładuje się”** (zgłoszenie z wersji w claude.ai). Testy przechodzą w Chromium i WebKit bez zmian w kodzie aplikacji, więc błędu nie udało się odtworzyć. W Firefoksie aplikacja **nie była testowana** (patrz tabela decyzji); sprawdzi to pierwsze uruchomienie CI.
 2. **Przeciąganie nie działa na ekranach dotykowych** (HTML5 drag and drop). Kliknięcie w bibliotece działa.
-3. **Brak zapisu projektu do pliku**, brak wielu projektów, brak cofania (undo).
-4. **Brak widoku do druku / PDF** (w artefakcie było to niemożliwe; w przeglądarce już można).
-5. **Licznik, stycznik, przekaźnik czasowy, zasilacz, gniazdo nie są okablowane**, więc np. „Podlicznik pompy ciepła” i „Bojler – taryfa G12” w przykładzie nie są w torze zasilania obwodów.
-6. **Szyna grzebieniowa tylko dla ciągłego bloku MCB bezpośrednio za RCD.** Nie sprawdzamy zgodności szyn między producentami ani rozstawu biegunów.
-7. **Uproszczone obliczenia**: brak spadku napięcia, impedancji pętli, Ik vs Icn, współczynników poprawkowych.
-8. **Szerokości aparatów uproszczone** (np. RCBO 1P+N zawsze 2 mod., choć są wersje 1-modułowe).
-9. **Przy wielu obwodach obudowa w widoku okablowania robi się wysoka**; brak powiększania i przesuwania.
-10. W `css/styles.css` reguły `.cabinet.wiring { padding … }` i `.cabinet.wiring .rowwrap { margin-top … }` są nadpisywane przez style inline z `drawWires()`; do uporządkowania.
-11. Faza RCD 2P jest wyznaczana z pierwszego przypisanego obwodu 1F (`rcdPh`), a nie ustawiana jawnie.
+3. **Okablowanie na wydruku jest małe** (skala ok. 0,5 przy 3 rzędach), bo wysoka obudowa musi się zmieścić na A4 poziomo. Do rozważenia: strona pionowa dla okablowania albo podział na rzędy.
+4. **Historia cofania znika po przeładowaniu strony** i przy zmianie projektu.
+5. **Usunięcia projektu nie da się cofnąć** (jest potwierdzenie i podpowiedź, żeby wcześniej zapisać plik).
+6. **Licznik, stycznik, przekaźnik czasowy, zasilacz, gniazdo nie są okablowane**, więc np. „Podlicznik pompy ciepła” i „Bojler – taryfa G12” w przykładzie nie są w torze zasilania obwodów.
+7. **Szyna grzebieniowa tylko dla ciągłego bloku MCB bezpośrednio za RCD.** Nie sprawdzamy zgodności szyn między producentami ani rozstawu biegunów.
+8. **Uproszczone obliczenia**: brak spadku napięcia, impedancji pętli, Ik vs Icn, współczynników poprawkowych.
+9. **Szerokości aparatów uproszczone** (np. RCBO 1P+N zawsze 2 mod., choć są wersje 1-modułowe).
+10. **Przy wielu obwodach obudowa w widoku okablowania robi się wysoka**; brak powiększania i przesuwania.
+11. W `css/styles.css` reguły `.cabinet.wiring { padding … }` i `.cabinet.wiring .rowwrap { margin-top … }` są nadpisywane przez style inline z `drawWires()`; do uporządkowania.
+12. Faza RCD 2P jest wyznaczana z pierwszego przypisanego obwodu 1F (`rcdPh`), a nie ustawiana jawnie.
+13. Zrzut `docs/okablowanie.png` pochodzi z wersji 0.4.0 (sam widok okablowania się nie zmienił).
+
+Naprawione w 0.5.0: pasek potwierdzenia „Wyczyść” widoczny od startu i podpowiedź o przewodach widoczna w widoku frontu (atrybut `hidden` nadpisywany przez `display`).
 
 ## Plan prac
 
-Kolejność według wartości dla użytkownika. Każde zadanie kończy się zielonym `npm test` i nowymi testami dla nowej funkcji.
+Kolejność według wartości dla użytkownika. Każde zadanie kończy się zielonym `npm test`, nowymi testami dla nowej funkcji i wpisem w `CHANGELOG.md`.
 
 ### P0 — stabilnie w przeglądarce
 
-1. **Testy w WebKit i Firefox.** Dodaj projekty `safari` i `firefox` w `playwright.config.js`, napraw różnice. *Gotowe, gdy:* 8 testów przechodzi w 3 silnikach.
-2. **Zapis i odczyt pliku projektu** (`.rozdz.json`): przyciski „Zapisz projekt” (pobranie pliku) i „Otwórz projekt” (input file + przeciągnij plik na stronę), walidacja i migracja wersji (pole `version` w pliku). *Gotowe, gdy:* zapisany plik po wczytaniu daje identyczne `buildConns()` i `bomRows()`.
-3. **Lista projektów** w `localStorage` (nowy, duplikuj, zmień nazwę, usuń z potwierdzeniem na stronie). Migracja z klucza `rozdz-v1`.
-4. **Cofnij / Ponów** (Ctrl+Z / Ctrl+Shift+Z, przyciski w nagłówku): stos migawek `S` (limit 50), z pominięciem zmian widoku (`tab`, `sel`, `wires`, `wf`, `q`).
-5. **Widok do druku / PDF** (`@media print` + przycisk „Drukuj”): strona 1 front z opisówką, strona 2 okablowanie, strona 3 schemat/struktura, strona 4 zestawienie i lista kabli; nagłówek z nazwą projektu i datą, A4 poziomo.
-6. **Hosting**: GitHub Pages (workflow `.github/workflows/pages.yml` publikujący katalog główny) albo Netlify. Uruchom testy w CI przed publikacją.
+1. ✅ **Testy w kolejnych silnikach.** WebKit lokalnie, Firefox w CI.
+2. ✅ **Zapis i odczyt pliku projektu** (`.rozdz.json`).
+3. ✅ **Lista projektów** w `localStorage`, migracja z `rozdz-v1`.
+4. ✅ **Cofnij / Ponów.**
+5. ✅ **Widok do druku / PDF.**
+6. ⏳ **Hosting.** Workflow GitHub Pages z testami jest w repozytorium. Do zrobienia po decyzji użytkownika: utworzyć repozytorium na GitHubie, wypchnąć `main`, w Settings → Pages ustawić Source „GitHub Actions”, sprawdzić pierwsze uruchomienie (w tym testy w Firefoksie). Alternatywa bez konta GitHub: Netlify Drop (ręczne przeciągnięcie plików).
 
 ### P1 — merytoryka
 
-7. **Schemat jednokreskowy** generowany z modelu (SVG): WLZ, rozłącznik, SPD, RCD, obwody z oznaczeniami, przekrojami, długościami i mocami. Eksport do druku.
+7. **Schemat jednokreskowy** generowany z modelu (SVG): WLZ, rozłącznik, SPD, RCD, obwody z oznaczeniami, przekrojami, długościami i mocami. Dodać jako stronę wydruku.
 8. **Katalog w JSON** (`data/catalog/*.json`): numery katalogowe, ceny, szerokości i warianty per producent; import cennika CSV od użytkownika; wartość zestawienia.
 9. **Rozszerzone obliczenia**: spadek napięcia (ΔU ≤ 3% obwody odbiorcze, ≤ 0,5% WLZ – parametry do ustawienia), impedancja pętli i warunek samoczynnego wyłączenia, Ik w miejscu instalacji vs Icn, współczynniki poprawkowe Iz. Każde jako reguła w `checks()` z odwołaniem do normy.
 10. **Obwody sterowania i pomiaru**: licznik w torze obwodu (np. pompa ciepła), stycznik dla bojlera z sygnałem taryfy G12, przekaźnik kontroli faz z cewką stycznika. Zaciski sterownicze w `terms()`, przewody 1,5 mm².
@@ -89,14 +105,16 @@ Kolejność według wartości dla użytkownika. Każde zadanie kończy się ziel
 
 12. **Migracja do Vite + TypeScript** (moduły ES, typy `Device`, `Conn`, `Endpoint`), testy jednostkowe modelu w Vitest (`checks`, `buildConns`, `bomRows`, `ib/iz`). Zachować działanie bez serwera przez `vite build` z jednym plikiem wynikowym (np. `vite-plugin-singlefile`), jeśli otwieranie z dysku ma zostać.
 13. **PWA** (manifest, service worker), praca offline, instalacja na telefonie.
-14. Porządek w CSS (punkt 10 z listy problemów), podział `render.js` na komponenty.
+14. Porządek w CSS (punkt 11 z listy problemów), podział `render.js` na komponenty.
 
 ## Jak sprawdzić, że wszystko działa
 
 ```bash
-npm install && npx playwright install chromium
+npm install && npx playwright install chromium webkit
 npm test
-npm start   # otwórz http://localhost:4173, kliknij „Okablowanie”, potem zakładki Kontrola, Kable, Zestawienie
+npm start   # otwórz http://localhost:4173
 ```
 
-Ręczny scenariusz: wczytaj przykład → kliknij rząd 3, potem w bibliotece „RCD 25 A / 30 mA, 2P” (trafi na koniec rzędu) → w Kontroli pojawi się informacja, że różnicówka nie ma obwodów → zaznacz „Podgrzewacz wody” i w polu „Ochrona RCD” wybierz nową różnicówkę → informacja zniknie, a w Okablowaniu pojawi się osobna listwa N za tą różnicówką i przewód L3 do wyłącznika.
+Ręczny scenariusz podstawowy: wczytaj przykład → kliknij rząd 3, potem w bibliotece „RCD 25 A / 30 mA, 2P” (trafi na koniec rzędu) → w Kontroli pojawi się informacja, że różnicówka nie ma obwodów → zaznacz „Podgrzewacz wody” i w polu „Ochrona RCD” wybierz nową różnicówkę → informacja zniknie, a w Okablowaniu pojawi się osobna listwa N za tą różnicówką i przewód L3 do wyłącznika.
+
+Ręczny scenariusz 0.5.0: „Cofnij” dwa razy (wraca stan sprzed przypisania i sprzed dodania RCD) → „Zapisz projekt” (pobiera plik) → „Nowy” (pusta obudowa, lista ma 2 projekty) → przeciągnij pobrany plik na stronę (trzeci projekt, 21 aparatów) → „Drukuj / PDF” i w oknie druku „Zapisz jako PDF”.

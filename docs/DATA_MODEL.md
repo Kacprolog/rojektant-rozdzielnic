@@ -20,7 +20,31 @@ S = {
 uid  // licznik do id aparatów: 'd' + uid++
 ```
 
-Zapis: `localStorage['rozdz-v1'] = JSON.stringify({ S, uid })`.
+Pola `name, enc, set, rows, dev` to **dane projektu** (`DATA_KEYS`); pozostałe to stan widoku.
+
+## Przechowywanie w przeglądarce
+
+```js
+localStorage['rozdz-v2'] = { version: 2, cur: 'p…', list: [ { id: 'p…', S, uid, mod } ] }
+PR = { cur, list }   // to samo w pamięci; S jest zawsze projektem PR.cur
+```
+
+- `load()` czyta `rozdz-v2` i pomija wpisy niespełniające `valid()`. Gdy lista jest pusta, migruje `rozdz-v1` (`{ S, uid }`, wersje do 0.4.0) i usuwa stary klucz. Gdy nadal jest pusta, aplikacja startuje z przykładem.
+- `valid(s)`: rzędy są tablicami; każdy id ma postać `dN`, występuje raz i wskazuje aparat znanego typu z `p` (oraz `c` dla obwodów); producent obudowy jest w katalogu.
+- `normalize(s)`: wartości domyślne ustawień i widoku, seria obudowy z katalogu, `enc.rows = rows.length`, usunięcie aparatów spoza rzędów i odwołań do nieistniejących RCD, `cleanDev()` (liczby oraz słowniki faz, charakterystyk i typów).
+- `fixUid(s, u)`: licznik większy od każdego istniejącego id.
+
+## Plik projektu `.rozdz.json`
+
+```js
+{ app: 'projektant-rozdzielnic', version: 1, saved: '2026-10-10T…Z', uid: 23, S: { name, enc, set, rows, dev } }
+```
+
+`importData()` odrzuca: nie-JSON, inne `app`, brak wersji, wersję nowszą niż `FILE_VERSION`, strukturę niespełniającą `valid()`. Poprawny plik staje się nowym projektem na liście i niczego nie nadpisuje.
+
+## Historia cofania
+
+`HIST = { u, r, cur, t, tag }`: `cur` to bieżąca migawka (JSON z `DATA_KEYS` i `uid`), `u` stos cofania (limit 50), `r` stos ponawiania. `histTrack()` jest wołane w `save()`: gdy migawka się zmieniła, poprzednia trafia na `u`, a `r` jest czyszczone. Zmiany z tym samym `histTag` w odstępie do 1,5 s są jednym krokiem (pisanie w polu). Historia nie jest zapisywana i jest resetowana przy zmianie projektu (`projUse()`).
 
 ## Aparat `Device`
 

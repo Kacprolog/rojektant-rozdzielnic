@@ -1,8 +1,8 @@
-﻿# Dziennik zmian
+# Dziennik zmian
 
 Każdy wpis odpowiada jednemu commitowi. Format: co zrobiono, dlaczego, jak sprawdzono.
 
-## 0.5.0 (w toku) — zadania P0 z HANDOFF.md
+## 0.5.0 (10.10.2026) — zadania P0 z HANDOFF.md
 
 ### Przygotowanie środowiska
 - Odtworzono strukturę folderów (`css/`, `js/`, `scripts/`, `tests/`, `docs/`) z plików przekazanych płasko.
@@ -74,3 +74,11 @@ Każdy wpis odpowiada jednemu commitowi. Format: co zrobiono, dlaczego, jak spra
 - Testy: 4 części, zawartość każdej, mieszczenie się na stronie, identyczność rysunku przewodów na ekranie i wydruku,
   brak wpływu na widok i historię cofania, widoczność w `@media print`.
 - Sprawdzenie: `npm test` → 63/63.
+
+### P0.6 Hosting (przygotowanie) i dokumentacja
+- `.github/workflows/pages.yml`: testy w Chromium, WebKit i Firefox, a po sukcesie publikacja `index.html`, `css/`, `js/`
+  na GitHub Pages. **Nie uruchomiono**: projekt nie ma jeszcze zdalnego repozytorium, wybór hostingu należy do użytkownika.
+- `.claude/launch.json`: konfiguracja podglądu w aplikacji Claude (`node scripts/serve.js 4173`).
+- Zaktualizowano `README.md`, `HANDOFF.md`, `CLAUDE.md`, `docs/DATA_MODEL.md`, zrzut `docs/front.png`; wersja 0.5.0.
+- Podczas edycji `HANDOFF.md` skrypt omyłkowo wyciął dwie sekcje; plik został napisany od nowa na podstawie wersji z repozytorium.
+- Sprawdzenie: `npm test` → 63/63; ręcznie w przeglądarce (lista projektów, cofanie, okablowanie).
