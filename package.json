@@ -5,7 +5,7 @@
   "description": "Interaktywny konfigurator rozdzielnic modułowych (DIN TH35) z widokiem okablowania, kontrolą projektu i zestawieniem materiałów.",
   "scripts": {
     "start": "node scripts/serve.js 4173",
-    "test": "playwright test",
+    "test": "playwright test --reporter=list",
     "test:ui": "playwright test --ui"
   },
   "devDependencies": {
