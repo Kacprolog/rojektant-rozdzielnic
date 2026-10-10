@@ -62,6 +62,12 @@ Działa tylko w trybie „Ręczne”. Każdy zacisk ma żyłę (`L1 L2 L3 N PE`)
 | błąd | Listwa PE bez połączenia z przewodem ochronnym WLZ | PN-HD 60364-5-54 |
 | uwaga | Główna listwa N niezasilona; listwa N za różnicówką z obwodami niepołączona z jej wyjściem N | – |
 | info | Tryb ręczny bez żadnego przewodu | – |
+| błąd | Izolacja zielono-żółta na przewodzie innym niż PE/PEN; przewód PE/PEN w innym kolorze | PN-EN 60445 |
+| uwaga | Izolacja niebieska na przewodzie fazowym; przewód N w kolorze innym niż niebieski | PN-EN 60445 |
+| info | Przewód fazowy w barwie innej fazy (zalecane L1 brązowy, L2 czarny, L3 szary) | PN-HD 308 S2 |
+| uwaga | Przekrój ustawiony ręcznie mniejszy niż dobrany | PN-HD 60364-4-43 |
+
+PEN w TN-C-S (żyła ochronno-neutralna WLZ, mostek PEN) jest rysowany jako zielono-żółty z niebieskimi końcami. Kolory żył są takie same w jasnym i ciemnym motywie.
 
 Ciągłość liczona jest po grafie: przewody + tory wewnątrz rozłącznika, RCD, MCB, RCBO (wejście ↔ wyjście tej samej żyły) + szyny grzebieniowe.
 

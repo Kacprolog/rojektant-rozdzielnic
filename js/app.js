@@ -32,7 +32,7 @@ function importData(text){let j;try{j=JSON.parse(text);}catch(e){return 'Plik ni
   projAdd(j.S,j.uid);return '';}
 
 /* ---------- lista projektów ---------- */
-function projUse(p){wirePick=wireSel=null;PR.cur=p.id;S=normalize(p.S);uid=fixUid(S,p.uid);histReset();$('#confirm').hidden=true;render();}
+function projUse(p){wireReset();PR.cur=p.id;S=normalize(p.S);uid=fixUid(S,p.uid);histReset();$('#confirm').hidden=true;render();}
 function projAdd(s,u){save();const p={id:pid(),S:s,uid:u};PR.list.push(p);projUse(p);}
 function projDup(){projAdd(Object.assign(JSON.parse(JSON.stringify(S)),{name:S.name+' (kopia)'}),uid);toast('Utworzono kopię projektu');}
 function projDel(){ask('Usunąć projekt „'+S.name+'” z tej przeglądarki? Tej operacji nie można cofnąć. Kopię możesz wcześniej pobrać przyciskiem „Zapisz projekt”.','Usuń projekt',()=>{
@@ -69,7 +69,7 @@ $('#libList').addEventListener('dragstart',e=>{const b=e.target.closest('[data-p
 const board=$('#board');
 board.addEventListener('click',e=>{
   const tp=e.target.closest('[data-ep]');if(tp){wireClick(JSON.parse(tp.getAttribute('data-ep')));return;}
-  const wp=e.target.closest('[data-w]');if(wp){wireSel=wp.getAttribute('data-w');wirePick=null;render(true);return;}
+  const wp=e.target.closest('[data-w]');if(wp){wireReset();wireSel=wp.getAttribute('data-w');render(true);return;}
   const s=e.target.closest('.slot');if(s){S.sel=s.dataset.id;S.active=rowOf(s.dataset.id);S.tab='aparat';render();return;}
   const r=e.target.closest('[data-row]');if(r){S.active=+r.dataset.row;render(true);}});
 board.addEventListener('dragstart',e=>{const s=e.target.closest('.slot');if(!s)return;dragInfo={id:s.dataset.id};e.dataTransfer.setData('text/plain','move');e.dataTransfer.effectAllowed='move';});
@@ -117,7 +117,7 @@ panel.addEventListener('change',e=>{const t=e.target,d=S.dev[S.sel];
   render();});
 document.addEventListener('keydown',e=>{const inField=/INPUT|TEXTAREA/.test(document.activeElement.tagName);
   if((e.ctrlKey||e.metaKey)&&!e.altKey&&!inField){const k=e.key.toLowerCase();if(k==='z'||k==='y'){e.preventDefault();if(k==='y'||e.shiftKey)redo();else undo();return;}}
-  if(e.key==='Escape'&&(wirePick||wireSel)){wirePick=wireSel=null;render(true);return;}
+  if(e.key==='Escape'&&(wirePick||wireSel||wireMove)){wireReset();render(true);return;}
   if((e.key==='Delete'||e.key==='Backspace')&&wireSel&&!/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)){e.preventDefault();wireDel();return;}
   if((e.key==='Delete'||e.key==='Backspace')&&S.sel&&!/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)){e.preventDefault();delDev(S.sel);}});
 $('#bSample').addEventListener('click',()=>{sample();render();toast('Wczytano przykładowy projekt domu jednorodzinnego');});
@@ -130,6 +130,7 @@ $('#wireFilter').addEventListener('click',e=>{const wm=e.target.closest('[data-w
   const wa=e.target.closest('[data-wact]');if(wa){wireAct(wa.dataset.wact);return;}
   const b=e.target.closest('[data-wf]');if(b){S.wf[b.dataset.wf]=S.wf[b.dataset.wf]?0:1;render(true);return;}
   if(e.target.closest('[data-wsel]')){S.sel=null;render();}});
+$('#wireFilter').addEventListener('change',e=>{const p=e.target.closest('[data-wprop]');if(p)wireSet(p.dataset.wprop,p.value);});
 $('#viewSeg').addEventListener('click',e=>{const b=e.target.closest('[data-view]');if(!b)return;S.wires=b.dataset.view==='wires';render(true);});
 $('#bClear').addEventListener('click',()=>ask('Usunąć wszystkie aparaty z obudowy?','Usuń wszystko',()=>{S.rows=S.rows.map(()=>[]);S.dev={};S.sel=null;render();toast('Obudowa wyczyszczona');}));
 $('#cNo').addEventListener('click',()=>{askFn=null;$('#confirm').hidden=true;});

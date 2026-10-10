@@ -2,6 +2,29 @@
 
 Każdy wpis odpowiada jednemu commitowi. Format: co zrobiono, dlaczego, jak sprawdzono.
 
+## 0.7.0 (10.10.2026) — kolory żył wg normy w każdym motywie, edycja przewodów
+
+Powód: użytkownik wymaga okablowania w kolorach polskich norm i możliwości modyfikowania przewodów.
+
+- **Kolory.** Barwy żył były zgodne z PN-EN 60445 (PN-HD 308 S2) tylko w jasnym motywie; w ciemnym były rozjaśniane
+  (L2 nie był czarny). Teraz w obu motywach: L1 brązowy `#7b4a22`, L2 czarny `#232323`, L3 szary `#8c9195`,
+  N niebieski `#2a62c9`, PE zielono-żółty. Żeby czarny przewód był widoczny, w ciemnym motywie obudowa zostaje jasna
+  (jak aparaty), a tekst na niej ciemny.
+- **PEN** (układ TN-C-S: żyła ochronno-neutralna WLZ i mostek PEN) jest zielono-żółty z niebieskim oznaczeniem końców.
+  Legenda nazywa kolory i normę.
+- **Edycja przewodu** (tryb „Ręczne”, po kliknięciu przewodu): przekrój (auto albo 1,5–35 mm²), kolor izolacji
+  (wg normy albo wybrany), „Przepnij początek” / „Przepnij koniec” (potem kliknięcie nowego zacisku), „Usuń przewód”.
+- **Nowe alerty** w `wireCheck()`: izolacja zielono-żółta na przewodzie innym niż PE/PEN (błąd), przewód ochronny
+  w innym kolorze (błąd), niebieski na fazie albo N nie-niebieski (uwaga), faza w barwie innej fazy (informacja),
+  przekrój mniejszy niż dobrany (uwaga). Przepięcie końca jest sprawdzane tak samo jak nowy przewód.
+- Dane: przewód w `S.conn` ma opcjonalne `mm` i `col`; brak pola = dobór automatyczny / kolor wg normy. Zestawienie
+  i lista przewodów liczą ustawiony przekrój i kolor.
+- Testy (3 nowe, razem 12 w `tests/okablowanie.spec.js`): edycja przekroju i koloru z każdym poziomem alertu,
+  przepinanie końców, identyczne barwy w jasnym i ciemnym motywie, oznaczenie PEN tylko w TN-C-S.
+- Sprawdzenie: `npm test` → 99/99; ręcznie w przeglądarce w ciemnym motywie (zrzut ekranu).
+- Ograniczenie: kontrola kolorów dotyczy izolacji przewodów w rozdzielnicy; nie obejmuje barw obwodów sterowniczych
+  (PN-EN 60204-1), bo aplikacja nie ma jeszcze obwodów sterowania.
+
 ## 0.6.0 (10.10.2026) — okablowanie ręczne i alerty złego podłączenia
 
 Powód: użytkownik zgłosił, że nie może sam dodawać przewodów ani dostać ostrzeżenia o złym podłączeniu

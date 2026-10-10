@@ -1,6 +1,6 @@
 # Przekazanie projektu: Projektant Rozdzielnic
 
-Stan na 10.10.2026, wersja 0.6.0. Projekt powstał w czacie z Claude jako pojedyncza strona (artefakt claude.ai), został podzielony na pliki i jest rozwijany w Claude Code jako zwykła strona w przeglądarce. Wersja 0.5.0 zamyka zadania P0 (1–5 w całości, 6 przygotowane, czeka na decyzję o hostingu). Szczegóły każdej zmiany: `CHANGELOG.md`.
+Stan na 10.10.2026, wersja 0.7.0. Projekt powstał w czacie z Claude jako pojedyncza strona (artefakt claude.ai), został podzielony na pliki i jest rozwijany w Claude Code jako zwykła strona w przeglądarce. Wersja 0.5.0 zamyka zadania P0 (1–5 w całości, 6 przygotowane, czeka na decyzję o hostingu). Szczegóły każdej zmiany: `CHANGELOG.md`.
 
 ![Widok frontu](docs/front.png)
 
@@ -8,7 +8,7 @@ Stan na 10.10.2026, wersja 0.6.0. Projekt powstał w czacie z Claude jako pojedy
 
 Narzędzie dla elektryka lub projektanta do wstępnego zaprojektowania rozdzielnicy mieszkaniowej / małej komercyjnej: dobór obudowy, rozmieszczenie aparatów różnych producentów, kontrola zgodności z podstawowymi wymaganiami PN-HD 60364, okablowanie wnętrza i zestawienie materiałów do zamówienia.
 
-## Co działa (zweryfikowane testami, `npm test`, 90/90: 30 testów × desktop, telefon, safari)
+## Co działa (zweryfikowane testami, `npm test`, 99/99: 33 testów × desktop, telefon, safari)
 
 **Obudowa i aparaty**
 - 5 producentów: Hager, Schneider Electric, ABB, Eaton, Legrand; 9 serii obudów (12–24 mod./rząd, 1–6 rzędów, IP40–IP65).

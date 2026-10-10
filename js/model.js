@@ -107,7 +107,10 @@ function cleanEp(s,e){if(!e||typeof e!=='object')return null;
   if(e.k==='bar'){const b=String(e.bar);return b==='PE'||b==='N'||(b.slice(0,2)==='N:'&&own(s.dev,b.slice(2)))?{k:'bar',bar:b}:null;}
   if(e.k==='wlz')return ['L1','L2','L3','N','PE'].indexOf(e.ph)>=0?{k:'wlz',ph:e.ph}:null;
   return null;}
-function cleanConn(s){const out=[],seen={};(Array.isArray(s.conn)?s.conn:[]).forEach(w=>{if(!w||!/^w\d+$/.test(w.id)||seen[w.id])return;const a=cleanEp(s,w.a),b=cleanEp(s,w.b);if(a&&b){seen[w.id]=1;out.push({id:w.id,a:a,b:b});}});return out;}
+function cleanConn(s){const out=[],seen={};(Array.isArray(s.conn)?s.conn:[]).forEach(w=>{if(!w||!/^w\d+$/.test(w.id)||seen[w.id])return;const a=cleanEp(s,w.a),b=cleanEp(s,w.b);if(a&&b){seen[w.id]=1;const c={id:w.id,a:a,b:b};
+    if([1.5,2.5,4,6,10,16,25,35].indexOf(w.mm)>=0)c.mm=w.mm;                 /* przekrój ustawiony ręcznie */
+    if(['L1','L2','L3','N','PE'].indexOf(w.col)>=0)c.col=w.col;              /* kolor izolacji ustawiony ręcznie */
+    out.push(c);}});return out;}
 function normalize(s){
   s.name=typeof s.name==='string'?s.name:'Projekt';
   const set=Object.assign({moc:22,przedl:32,ks:0.5,cos:0.95,siec:'TN-C-S'},s.set||{});
@@ -141,7 +144,7 @@ function histTrack(){const s=snap(),tag=histTag,now=Date.now();histTag=null;
   HIST.cur=s;HIST.r=[];HIST.t=now;HIST.tag=tag;}
 function histApply(s){const o=JSON.parse(s);uid=o.uid;DATA_KEYS.forEach(k=>S[k]=o[k]);
   if(S.sel&&!S.dev[S.sel])S.sel=null;if(S.active>=S.rows.length)S.active=S.rows.length-1;
-  wirePick=wireSel=null;HIST.cur=s;HIST.tag=null;render();}
+  wireReset();HIST.cur=s;HIST.tag=null;render();}
 function undo(){if(!HIST.u.length)return;HIST.r.push(HIST.cur);histApply(HIST.u.pop());toast('Cofnięto zmianę');}
 function redo(){if(!HIST.r.length)return;HIST.u.push(HIST.cur);histApply(HIST.r.pop());toast('Ponowiono zmianę');}
 function save(){histTrack();try{const cur=PR.list.find(x=>x.id===PR.cur);if(cur){cur.S=S;cur.uid=uid;cur.mod=Date.now();}

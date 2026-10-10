@@ -10,28 +10,33 @@
   --f-display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
   --f-body:"Barlow","Segoe UI",Roboto,Arial,sans-serif;
   --f-mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+  --wire-edge:var(--cabinet);
   --M:34px;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#121615; --panel:#1a1f1e; --panel2:#212726; --ink:#e3e8e5; --muted:#97a29d; --line:#2e3634;
   --accent:#dd8a50; --accent-soft:#3a2a1f; --accent-ink:#1a1210;
-  --cabinet:#2a302e; --cabinet-edge:#3a4240; --rail1:#7b8380; --rail2:#4b5250;
+  --cabinet:#c6ccc8; --cabinet-edge:#a9b1ac; --rail1:#b4bab6; --rail2:#868e8a;
   --dev:#e2e4df; --dev-edge:#9da19b; --dev-ink:#1e211f; --dev-muted:#5f645f; --screw:#6c726f;
-  --blank:#232927; --blank-line:#323a37;
+  --blank:#d6dbd7; --blank-line:#b7beb9;
   --ok:#5cc184; --warn:#e3ad3a; --crit:#f0725f; --ok-bg:#1d3326; --warn-bg:#3a2f15; --crit-bg:#3d1f1a;
-  --l1:#b07a4a; --l2:#cfd3d1; --l3:#7f8589; --n:#6a97ef; --pe:#4cc062; --pe2:#e8cc3a; --cu:#c98547; --cu-edge:#8a5a2c;
+  --l1:#7b4a22; --l2:#232323; --l3:#8c9195; --n:#2a62c9; --pe:#2f9a3c; --pe2:#e2c21c; --cu:#b87333; --cu-edge:#7a4a1e;
   color-scheme:dark;
 }}
 :root[data-theme="dark"]{
   --bg:#121615; --panel:#1a1f1e; --panel2:#212726; --ink:#e3e8e5; --muted:#97a29d; --line:#2e3634;
   --accent:#dd8a50; --accent-soft:#3a2a1f; --accent-ink:#1a1210;
-  --cabinet:#2a302e; --cabinet-edge:#3a4240; --rail1:#7b8380; --rail2:#4b5250;
+  --cabinet:#c6ccc8; --cabinet-edge:#a9b1ac; --rail1:#b4bab6; --rail2:#868e8a;
   --dev:#e2e4df; --dev-edge:#9da19b; --dev-ink:#1e211f; --dev-muted:#5f645f; --screw:#6c726f;
-  --blank:#232927; --blank-line:#323a37;
+  --blank:#d6dbd7; --blank-line:#b7beb9;
   --ok:#5cc184; --warn:#e3ad3a; --crit:#f0725f; --ok-bg:#1d3326; --warn-bg:#3a2f15; --crit-bg:#3d1f1a;
-  --l1:#b07a4a; --l2:#cfd3d1; --l3:#7f8589; --n:#6a97ef; --pe:#4cc062; --pe2:#e8cc3a; --cu:#c98547; --cu-edge:#8a5a2c;
+  --l1:#7b4a22; --l2:#232323; --l3:#8c9195; --n:#2a62c9; --pe:#2f9a3c; --pe2:#e2c21c; --cu:#b87333; --cu-edge:#7a4a1e;
   color-scheme:dark;
 }
+/* Ciemny motyw: obudowa, aparaty i przewody zostaja w barwach rzeczywistych, zeby kolory zyl byly zgodne z PN-EN 60445
+   (L1 brazowy, L2 czarny, L3 szary, N niebieski, PE zielono-zolty). Tekst na jasnej obudowie musi byc wtedy ciemny. */
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .cabinet{--ink:#1c2220;--muted:#5a6561;--accent:#a95a24;--accent-ink:#ffffff;--crit:#bf3626;--warn:#a97100;color:var(--ink)}}
+:root[data-theme="dark"] .cabinet{--ink:#1c2220;--muted:#5a6561;--accent:#a95a24;--accent-ink:#ffffff;--crit:#bf3626;--warn:#a97100;color:var(--ink)}
 *{box-sizing:border-box}
 /* Atrybut hidden musi wygrywać z regułami display (np. .confirm, .legend span). */
 [hidden]{display:none!important}
@@ -170,6 +175,10 @@ svg.wires .tp.on{fill-opacity:.75;stroke-opacity:1;stroke-width:2}
 .legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12px;color:var(--muted);margin-top:10px}
 .legend span{display:inline-flex;align-items:center;gap:5px}
 .legend i{width:10px;height:10px;border-radius:50%;display:inline-block}
+.legend i,.chip .dot{box-shadow:0 0 0 1px var(--muted)}
+.wedit{display:inline-flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:13px}
+.wedit label{display:inline-flex;align-items:center;gap:4px;color:var(--muted);font-size:12px}
+.wedit select{border:1px solid var(--line);background:var(--panel2);color:var(--ink);border-radius:6px;padding:3px 6px;font-size:13px}
 
 /* Side */
 .side{min-width:0}

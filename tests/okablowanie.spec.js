@@ -195,3 +195,91 @@ test('„Usuń przewody” i zastąpienie wymagają potwierdzenia; powrót do tr
   await expect(page.locator('svg.wires .tp')).toHaveCount(0);
   expect(await page.evaluate(() => [S.conn.length, buildConns().C.length])).toEqual([36, 42]);
 });
+
+test('edycja przewodu: przekrój, kolor izolacji wg PN-EN 60445, przepinanie końców', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', e => errors.push(e.message));
+  await manualAdopted(page);
+  const d = await ids(page);
+  // Przewód -Q1 wyj. L1 → -F2 wej. L1 (10 mm², brązowy).
+  const id = await page.evaluate(([q, r]) => buildConns().C.find(c => c.user && c.a.id === q && c.a.side === 'bot' && c.a.ph === 'L1' && c.b.id === r).id, [d['Rozłącznik główny'], d['RCD obwody ogólne']]);
+  const wire = page.locator(`svg.wires path[data-w="${id}"]`);
+  const pick = () => wire.dispatchEvent('click');
+  await pick();
+  await expect(page.locator('[data-wprop="mm"]')).toHaveValue('');
+  await expect(page.locator('[data-wprop="mm"] option').first()).toHaveText('auto (10 mm²)');
+  await expect(wire).toHaveAttribute('stroke', 'var(--l1)');
+
+  // Większy przekrój: bez uwag, zmienia materiały. Mniejszy niż dobrany: uwaga.
+  await page.selectOption('[data-wprop="mm"]', '16');
+  expect(await issues(page)).toEqual([]);
+  expect(await page.evaluate(() => wireMat().some(w => w.mm === 16 && w.col === 'L1'))).toBe(true);
+  await page.selectOption('[data-wprop="mm"]', '4');
+  await expect(page.locator('.toast')).toContainText('mniejszy niż dobrany 10 mm²');
+  expect((await issues(page))[0]).toContain('warn: Przewód -Q1 wyj. L1 → -F2 wej. L1 ma przekrój 4 mm²');
+  await page.selectOption('[data-wprop="mm"]', '');
+  expect(await issues(page)).toEqual([]);
+
+  // Kolory: inna barwa fazowa = informacja, niebieski na fazie = uwaga, zielono-żółty na fazie = błąd.
+  await page.selectOption('[data-wprop="col"]', 'L2');
+  await expect(wire).toHaveAttribute('stroke', 'var(--l2)');
+  expect((await issues(page))[0]).toContain('info: Przewód -Q1 wyj. L1 → -F2 wej. L1 (faza L1) ma izolację czarną');
+  await page.selectOption('[data-wprop="col"]', 'N');
+  expect((await issues(page))[0]).toContain('warn: Przewód -Q1 wyj. L1 → -F2 wej. L1 ma izolację niebieską');
+  await page.selectOption('[data-wprop="col"]', 'PE');
+  await expect(page.locator('.toast')).toContainText('Złe podłączenie');
+  expect((await issues(page))[0]).toContain('crit: Przewód -Q1 wyj. L1 → -F2 wej. L1 ma izolację zielono-żółtą, a nie jest przewodem ochronnym');
+  await page.selectOption('[data-wprop="col"]', '');
+  expect(await issues(page)).toEqual([]);
+
+  // Przewód ochronny w innym kolorze = błąd.
+  const pe = await page.evaluate(() => buildConns().C.find(c => c.user && c.ph === 'PE' && c.b.k === 'dev').id);   // ogranicznik: listwa PE → -F1 wyj. PE
+  await page.locator(`svg.wires path[data-w="${pe}"]`).dispatchEvent('click');
+  await page.selectOption('[data-wprop="col"]', 'L2');
+  expect((await issues(page))[0]).toContain('jest przewodem ochronnym, a ma izolację czarną');
+  await page.click('#bUndo');
+  expect(await issues(page)).toEqual([]);
+
+  // Przepinanie: podpowiedź i anulowanie klawiszem Esc.
+  await pick();
+  await page.click('[data-wact="moveb"]');
+  await expect(page.locator('#wireHelp')).toContainText('przepiąć koniec');
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#wireHelp')).toContainText('Kliknij zacisk, potem drugi');
+  expect(errors).toEqual([]);
+});
+
+test('przepięcie końca przewodu zgłasza złą fazę, a powrót ją usuwa', async ({ page }) => {
+  await manualAdopted(page);
+  const d = await ids(page);
+  const q = d['Rozłącznik główny'], f15 = d['Podgrzewacz wody'], r1 = d['RCD obwody ogólne'];
+  const id = await page.evaluate(([a, b]) => buildConns().C.find(c => c.user && c.a.id === a && c.b.id === b).id, [q, f15]);
+  const n = await page.evaluate(() => S.conn.length);
+  await page.locator(`svg.wires path[data-w="${id}"]`).dispatchEvent('click');
+  await page.click('[data-wact="movea"]');                                  // początek: -Q1 wyj. L3
+  await target(page, dev(q, 'bot', 0)).click();                             // przepinamy na wyj. L1
+  await expect(page.locator('.toast')).toContainText('dwie różne fazy (L1 i L3)');
+  await expect(page.locator('[data-wact="del"]')).toContainText('-Q1 wyj. L1 → -F15 wej. L3');
+  await page.click('[data-wact="movea"]');
+  await target(page, dev(q, 'bot', 2)).click();
+  await expect(page.locator('.toast')).toHaveText('Przepięto przewód');
+  expect(await issues(page)).toEqual([]);
+  expect(await page.evaluate(() => S.conn.length)).toBe(n);
+  // Oba końce w tym samym zacisku są odrzucane.
+  await page.click('[data-wact="moveb"]');
+  await target(page, dev(q, 'bot', 2)).click();
+  await expect(page.locator('.toast')).toContainText('nie mogą być w tym samym zacisku');
+  expect(await issues(page)).toEqual([]);
+});
+
+test('kolory żył są normatywne także w ciemnym motywie; PEN ma niebieskie końce', async ({ page }) => {
+  const read = () => page.evaluate(() => { const s = getComputedStyle(document.querySelector('#board')); return ['--l1', '--l2', '--l3', '--n', '--pe', '--pe2'].map(k => s.getPropertyValue(k).trim()); });
+  const light = await read();
+  expect(light).toEqual(['#7b4a22', '#232323', '#8c9195', '#2a62c9', '#2f9a3c', '#e2c21c']);
+  await page.emulateMedia({ colorScheme: 'dark' });
+  expect(await read()).toEqual(light);
+  // TN-C-S: przewód PEN z WLZ i mostek PEN mają niebieskie oznaczenie końców; w TN-S go nie ma.
+  await expect(page.locator('svg.wires path.pen')).toHaveCount(2);
+  await page.evaluate(() => { S.set.siec = 'TN-S'; render(); });
+  await expect(page.locator('svg.wires path.pen')).toHaveCount(0);
+});

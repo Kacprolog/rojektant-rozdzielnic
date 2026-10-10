@@ -38,11 +38,17 @@ function face(d){const w=width(d);switch(d.t){
   case 'timer':case 'relay':return `<div class="dial"></div>`;
   case 'psu':return `<div class="lcd" style="background:#cfd2cc;color:#333">DC OK</div>`;}return '';}
 function screwsFor(d,side){const w=width(d),t=terms(d);let n=t[side].length||(side==='bot'&&t.top.length?0:Math.ceil(w));if(!n)return '';return screws(Math.min(n,Math.max(1,Math.floor(w*34/10))));}
+/* Edytor zaznaczonego przewodu (tryb ręczny): przekrój, kolor izolacji, przepinanie końców, usunięcie. */
+function wireEditor(w,D){const st=S.conn.find(x=>x.id===w.id)||{},cols=[['','wg normy'],['L1','brązowy'],['L2','czarny'],['L3','szary'],['N','niebieski'],['PE','zielono-żółty']];
+  return `<span class="wedit"><label>Przekrój <select data-wprop="mm">${opt('',st.mm||'','auto ('+fmt(w.mmAuto)+' mm²)')}${WIRE_MM.map(v=>opt(v,st.mm||'',fmt(v)+' mm²')).join('')}</select></label>
+    <label>Kolor <select data-wprop="col">${cols.map(c=>opt(c[0],st.col||'',c[1])).join('')}</select></label>
+    <button class="chip" data-wact="movea" title="${esc(epName(w.a,D))}">Przepnij początek</button><button class="chip" data-wact="moveb" title="${esc(epName(w.b,D))}">Przepnij koniec</button>
+    <button class="chip" data-wact="del" aria-pressed="true">Usuń przewód: ${esc(epName(w.a,D)+' → '+epName(w.b,D))} ✕</button></span>`;}
 function renderWireFilter(){const f=$('#wireFilter');f.hidden=!S.wires;if(!S.wires)return;const wf=S.wf||(S.wf={L1:1,L2:1,L3:1,N:1,PE:1});
   const bg={L1:'var(--l1)',L2:'var(--l2)',L3:'var(--l3)',N:'var(--n)',PE:'linear-gradient(90deg,var(--pe) 50%,var(--pe2) 50%)'};
   const man=S.wmode==='manual',wsel=man&&wireSel?buildConns().C.find(c=>c.id===wireSel):null,Dn=designations();
   f.innerHTML='<span class="seg" role="group" aria-label="Tryb okablowania"><button data-wmode="auto" aria-pressed="'+!man+'" title="Przewody wylicza program">Automatyczne</button><button data-wmode="manual" aria-pressed="'+man+'" title="Przewody dodajesz sam, a Kontrola je sprawdza">Ręczne</button></span>'
-    +(man?'<button class="chip" data-wact="adopt">Przejmij automatyczne</button><button class="chip" data-wact="clear">Usuń przewody</button>'+(wsel?'<button class="chip" data-wact="del" aria-pressed="true">Usuń przewód: '+esc(epName(wsel.a,Dn)+' → '+epName(wsel.b,Dn))+' ✕</button>':'<span class="encsub" id="wireHelp" style="align-self:center">'+(wirePick?'Kliknij drugi zacisk (Esc anuluje).':'Kliknij zacisk, potem drugi, aby dodać przewód. Kliknij przewód, aby go zaznaczyć i usunąć.')+'</span>'):'')
+    +(man?'<button class="chip" data-wact="adopt">Przejmij automatyczne</button><button class="chip" data-wact="clear">Usuń przewody</button>'+(wsel&&!wireMove?wireEditor(wsel,Dn):'<span class="encsub" id="wireHelp" style="align-self:center">'+(wireMove?'Kliknij zacisk, do którego przepiąć koniec przewodu (Esc anuluje).':wirePick?'Kliknij drugi zacisk (Esc anuluje).':'Kliknij zacisk, potem drugi, aby dodać przewód. Kliknij przewód, aby go zaznaczyć i usunąć.')+'</span>'):'')
     +'<span class="encsub" style="align-self:center">Pokaż żyły:</span>'+Object.keys(bg).map(k=>`<button class="chip" data-wf="${k}" aria-pressed="${!!wf[k]}"><span class="dot" style="background:${bg[k]}"></span>${k}</button>`).join('')
     +(S.sel&&S.dev[S.sel]?`<button class="chip" data-wsel="1" aria-pressed="true">Wyróżnione: ${designations()[S.sel]} ✕</button>`:'');}
 function renderBoard(){const e=enc(),D=designations(),M=34;$('#board').className='cabinet'+(S.wires?' wiring':'');
@@ -120,7 +126,7 @@ function panelBal(){const L=phaseLoads(),T=totals(),ks=S.set.ks;
     ${ticks.map(t=>`<line x1="${sx(t)}" x2="${sx(t)}" y1="8" y2="120" stroke="var(--line)"/><text x="${sx(t)}" y="136" font-size="10" text-anchor="middle" fill="var(--muted)" font-family="JetBrains Mono, monospace">${t}</text>`).join('')}
     ${vals.map(([p,v,raw],i)=>{const y=14+i*36;return `<text x="0" y="${y+15}" font-size="12" font-weight="600" fill="var(--ink)">${p}</text>
       <rect x="${lx}" y="${y}" width="${Math.max(0,sx(raw)-lx)}" height="22" rx="3" fill="var(--${p.toLowerCase()})" opacity=".22"/>
-      <rect x="${lx}" y="${y}" width="${Math.max(0,sx(v)-lx)}" height="22" rx="3" fill="var(--${p.toLowerCase()})"/>
+      <rect x="${lx}" y="${y}" width="${Math.max(0,sx(v)-lx)}" height="22" rx="3" fill="var(--${p.toLowerCase()})" stroke="var(--muted)" stroke-width=".6"/>
       <text x="${Math.min(sx(v)+5,W-40)}" y="${y+15}" font-size="11" fill="var(--ink)" font-family="JetBrains Mono, monospace">${fmt(v)} A</text>`;}).join('')}
     <line x1="${sx(S.set.przedl)}" x2="${sx(S.set.przedl)}" y1="4" y2="122" stroke="var(--crit)" stroke-width="1.5" stroke-dasharray="4 3"/>
     <text x="${sx(S.set.przedl)-4}" y="148" font-size="10" text-anchor="end" fill="var(--crit)">zab. przedlicznikowe ${S.set.przedl} A</text></svg>`;
@@ -162,7 +168,7 @@ function printView(){let pv=$('#print');if(!pv){pv=document.createElement('div')
   const b=$('#board'),keep={wires:S.wires,sel:S.sel,wf:S.wf},PW=1040,PH=570;
   const shot=w=>{S.wires=w;renderBoard();const sc=Math.min(1,PW/b.offsetWidth,PH/b.offsetHeight);
     return `<div class="pfit" style="width:${Math.ceil(b.offsetWidth*sc)}px;height:${Math.ceil(b.offsetHeight*sc)}px"><div class="${b.className}" style="${esc(b.getAttribute('style')||'')};width:${b.offsetWidth}px;min-width:0;transform:scale(${sc.toFixed(4)});transform-origin:0 0">${b.innerHTML}</div></div>`;};
-  S.sel=null;S.wf={L1:1,L2:1,L3:1,N:1,PE:1};wirePick=wireSel=null;
+  S.sel=null;S.wf={L1:1,L2:1,L3:1,N:1,PE:1};wireReset();
   let front,wires;
   try{front=shot(false);wires=shot(true);}finally{S.wires=keep.wires;S.sel=keep.sel;S.wf=keep.wf;renderBoard();}
   const e=enc(),T=totals(),date=new Date().toLocaleDateString('pl-PL'),noId=h=>h.replace(/ id="[^"]*"/g,'');

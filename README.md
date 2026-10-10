@@ -12,6 +12,8 @@ Interaktywny konfigurator rozdzielnic modułowych działający w przeglądarce: 
 | Kontrola projektu | Zakładka „Kontrola”: 19 reguł, klik przenosi do aparatu |
 | Okablowanie | Przełącznik „Front / Okablowanie” nad obudową; tryb „Automatyczne” rysuje przewody sam |
 | Własne przewody | W okablowaniu wybierz „Ręczne”: kliknij zacisk, potem drugi. Kliknij przewód i Delete, żeby usunąć. „Przejmij automatyczne” daje gotowy punkt wyjścia |
+| Edycja przewodu | Kliknij przewód w trybie ręcznym: przekrój, kolor izolacji, „Przepnij początek / koniec”, „Usuń przewód” |
+| Kolory żył | Wg PN-EN 60445 w jasnym i ciemnym motywie: L1 brązowy, L2 czarny, L3 szary, N niebieski, PE zielono-żółty, PEN zielono-żółty z niebieskimi końcami; kolor niezgodny z normą daje alert |
 | Alerty złego podłączenia | W trybie ręcznym: czerwony komunikat od razu, obwódka na przewodzie i wpis w „Kontroli” (zwarcia, ominięta różnicówka, wspólny N, brak zasilania) |
 | Wiele projektów | Lista „Projekt” oraz „Nowy”, „Duplikuj”, „Usuń”; nazwa to tytuł w nagłówku |
 | Plik projektu | „Zapisz projekt” pobiera `.rozdz.json`; „Otwórz projekt” albo przeciągnięcie pliku na stronę |
