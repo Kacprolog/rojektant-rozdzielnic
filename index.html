@@ -35,6 +35,7 @@
       <button class="btn sm" id="bSave" title="Pobierz projekt jako plik .rozdz.json">Zapisz projekt</button>
       <button class="btn sm" id="bOpen" title="Wczytaj plik .rozdz.json (można też przeciągnąć plik na stronę)">Otwórz projekt</button>
       <input type="file" id="fOpen" accept=".json,application/json" hidden>
+      <button class="btn sm" id="bPrint" title="Wydruk lub PDF: front, okablowanie, struktura, zestawienie (A4 poziomo)">Drukuj / PDF</button>
     </div>
     <div class="pgroup">
       <button class="btn sm" id="bUndo" title="Cofnij ostatnią zmianę projektu (Ctrl+Z)">↶ Cofnij</button>
@@ -42,7 +43,7 @@
     </div>
   </div>
   <div class="confirm" id="confirm" hidden>
-    <span id="cMsg">Usunąć wszystkie aparaty z obudowy? Tej operacji nie można cofnąć.</span>
+    <span id="cMsg"></span>
     <button class="btn sm pri" id="cYes">Usuń wszystko</button>
     <button class="btn sm" id="cNo">Anuluj</button>
   </div>

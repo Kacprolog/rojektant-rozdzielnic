@@ -197,3 +197,52 @@ test.describe('cofnij / ponów', () => {
     expect(n).toBe(50);
   });
 });
+
+test.describe('druk / PDF', () => {
+  test('buduje 4 strony z frontem, okablowaniem, strukturą i zestawieniem; nie zmienia widoku', async ({ page }) => {
+    const errors = [];
+    page.on('pageerror', e => errors.push(e.message));
+    await page.goto('/');
+    await page.evaluate(() => { window.print = () => { window.__printed = (window.__printed || 0) + 1; }; });
+    await page.locator('.slot').nth(3).click();
+    await page.click('#bPrint');
+    expect(await page.evaluate(() => window.__printed)).toBe(1);
+
+    const pages = page.locator('#print .ppage');
+    await expect(pages).toHaveCount(4);
+    for (let i = 0; i < 4; i++) await expect(pages.nth(i).locator('.phead')).toContainText('Dom jednorodzinny');
+    await expect(pages.nth(0).locator('.slot')).toHaveCount(21);
+    await expect(pages.nth(0).locator('svg.wires')).toHaveCount(0);
+    await expect(pages.nth(1).locator('svg.wires')).toHaveCount(1);
+    expect(await pages.nth(1).locator('svg.wires path.w').count()).toBeGreaterThan(30);
+    await expect(pages.nth(2)).toContainText('WLZ');
+    await expect(pages.nth(2).locator('.issue').first()).toBeAttached();
+    await expect(pages.nth(3)).toContainText('Szyna grzebieniowa');
+    await expect(pages.nth(3)).toContainText('YKY 4×10');
+
+    // Obudowa mieści się na stronie A4 poziomo (obszar roboczy ok. 1047 × 718 px).
+    const fit = await page.evaluate(() => [...document.querySelectorAll('#print .pfit')].map(e => [parseFloat(e.style.width), parseFloat(e.style.height)]));
+    for (const [w, h] of fit) { expect(w).toBeLessThanOrEqual(1040); expect(h).toBeLessThanOrEqual(570); }
+
+    // Ekran bez zmian: widok frontu, zaznaczenie zachowane, #print ukryty.
+    await expect(page.locator('#board svg.wires')).toHaveCount(0);
+    await expect(page.locator('#board .slot.sel')).toHaveCount(1);
+    await expect(page.locator('#print')).toBeHidden();
+    await expect(page.locator('#bUndo')).toBeDisabled();
+
+    await page.emulateMedia({ media: 'print' });
+    await expect(page.locator('#print')).toBeVisible();
+    await expect(page.locator('.app')).toBeHidden();
+    expect(errors).toEqual([]);
+  });
+
+  test('przewody na wydruku trafiają w zaciski tak samo jak na ekranie', async ({ page }) => {
+    await page.goto('/');
+    await page.evaluate(() => { window.print = () => {}; });
+    await page.click('[data-view="wires"]');
+    const screen = await page.evaluate(() => document.querySelector('#board svg.wires').innerHTML);
+    await page.click('#bPrint');
+    const printed = await page.evaluate(() => document.querySelector('#print svg.wires').innerHTML);
+    expect(printed).toBe(screen);
+  });
+});

@@ -59,8 +59,14 @@ test('dodanie aparatu z biblioteki i usunięcie klawiszem Delete', async ({ page
 
 test('czyszczenie wymaga potwierdzenia na stronie', async ({ page }) => {
   await page.goto('/');
+  await expect(page.locator('#confirm')).toBeHidden();
+  await expect(page.locator('#wireHint')).toBeHidden();
   await page.click('#bClear');
   await expect(page.locator('#confirm')).toBeVisible();
+  await page.click('#cNo');
+  await expect(page.locator('#confirm')).toBeHidden();
+  await expect(page.locator('.slot')).toHaveCount(21);
+  await page.click('#bClear');
   await page.click('#cYes');
   await expect(page.locator('.slot')).toHaveCount(0);
 });

@@ -151,3 +151,24 @@ function panelBom(){const r=bomRows();
   <div class="tbl"><table><thead><tr><th>Lp.</th><th>Producent / seria</th><th>Pozycja</th><th style="text-align:right">Mod.</th><th style="text-align:right">Szt.</th></tr></thead>
   <tbody>${r.map((x,i)=>`<tr class="${x.acc?'acc':''}"><td class="n">${i+1}</td><td>${esc(x.m)}<br><small>${esc(x.s)}</small></td><td>${esc(x.d)}</td><td class="n">${x.w===''?'':fmt(x.w)}</td><td class="n">${x.n}</td></tr>`).join('')}</tbody></table></div><div id="copyOut"></div>`;}
 
+
+/* ---------- druk / PDF ---------- */
+/* Buduje #print (widoczny tylko w @media print): front, okablowanie, struktura i kontrola, zestawienie i kable.
+   Obudowa jest renderowana dwa razy w #board (front i okablowanie), kopiowana z wymiarami i skalowana do strony A4 poziomo. */
+function printView(){let pv=$('#print');if(!pv){pv=document.createElement('div');pv.id='print';document.body.appendChild(pv);}
+  const b=$('#board'),keep={wires:S.wires,sel:S.sel,wf:S.wf},PW=1040,PH=570;
+  const shot=w=>{S.wires=w;renderBoard();const sc=Math.min(1,PW/b.offsetWidth,PH/b.offsetHeight);
+    return `<div class="pfit" style="width:${Math.ceil(b.offsetWidth*sc)}px;height:${Math.ceil(b.offsetHeight*sc)}px"><div class="${b.className}" style="${esc(b.getAttribute('style')||'')};width:${b.offsetWidth}px;min-width:0;transform:scale(${sc.toFixed(4)});transform-origin:0 0">${b.innerHTML}</div></div>`;};
+  S.sel=null;S.wf={L1:1,L2:1,L3:1,N:1,PE:1};
+  let front,wires;
+  try{front=shot(false);wires=shot(true);}finally{S.wires=keep.wires;S.sel=keep.sel;S.wf=keep.wf;renderBoard();}
+  const e=enc(),T=totals(),date=new Date().toLocaleDateString('pl-PL'),noId=h=>h.replace(/ id="[^"]*"/g,'');
+  const legend=$('.legend').innerHTML.replace(/<span[^>]*id="wireHint"[\s\S]*$/,'');
+  const pages=[
+    ['Widok frontu z opisówką',front+`<div class="legend">${legend}</div>`],
+    ['Okablowanie',wires+`<div class="legend">${legend}</div>`],
+    ['Struktura zasilania i kontrola projektu',`<div class="pcols"><div>${panelTree()}</div><div>${panelChecks()}<dl class="specs" style="margin-top:14px"><dt>Moc zainstalowana</dt><dd>${fmt(T.P)} kW</dd><dt>Moc szczytowa (ks = ${fmt(S.set.ks,2)})</dt><dd>${fmt(T.Pd)} kW · ${fmt(T.Ibm)} A</dd><dt>Moc przyłączeniowa</dt><dd>${fmt(S.set.moc)} kW</dd><dt>Zab. przedlicznikowe</dt><dd>${S.set.przedl} A</dd><dt>Układ sieci</dt><dd>${esc(S.set.siec)}</dd></dl></div></div>`],
+    ['Zestawienie materiałów i lista kabli',noId(panelBom())+noId(panelKable())]];
+  pv.innerHTML=pages.map(([t,h],i)=>`<section class="ppage"><header class="phead"><b>${esc(S.name)}</b><span>${t}</span><span>${esc(MFR[S.enc.mfr].n+' '+e.n)} · ${S.enc.rows} × ${e.mpr} mod. · ${date} · str. ${i+1}</span></header>${h}
+    <footer class="pfoot">Projekt wstępny. Parametry orientacyjne; weryfikacja i pomiary należą do osoby z uprawnieniami SEP.</footer></section>`).join('');
+  window.print();}

@@ -116,6 +116,8 @@ document.addEventListener('keydown',e=>{const inField=/INPUT|TEXTAREA/.test(docu
   if((e.key==='Delete'||e.key==='Backspace')&&S.sel&&!/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)){e.preventDefault();delDev(S.sel);}});
 $('#bSample').addEventListener('click',()=>{sample();render();toast('Wczytano przykładowy projekt domu jednorodzinnego');});
 $('#bBalance').addEventListener('click',balance);
+$('#bPrint').addEventListener('click',printView);
+window.addEventListener('afterprint',()=>{const pv=$('#print');if(pv)pv.innerHTML='';});
 $('#bUndo').addEventListener('click',undo);
 $('#bRedo').addEventListener('click',redo);
 $('#wireFilter').addEventListener('click',e=>{const b=e.target.closest('[data-wf]');if(b){S.wf[b.dataset.wf]=S.wf[b.dataset.wf]?0:1;render(true);return;}

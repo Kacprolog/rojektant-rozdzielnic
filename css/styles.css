@@ -33,6 +33,8 @@
   color-scheme:dark;
 }
 *{box-sizing:border-box}
+/* Atrybut hidden musi wygrywać z regułami display (np. .confirm, .legend span). */
+[hidden]{display:none!important}
 body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.45}
 button,input,select{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -205,3 +207,26 @@ footer{margin-top:22px;font-size:12px;color:var(--muted);max-width:90ch}
 .toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:8px;font-size:13px;z-index:50}
 .empty{color:var(--muted);font-size:13px}
 @media (prefers-reduced-motion: no-preference){.slot .dev{transition:box-shadow .15s}}
+
+/* Druk / PDF: #print buduje printView() w render.js; na ekranie jest ukryty. Strona A4 poziomo. */
+#print{display:none}
+#print .ppage{break-after:page;page-break-after:always}
+#print .ppage:last-child{break-after:auto;page-break-after:auto}
+#print .phead{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 18px;border-bottom:1px solid var(--line);padding-bottom:6px;margin-bottom:10px;font-size:12px;color:var(--muted)}
+#print .phead b{font-family:var(--f-display);font-size:20px;color:var(--ink);margin-right:auto}
+#print .pfoot{margin-top:10px;font-size:10px;color:var(--muted)}
+#print .pfit{overflow:hidden;margin:0 auto}
+#print .cabinet{display:block;box-shadow:none}
+#print .rail.active{outline:0}
+#print .rowlab .act{visibility:hidden}
+#print .tools,#print .note{display:none}
+#print .pcols{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start}
+#print .issue{break-inside:avoid;page-break-inside:avoid}
+#print tr{break-inside:avoid;page-break-inside:avoid}
+#print h3{break-after:avoid;page-break-after:avoid}
+@page{size:A4 landscape;margin:10mm}
+@media print{
+  .app,.toast{display:none!important}
+  body{margin:0;background:none}
+  #print{display:block;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
