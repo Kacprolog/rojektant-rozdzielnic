@@ -2,6 +2,7 @@
 /* ---------- render ---------- */
 function render(skipPanel){save();renderTop();renderEnc();renderLib();renderBoard();renderTabs();if(!skipPanel)renderPanel();}
 function renderTop(){const pn=$('#pname');if(document.activeElement!==pn)pn.value=S.name;const T=totals(),ck=checks();
+  $('#projSel').innerHTML=PR.list.map(p=>`<option value="${esc(p.id)}" ${p.id===PR.cur?'selected':''}>${esc((p.id===PR.cur?S.name:p.S.name)||'(bez nazwy)')}</option>`).join('');
   const nc=ck.filter(c=>c.sev==='crit').length,nw=ck.filter(c=>c.sev==='warn').length;
   $('#stats').innerHTML=`<div class="stat"><div class="k">Moduły</div><div class="v">${fmt(T.used)}<small> / ${T.cap}</small></div></div>
   <div class="stat"><div class="k">Moc zainst.</div><div class="v">${fmt(T.P)}<small> kW</small></div></div>

@@ -115,8 +115,19 @@ function normalize(s){
   return s;}
 /* Licznik id musi być większy od każdego istniejącego 'dN'. */
 function fixUid(s,u){let m=num(u,1);Object.keys(s.dev).forEach(id=>{const n=+id.slice(1);if(n>=m)m=n+1;});return m;}
-function save(){try{localStorage.setItem('rozdz-v1',JSON.stringify({S,uid}));}catch(e){}}
-function load(){try{const j=JSON.parse(localStorage.getItem('rozdz-v1'));if(j&&valid(j.S)){S=normalize(j.S);uid=fixUid(S,j.uid);return true;}}catch(e){}return false;}
+/* Lista projektów: localStorage['rozdz-v2'] = { version:2, cur:<id>, list:[{ id, S, uid, mod }] }. S to zawsze projekt PR.cur. */
+const KEY='rozdz-v2',KEY1='rozdz-v1';
+const PR={cur:null,list:[]};
+function pid(){return 'p'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+function blankS(){return {name:'Nowy projekt',enc:{mfr:'hager',series:'volta',rows:3},set:{moc:22,przedl:32,ks:0.5,cos:0.95,siec:'TN-C-S'},rows:[[],[],[]],dev:{}};}
+function save(){try{const cur=PR.list.find(x=>x.id===PR.cur);if(cur){cur.S=S;cur.uid=uid;cur.mod=Date.now();}
+  localStorage.setItem(KEY,JSON.stringify({version:2,cur:PR.cur,list:PR.list}));}catch(e){}}
+function load(){PR.list=[];PR.cur=null;
+  try{const j=JSON.parse(localStorage.getItem(KEY));if(j&&Array.isArray(j.list)){PR.list=j.list.filter(x=>x&&typeof x.id==='string'&&valid(x.S));PR.cur=j.cur;}}catch(e){}
+  if(!PR.list.length){/* migracja z wersji jednoprojektowej (klucz rozdz-v1) */
+    try{const j=JSON.parse(localStorage.getItem(KEY1));if(j&&valid(j.S)){PR.list=[{id:pid(),S:j.S,uid:j.uid}];localStorage.removeItem(KEY1);}}catch(e){}}
+  if(!PR.list.length)return false;
+  const cur=PR.list.find(x=>x.id===PR.cur)||PR.list[0];PR.cur=cur.id;S=normalize(cur.S);uid=fixUid(S,cur.uid);return true;}
 
 /* ---------- calculations ---------- */
 function designations(){const cnt={},map={};S.rows.forEach(r=>r.forEach(id=>{const d=S.dev[id];const pf=PREFIX[d.t];cnt[pf]=(cnt[pf]||0)+1;map[id]='-'+pf+cnt[pf];}));return map;}

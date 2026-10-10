@@ -69,20 +69,29 @@ test('stan zapisany przez starą wersję (bez len/wf) wczytuje się', async ({ p
   const errors = watchErrors(page);
   await page.goto('/');
   await page.evaluate(() => {
-    const j = JSON.parse(localStorage.getItem('rozdz-v1'));
-    delete j.S.wf; j.S.wires = true;
-    Object.values(j.S.dev).forEach(d => { if (d.c) delete d.c.len; });
-    localStorage.setItem('rozdz-v1', JSON.stringify(j));
+    // Stan w formacie sprzed listy projektów: jeden projekt pod kluczem rozdz-v1.
+    const s = JSON.parse(localStorage.getItem('rozdz-v2')).list[0].S;
+    delete s.wf; s.wires = true;
+    Object.values(s.dev).forEach(d => { if (d.c) delete d.c.len; });
+    localStorage.removeItem('rozdz-v2');
+    localStorage.setItem('rozdz-v1', JSON.stringify({ S: s, uid: 99 }));
   });
   await page.reload();
   await expect(page.locator('.slot')).toHaveCount(21);
   await expect(page.locator('svg.wires')).toHaveCount(1);
+  // Migracja: projekt trafia na listę (rozdz-v2), stary klucz znika.
+  const keys = await page.evaluate(() => [localStorage.getItem('rozdz-v1'), JSON.parse(localStorage.getItem('rozdz-v2')).list.length]);
+  expect(keys).toEqual([null, 1]);
   expect(errors).toEqual([]);
 });
 
 test('uszkodzony stan nie blokuje startu', async ({ page }) => {
   await page.goto('/');
-  await page.evaluate(() => localStorage.setItem('rozdz-v1', JSON.stringify({ S: { rows: [['x']], dev: {}, enc: { mfr: 'hager', series: 'volta', rows: 1 }, set: {} }, uid: 2 })));
+  await page.evaluate(() => {
+    const bad = { rows: [['x']], dev: {}, enc: { mfr: 'hager', series: 'volta', rows: 1 }, set: {} };
+    localStorage.setItem('rozdz-v1', JSON.stringify({ S: bad, uid: 2 }));
+    localStorage.setItem('rozdz-v2', JSON.stringify({ version: 2, cur: 'p1', list: [{ id: 'p1', S: bad, uid: 2 }] }));
+  });
   await page.reload();
   await expect(page.locator('.slot')).toHaveCount(21); // fallback do przykładu
 });

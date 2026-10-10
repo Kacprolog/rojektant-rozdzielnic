@@ -26,6 +26,12 @@
   </header>
   <div class="projbar" id="projbar">
     <div class="pgroup">
+      <label for="projSel">Projekt</label><select id="projSel"></select>
+      <button class="btn sm" id="bNew" title="Nowy, pusty projekt">Nowy</button>
+      <button class="btn sm" id="bDup" title="Kopia bieżącego projektu">Duplikuj</button>
+      <button class="btn sm danger" id="bDel" title="Usuń bieżący projekt z tej przeglądarki">Usuń</button>
+    </div>
+    <div class="pgroup">
       <button class="btn sm" id="bSave" title="Pobierz projekt jako plik .rozdz.json">Zapisz projekt</button>
       <button class="btn sm" id="bOpen" title="Wczytaj plik .rozdz.json (można też przeciągnąć plik na stronę)">Otwórz projekt</button>
       <input type="file" id="fOpen" accept=".json,application/json" hidden>

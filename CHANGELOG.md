@@ -30,3 +30,16 @@ Każdy wpis odpowiada jednemu commitowi. Format: co zrobiono, dlaczego, jak spra
 - Testy (`tests/p0.spec.js`): zapis → wyczyszczenie → odczyt daje identyczne `buildConns()` i `bomRows()`;
   4 rodzaje błędnych plików; próba wstrzyknięcia HTML przez pole fazy.
 - Sprawdzenie: `npm test` → 33/33.
+
+### P0.3 Lista projektów
+- Wiele projektów w jednej przeglądarce: lista wyboru „Projekt” oraz przyciski „Nowy”, „Duplikuj”, „Usuń”.
+  Zmiana nazwy to edycja tytułu w nagłówku (lista odświeża się na bieżąco).
+- Nowy klucz `localStorage['rozdz-v2'] = { version: 2, cur, list: [{ id, S, uid, mod }] }`.
+  Migracja: jeśli nie ma `rozdz-v2`, a jest poprawny `rozdz-v1`, projekt trafia na listę, a stary klucz jest usuwany.
+  Uszkodzone wpisy listy są pomijane; pusta lista oznacza start z przykładem.
+- „Usuń” wymaga potwierdzenia na stronie (pasek `#confirm` jest teraz ogólny: funkcja `ask(komunikat, etykieta, akcja)`).
+  Usunięcie ostatniego projektu zostawia pusty „Nowy projekt”.
+- Zmiana względem P0.2: wczytany plik staje się **nowym** projektem na liście, niczego nie nadpisuje.
+- Testy: pełny scenariusz listy z przeładowaniem strony, usunięcie ostatniego projektu, migracja v1 → v2
+  (zaktualizowane testy dymne starego i uszkodzonego stanu).
+- Sprawdzenie: `npm test` → 42/42.

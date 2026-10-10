@@ -63,4 +63,58 @@ test.describe('plik projektu', () => {
     expect(await page.evaluate(() => window.__xss)).toBeUndefined();
     expect(errors).toEqual([]);
   });
+
+  test('wczytany plik staje się nowym projektem i nie nadpisuje bieżącego', async ({ page }) => {
+    await page.goto('/');
+    const text = await page.evaluate(() => JSON.stringify(Object.assign(exportData(), {})));
+    await page.setInputFiles('#fOpen', asFile('dom.rozdz.json', text));
+    await expect(page.locator('#projSel option')).toHaveCount(2);
+    await expect(page.locator('.slot')).toHaveCount(21);
+  });
+});
+
+test.describe('lista projektów', () => {
+  test('nowy, przełączanie, duplikat, zmiana nazwy, usunięcie z potwierdzeniem, trwałość', async ({ page }) => {
+    await page.goto('/');
+    const opts = page.locator('#projSel option');
+    await expect(opts).toHaveCount(1);
+
+    await page.click('#bNew');
+    await expect(opts).toHaveCount(2);
+    await expect(page.locator('.slot')).toHaveCount(0);
+    await expect(page.locator('#pname')).toHaveValue('Nowy projekt');
+
+    await page.fill('#pname', 'Garaż');
+    await expect(opts.nth(1)).toHaveText('Garaż');
+
+    await page.selectOption('#projSel', { index: 0 });
+    await expect(page.locator('.slot')).toHaveCount(21);
+
+    await page.click('#bDup');
+    await expect(opts).toHaveCount(3);
+    await expect(page.locator('#pname')).toHaveValue(/\(kopia\)$/);
+    await expect(page.locator('.slot')).toHaveCount(21);
+
+    // Usunięcie wymaga potwierdzenia na stronie; „Anuluj” niczego nie usuwa.
+    await page.click('#bDel');
+    await expect(page.locator('#confirm')).toContainText('(kopia)');
+    await page.click('#cNo');
+    await expect(opts).toHaveCount(3);
+    await page.click('#bDel');
+    await page.click('#cYes');
+    await expect(opts).toHaveCount(2);
+
+    await page.reload();
+    await expect(opts).toHaveCount(2);
+    await expect(opts.nth(1)).toHaveText('Garaż');
+  });
+
+  test('usunięcie ostatniego projektu zostawia pusty projekt', async ({ page }) => {
+    await page.goto('/');
+    await page.click('#bDel');
+    await page.click('#cYes');
+    await expect(page.locator('#projSel option')).toHaveCount(1);
+    await expect(page.locator('.slot')).toHaveCount(0);
+    await expect(page.locator('#pname')).toHaveValue('Nowy projekt');
+  });
 });

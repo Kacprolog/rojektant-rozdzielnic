@@ -21,15 +21,28 @@ function fileName(){return (S.name||'').replace(/[\\/:*?"<>|]+/g,' ').trim().sli
 function exportData(){const o={app:FILE_APP,version:FILE_VERSION,saved:new Date().toISOString(),uid:uid,S:{}};DATA_KEYS.forEach(k=>o.S[k]=S[k]);return o;}
 function saveFile(){const a=document.createElement('a'),url=URL.createObjectURL(new Blob([JSON.stringify(exportData(),null,1)],{type:'application/json'}));
   a.href=url;a.download=fileName()+'.rozdz.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);toast('Zapisano plik '+a.download);}
-/* Zwraca '' albo komunikat błędu. Poprawny plik zastępuje dane bieżącego projektu. */
+/* Zwraca '' albo komunikat błędu. Poprawny plik staje się nowym projektem na liście (niczego nie nadpisuje). */
 function importData(text){let j;try{j=JSON.parse(text);}catch(e){return 'Plik nie jest poprawnym plikiem JSON.';}
   if(!j||j.app!==FILE_APP)return 'To nie jest plik Projektanta Rozdzielnic.';
   if(!(j.version>=1))return 'Plik nie ma numeru wersji.';
   if(j.version>FILE_VERSION)return 'Plik pochodzi z nowszej wersji aplikacji (wersja pliku '+j.version+').';
   if(!valid(j.S))return 'Plik projektu jest uszkodzony lub niepełny.';
   /* migracje starszych wersji pliku: tutaj, gdy FILE_VERSION wzrośnie */
-  openData(normalize(j.S),j.uid);return '';}
-function openData(s,u){S=s;uid=fixUid(s,u);render();}
+  projAdd(j.S,j.uid);return '';}
+
+/* ---------- lista projektów ---------- */
+function projUse(p){PR.cur=p.id;S=normalize(p.S);uid=fixUid(S,p.uid);$('#confirm').hidden=true;render();}
+function projAdd(s,u){save();const p={id:pid(),S:s,uid:u};PR.list.push(p);projUse(p);}
+function projDup(){projAdd(Object.assign(JSON.parse(JSON.stringify(S)),{name:S.name+' (kopia)'}),uid);toast('Utworzono kopię projektu');}
+function projDel(){ask('Usunąć projekt „'+S.name+'” z tej przeglądarki? Tej operacji nie można cofnąć. Kopię możesz wcześniej pobrać przyciskiem „Zapisz projekt”.','Usuń projekt',()=>{
+  PR.list=PR.list.filter(x=>x.id!==PR.cur);if(!PR.list.length)PR.list.push({id:pid(),S:blankS(),uid:1});projUse(PR.list[0]);toast('Projekt usunięty');});}
+$('#projSel').addEventListener('change',e=>{const p=PR.list.find(x=>x.id===e.target.value);if(p){save();projUse(p);}});
+$('#bNew').addEventListener('click',()=>{projAdd(blankS(),1);toast('Utworzono pusty projekt');});
+$('#bDup').addEventListener('click',projDup);
+$('#bDel').addEventListener('click',projDel);
+/* Potwierdzenie na stronie zamiast confirm(): komunikat, etykieta przycisku, akcja. */
+let askFn=null;
+function ask(msg,yes,fn){$('#cMsg').textContent=msg;$('#cYes').textContent=yes;askFn=fn;$('#confirm').hidden=false;}
 function readFile(f){if(!f)return;const r=new FileReader();
   r.onload=()=>{const err=importData(String(r.result));toast(err||'Wczytano projekt „'+S.name+'”');};
   r.onerror=()=>toast('Nie udało się odczytać pliku.');r.readAsText(f);}
@@ -41,7 +54,7 @@ document.addEventListener('dragover',e=>{if(hasFiles(e))e.preventDefault();});
 document.addEventListener('drop',e=>{if(!hasFiles(e))return;e.preventDefault();readFile(e.dataTransfer.files[0]);});
 
 /* ---------- events ---------- */
-$('#pname').addEventListener('input',e=>{S.name=e.target.value;save();});
+$('#pname').addEventListener('input',e=>{S.name=e.target.value;save();renderTop();});
 $('#encMfr').addEventListener('change',e=>{S.enc.mfr=e.target.value;S.enc.series=ENC[S.enc.mfr][0].id;fixRows();render();});
 $('#encSeries').addEventListener('change',e=>{S.enc.series=e.target.value;fixRows();render();});
 $('#encRows').addEventListener('change',e=>{S.enc.rows=+e.target.value;fixRows();render();});
@@ -104,15 +117,14 @@ $('#bBalance').addEventListener('click',balance);
 $('#wireFilter').addEventListener('click',e=>{const b=e.target.closest('[data-wf]');if(b){S.wf[b.dataset.wf]=S.wf[b.dataset.wf]?0:1;render(true);return;}
   if(e.target.closest('[data-wsel]')){S.sel=null;render();}});
 $('#viewSeg').addEventListener('click',e=>{const b=e.target.closest('[data-view]');if(!b)return;S.wires=b.dataset.view==='wires';render(true);});
-$('#bClear').addEventListener('click',()=>{$('#confirm').hidden=false;});
-$('#cNo').addEventListener('click',()=>{$('#confirm').hidden=true;});
-$('#cYes').addEventListener('click',()=>{S.rows=S.rows.map(()=>[]);S.dev={};S.sel=null;$('#confirm').hidden=true;render();toast('Obudowa wyczyszczona');});
+$('#bClear').addEventListener('click',()=>ask('Usunąć wszystkie aparaty z obudowy?','Usuń wszystko',()=>{S.rows=S.rows.map(()=>[]);S.dev={};S.sel=null;render();toast('Obudowa wyczyszczona');}));
+$('#cNo').addEventListener('click',()=>{askFn=null;$('#confirm').hidden=true;});
+$('#cYes').addEventListener('click',()=>{const fn=askFn;askFn=null;$('#confirm').hidden=true;if(fn)fn();});
 
 function boot(){
-  if(!load())sample();
-  if(S.q===undefined)S.q='';
+  if(!load()){sample();PR.list=[{id:pid(),S:S,uid:uid}];PR.cur=PR.list[0].id;}
   try{render();}
-  catch(err){console.error(err);sample();try{localStorage.removeItem('rozdz-v1');}catch(e){}render();toast('Zapisany projekt był niezgodny z nową wersją. Wczytano przykład.');}
+  catch(err){console.error(err);sample();render();toast('Zapisany projekt był niezgodny z nową wersją. Wczytano przykład.');}
 }
 try{boot();}catch(err){document.querySelector('.app').insertAdjacentHTML('afterbegin','<div class="confirm" role="alert">Nie udało się uruchomić projektanta: '+String(err&&err.message||err).replace(/</g,'&lt;')+'</div>');}
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{try{if(S&&S.wires)renderBoard();}catch(e){}});
