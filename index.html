@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Projektant Rozdzielnic</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<div class="app">
+  <header class="top">
+    <div class="ttl">
+      <div class="eyebrow">Rozdzielnica modułowa · szyna TH35 · 1 moduł = 18 mm</div>
+      <input id="pname" class="pname" aria-label="Nazwa projektu">
+    </div>
+    <div class="stats" id="stats"></div>
+    <div class="actions">
+      <button class="btn" id="bSample">Wczytaj przykład</button>
+      <button class="btn" id="bBalance" title="Rozłóż obwody jednofazowe równomiernie na L1–L3">Rozłóż fazy</button>
+      <button class="btn danger" id="bClear">Wyczyść</button>
+    </div>
+  </header>
+  <div class="confirm" id="confirm" hidden>
+    <span>Usunąć wszystkie aparaty z obudowy? Tej operacji nie można cofnąć.</span>
+    <button class="btn sm pri" id="cYes">Usuń wszystko</button>
+    <button class="btn sm" id="cNo">Anuluj</button>
+  </div>
+
+  <main class="grid">
+    <aside class="lib">
+      <section class="card">
+        <h2>Obudowa</h2>
+        <div class="fld"><label for="encMfr">Producent</label><select id="encMfr"></select></div>
+        <div class="fld2">
+          <div class="fld"><label for="encSeries">Seria</label><select id="encSeries"></select></div>
+          <div class="fld"><label for="encRows">Liczba rzędów</label><select id="encRows"></select></div>
+        </div>
+        <dl class="specs" id="encSpecs"></dl>
+      </section>
+      <section class="card">
+        <h2>Aparaty</h2>
+        <div class="chips" id="mfrChips" role="group" aria-label="Producent aparatów"></div>
+        <div class="fld"><input id="libSearch" type="search" placeholder="Szukaj: B16, różnicówka, licznik…" aria-label="Szukaj aparatu"></div>
+        <div class="libgroups" id="libList"></div>
+        <p class="hint">Przeciągnij aparat na szynę albo kliknij, aby dodać go na koniec aktywnego rzędu.</p>
+      </section>
+    </aside>
+
+    <section class="boardcol">
+      <div class="boardhead">
+        <div><div class="enc" id="encTitle"></div><div class="encsub" id="encSub"></div></div>
+        <div class="seg" role="group" aria-label="Widok obudowy" id="viewSeg"><button data-view="front">Front</button><button data-view="wires">Okablowanie</button></div>
+      </div>
+      <div class="chips" id="wireFilter" hidden role="group" aria-label="Pokazywane żyły"></div>
+      <div class="boardscroll"><div class="cabinet" id="board"></div></div>
+      <div class="legend">
+        <span><i style="background:var(--l1)"></i>L1 (brązowy)</span>
+        <span><i style="background:var(--l2)"></i>L2 (czarny)</span>
+        <span><i style="background:var(--l3)"></i>L3 (szary)</span>
+        <span><i style="background:var(--n)"></i>N</span>
+        <span><i style="background:linear-gradient(90deg,var(--pe) 50%,var(--pe2) 50%)"></i>PE</span>
+        <span><i style="background:var(--cu);border-radius:2px"></i>szyna grzebieniowa</span>
+        <span id="wireHint" hidden>Kliknij aparat, aby wyróżnić jego przewody. Najedź na przewód, aby zobaczyć skąd i dokąd prowadzi.</span>
+        <span>Klawisz Delete usuwa zaznaczony aparat</span>
+      </div>
+    </section>
+
+    <aside class="side card">
+      <div class="tabs" role="tablist" id="tabs"></div>
+      <div id="panel"></div>
+    </aside>
+  </main>
+
+  <footer>Parametry aparatów i obudów są orientacyjne i służą do wstępnego projektu. Numer katalogowy, zgodność szyn grzebieniowych i dane znamionowe sprawdź w aktualnym katalogu producenta. Obciążalność przewodów: Cu/PVC, metoda A1 wg PN-HD 60364-5-52. Weryfikacja projektu i pomiary należą do osoby z uprawnieniami SEP.</footer>
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/model.js"></script>
+<script src="js/render.js"></script>
+<script src="js/wiring.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
