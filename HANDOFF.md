@@ -92,7 +92,7 @@ Kolejność według wartości dla użytkownika. Każde zadanie kończy się ziel
 3. ✅ **Lista projektów** w `localStorage`, migracja z `rozdz-v1`.
 4. ✅ **Cofnij / Ponów.**
 5. ✅ **Widok do druku / PDF.**
-6. ⏳ **Hosting.** Workflow GitHub Pages z testami jest w repozytorium. Do zrobienia po decyzji użytkownika: utworzyć repozytorium na GitHubie, wypchnąć `main`, w Settings → Pages ustawić Source „GitHub Actions”, sprawdzić pierwsze uruchomienie (w tym testy w Firefoksie). Alternatywa bez konta GitHub: Netlify Drop (ręczne przeciągnięcie plików).
+6. ✅ **Hosting.** GitHub Pages: https://kacprolog.github.io/rojektant-rozdzielnic/ (repozytorium `Kacprolog/rojektant-rozdzielnic`). Każdy push na `main` uruchamia testy w Chromium, WebKit i Firefoksie, a po sukcesie publikuje `index.html`, `css/`, `js/`.
 
 ### P1 — merytoryka
 

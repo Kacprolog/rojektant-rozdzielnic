@@ -2,6 +2,12 @@
 
 Każdy wpis odpowiada jednemu commitowi. Format: co zrobiono, dlaczego, jak sprawdzono.
 
+## Publikacja (11.10.2026)
+
+- Strona działa pod https://kacprolog.github.io/rojektant-rozdzielnic/ (GitHub Pages włączone przez użytkownika).
+- Sprawdzenie po publikacji wersji 0.9.0: strona otwarta w przeglądarce, 21 aparatów przykładu, 42 przewody w widoku
+  okablowania, przełącznik trybu ręcznego, style producentów, brak błędów w konsoli. Testy w CI obejmują Firefoksa.
+
 ## 0.9.0 (11.10.2026) — fronty aparatów wg producenta
 
 Powód: użytkownik poprosił o modele aparatów wszystkich producentów.

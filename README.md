@@ -8,6 +8,8 @@ Fronty aparatów pięciu producentów (rysunki własne, uproszczone):
 
 ![Producenci](docs/marki.png)
 
+**Wersja online:** https://kacprolog.github.io/rojektant-rozdzielnic/
+
 ## Co potrafi
 
 | Funkcja | Jak użyć |
