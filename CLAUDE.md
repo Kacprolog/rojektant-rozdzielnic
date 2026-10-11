@@ -12,7 +12,7 @@ Szczegóły przekazania, znane problemy i plan prac: `HANDOFF.md`. Dziennik zmia
 npm start            # serwer statyczny bez zależności: http://localhost:4173
 npm install          # tylko dla testów (@playwright/test)
 npx playwright install chromium webkit   # raz, jeśli nie ma przeglądarek
-npm test             # 34 testów × 3 projekty: desktop 1600 px i telefon 390 px (Chromium), safari (WebKit)
+npm test             # 35 testów × 3 projekty: desktop 1600 px i telefon 390 px (Chromium), safari (WebKit)
 node scripts/podglad-druku.js            # PDF i zrzuty stron wydruku w test-results/druk/
 ```
 

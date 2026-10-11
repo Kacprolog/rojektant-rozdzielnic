@@ -4,6 +4,10 @@ Interaktywny konfigurator rozdzielnic modułowych działający w przeglądarce: 
 
 ![Okablowanie](docs/okablowanie.png)
 
+Fronty aparatów pięciu producentów (rysunki własne, uproszczone):
+
+![Producenci](docs/marki.png)
+
 ## Co potrafi
 
 | Funkcja | Jak użyć |

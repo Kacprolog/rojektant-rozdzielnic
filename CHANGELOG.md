@@ -2,6 +2,22 @@
 
 Każdy wpis odpowiada jednemu commitowi. Format: co zrobiono, dlaczego, jak sprawdzono.
 
+## 0.9.0 (11.10.2026) — fronty aparatów wg producenta
+
+Powód: użytkownik poprosił o modele aparatów wszystkich producentów.
+
+- **Modeli producentów nie pobrano i nie wbudowano.** Pliki CAD są udostępniane po zalogowaniu (Schneider przez
+  TraceParts; portale ABB i Eatona prosiły o rejestrację), a znalezione warunki zastrzegają prawa i nie pozwalają na dalsze
+  rozpowszechnianie. Repozytorium i strona są publiczne. Dla Hagera i Legranda warunków nie znaleziono.
+  Użytkownik wybrał wariant: własne rysunki frontów.
+- **Własne, uproszczone fronty** dla Hager, Schneider Electric, ABB, Eaton i Legrand: inna barwa korpusu, forma znaku
+  (pasek, pełne tło, pogrubienie, podkreślenie, obwódka), kształt dźwigni i akcent (znacznik, pas, okienko stanu,
+  punktowy wskaźnik, uchwyt etykiety). To nie są kopie materiałów producentów ani wierne odwzorowania serii.
+- Technicznie: `.dev` dostaje klasę `m-<producent>` oraz `lv` dla aparatów z dźwignią; barwa znaku `--b` z `MFR`
+  jest ustawiana na `.dev`; style w sekcji „Fronty aparatów wg producenta” w `css/styles.css`.
+- Test: 21 aparatów Hagera w przykładzie, a ten sam MCB pięciu producentów ma pięć różnych wyglądów.
+- Sprawdzenie: `npm test` → 105/105; wzrokowo na zrzucie `docs/marki.png` (5 marek × 6 typów aparatów).
+
 ## 0.8.0 (11.10.2026) — wygląd przestrzenny, przekroje a zaciski aparatów
 
 Powód: użytkownik chce bardziej trójwymiarowych aparatów i przewodów oraz pilnowania przekrojów w aparaturze.

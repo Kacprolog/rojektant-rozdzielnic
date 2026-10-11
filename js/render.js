@@ -57,7 +57,7 @@ function renderBoard(){const e=enc(),D=designations(),M=34;$('#board').className
     const devs=r.map(id=>{const d=S.dev[id],w=width(d),[a,b]=rate(d);
       const phs=isCirc(d)?phases(d).map(p=>`<i style="background:var(--${p.toLowerCase()})"></i>`).join(''):'';
       return `<div class="slot ${S.sel===id?'sel':''}" draggable="true" data-id="${id}" style="width:${w*M}px" title="${esc(D[id]+' '+d.name+' · '+desc(d))}">
-        <div class="dev"><div class="trm">${screwsFor(d,'top')}</div><div class="mk" style="--b:${MFR[d.m].c}">${w>=2?MFR[d.m].s:MFR[d.m].s.slice(0,4)}</div>
+        <div class="dev m-${d.m}${['mcb','rcbo','rcd','sw'].indexOf(d.t)>=0?' lv':''}" style="--b:${MFR[d.m].c}"><div class="trm">${screwsFor(d,'top')}</div><div class="mk">${w>=2?MFR[d.m].s:MFR[d.m].s.slice(0,4)}</div>
         <div class="rt">${esc(a)}</div><div class="sub">${esc(b)}</div>${face(d)}<div class="trm b">${screwsFor(d,'bot')}</div></div>
         <div class="tag"><b>${D[id]}</b><span>${esc(d.name)}</span><span class="ph">${phs}</span></div></div>`;}).join('');
     const free=e.mpr-u;

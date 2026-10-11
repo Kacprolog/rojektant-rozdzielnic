@@ -101,3 +101,22 @@ test('uszkodzony stan nie blokuje startu', async ({ page }) => {
   await page.reload();
   await expect(page.locator('.slot')).toHaveCount(21); // fallback do przykładu
 });
+
+test('front aparatu zależy od producenta', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#board .dev.m-hager')).toHaveCount(21);
+  await expect(page.locator('#board .dev.m-hager.lv')).toHaveCount(16); // rozłącznik, 2 RCD, RCBO, 12 MCB
+  // Ten sam aparat pięciu producentów: inna klasa, inna barwa znaku, inny kształt dźwigni.
+  const looks = [];
+  for (const m of ['hager', 'schneider', 'abb', 'eaton', 'legrand']) {
+    await page.click(`[data-mfr="${m}"]`);
+    await page.locator('.libitem', { hasText: 'MCB B16 1P' }).click();
+    const dev = page.locator(`#board .slot.sel .dev.m-${m}.lv`);
+    await expect(dev).toHaveCount(1);
+    looks.push(await dev.evaluate(e => {
+      const mk = getComputedStyle(e.querySelector('.mk')), lv = getComputedStyle(e.querySelector('.lever'));
+      return [mk.color, mk.backgroundColor, mk.borderTopWidth, mk.borderBottomWidth, mk.borderLeftWidth, lv.borderTopLeftRadius, lv.borderBottomLeftRadius].join('|');
+    }));
+  }
+  expect(new Set(looks).size).toBe(5);
+});
