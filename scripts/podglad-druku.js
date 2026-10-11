@@ -12,6 +12,11 @@ const fs = require('fs'), path = require('path');
     const p = await b.newPage({ viewport: { width: 1600, height: 1000 } });
     await p.goto('http://localhost:4199/');
     await p.screenshot({ path: path.join(out, 'ekran.png') });
+    // Zrzuty samej obudowy: front i okablowanie (do kontroli wyglądu i do docs/).
+    await p.locator('#board').screenshot({ path: path.join(out, 'front.png') });
+    await p.click('[data-view="wires"]');
+    await p.locator('#board').screenshot({ path: path.join(out, 'okablowanie.png') });
+    await p.click('[data-view="front"]');
     await p.evaluate(() => { window.print = () => {}; });
     await p.click('#bPrint');
     await p.emulateMedia({ media: 'print' });

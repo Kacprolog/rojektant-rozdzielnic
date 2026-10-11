@@ -283,3 +283,37 @@ test('kolory żył są normatywne także w ciemnym motywie; PEN ma niebieskie ko
   await page.evaluate(() => { S.set.siec = 'TN-S'; render(); });
   await expect(page.locator('svg.wires path.pen')).toHaveCount(0);
 });
+
+test('przekroje: grubość linii rośnie z przekrojem, przewód ma połysk i cień, zaciski mają zakres', async ({ page }) => {
+  // Tryb automatyczny: przykład nie ma zastrzeżeń do przekrojów, a przewody 10 mm² są grubsze niż 1,5 mm².
+  expect(await page.evaluate(() => termIssues())).toEqual([]);
+  const w = await page.evaluate(() => [1.5, 2.5, 4, 6, 10, 16, 25, 35].map(wireW));
+  for (let i = 1; i < w.length; i++) expect(w[i]).toBeGreaterThan(w[i - 1]);
+  const n = await page.locator('svg.wires path.w').count();
+  expect(await page.locator('svg.wires path.hl').count()).toBeGreaterThanOrEqual(n - 2); // PE ma dwie warstwy .w
+  expect(await page.locator('svg.wires path.sh').count()).toBeGreaterThan(30);
+
+  // Dane techniczne aparatu pokazują zakres zacisków.
+  await page.locator('#board .slot').first().dispatchEvent('click');
+  await expect(page.locator('#panel')).toContainText('przewód 1,5–25 mm² (orientacyjnie)');
+
+  // Tryb ręczny: 35 mm² nie wejdzie w zacisk różnicówki 40 A, 4 mm² nie wejdzie w przekaźnik kontroli faz.
+  await manualAdopted(page);
+  const d = await ids(page);
+  const find = (a, b) => page.evaluate(([x, y]) => buildConns().C.find(c => c.user && c.a.id === x && c.b.id === y).id, [a, b]);
+  const big = await find(d['Rozłącznik główny'], d['RCD obwody ogólne']);
+  await page.locator(`svg.wires path[data-w="${big}"]`).dispatchEvent('click');
+  const thin = +(await page.locator(`svg.wires path[data-w="${big}"]`).getAttribute('stroke-width'));
+  await page.selectOption('[data-wprop="mm"]', '35');
+  await expect(page.locator('.toast')).toContainText('35 mm² nie pasuje do zacisku -Q1 Rozłącznik główny (zakres 1,5–25 mm²)');
+  expect(+(await page.locator(`svg.wires path[data-w="${big}"]`).getAttribute('stroke-width'))).toBeGreaterThan(thin);
+  expect((await issues(page)).filter(x => x.startsWith('crit')).length).toBe(1);
+  await page.selectOption('[data-wprop="mm"]', '');
+
+  const rel = await find(d['Rozłącznik główny'], d['Kontrola faz PC']);
+  await page.locator(`svg.wires path[data-w="${rel}"]`).dispatchEvent('click');
+  await page.selectOption('[data-wprop="mm"]', '4');
+  await expect(page.locator('.toast')).toContainText('4 mm² nie pasuje do zacisku -K1 Kontrola faz PC (zakres 0,5–2,5 mm²)');
+  await page.selectOption('[data-wprop="mm"]', '');
+  expect(await issues(page)).toEqual([]);
+});

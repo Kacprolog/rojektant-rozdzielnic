@@ -10,7 +10,7 @@
   --f-display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
   --f-body:"Barlow","Segoe UI",Roboto,Arial,sans-serif;
   --f-mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
-  --wire-edge:var(--cabinet);
+  --wire-edge:var(--cabinet); --wire-sh:#000000; --wire-hl:#ffffff;
   --M:34px;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
@@ -247,3 +247,23 @@ footer{margin-top:22px;font-size:12px;color:var(--muted);max-width:90ch}
   body{margin:0;background:none}
   #print{display:block;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 }
+
+/* Wygląd przestrzenny (bez transformacji 3D, żeby pomiar zacisków dla przewodów pozostał dokładny):
+   bryła aparatu z boczną ścianką i cieniem, wypukły front, wgłębione zaciski, głębia obudowy. */
+.cabinet{box-shadow:inset 0 0 0 6px color-mix(in srgb,var(--cabinet-edge) 35%,transparent),inset 0 18px 30px -16px rgba(0,0,0,.4),inset 0 -12px 22px -14px rgba(0,0,0,.22),inset 14px 0 22px -16px rgba(0,0,0,.22),inset -14px 0 22px -16px rgba(0,0,0,.22)}
+.rail::before{box-shadow:0 3px 4px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.55),inset 0 -1px 0 rgba(0,0,0,.25)}
+.dev{background:linear-gradient(90deg,rgba(255,255,255,.6),rgba(255,255,255,0) 20%,rgba(0,0,0,0) 74%,rgba(0,0,0,.11)),linear-gradient(180deg,rgba(0,0,0,.12),rgba(0,0,0,0) 18%,rgba(255,255,255,.25) 50%,rgba(0,0,0,0) 82%,rgba(0,0,0,.16)),var(--dev);
+  box-shadow:1px 1px 0 var(--dev-edge),2px 2px 0 var(--dev-edge),3px 3px 0 var(--dev-edge),7px 9px 12px rgba(0,0,0,.3)}
+.slot.sel .dev{box-shadow:0 0 0 2px var(--accent),3px 3px 0 var(--dev-edge),8px 11px 16px rgba(0,0,0,.38)}
+.slot.over .dev{box-shadow:0 0 0 2px var(--crit),3px 3px 0 var(--dev-edge),7px 9px 12px rgba(0,0,0,.3)}
+.trm{background:linear-gradient(180deg,rgba(0,0,0,.24),rgba(0,0,0,.05));box-shadow:inset 0 -1px 0 rgba(0,0,0,.14)}
+.trm.b{background:linear-gradient(0deg,rgba(0,0,0,.24),rgba(0,0,0,.05));box-shadow:inset 0 1px 0 rgba(0,0,0,.14)}
+.scr{box-shadow:inset 0 1px 2px rgba(0,0,0,.65),0 0 0 1.5px rgba(0,0,0,.2)}
+.lever{background:linear-gradient(180deg,#eef0ea,#c6c9c2);box-shadow:inset 0 1px 0 rgba(255,255,255,.8),0 2px 3px rgba(0,0,0,.32)}
+.lever::after{box-shadow:0 2px 2px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.28)}
+.lcd,.sock,.dial{box-shadow:inset 0 1px 3px rgba(0,0,0,.4)}
+.tbtn{box-shadow:0 1px 1px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.5)}
+.leds i{background:radial-gradient(circle at 35% 30%,#ffc2b6,#cf3b2a 62%)}
+.spdwin i{box-shadow:inset 0 1px 1px rgba(255,255,255,.5),0 1px 1px rgba(0,0,0,.3)}
+.tag{box-shadow:1px 2px 2px rgba(0,0,0,.2)}
+.blank{box-shadow:inset 0 3px 7px rgba(0,0,0,.2)}

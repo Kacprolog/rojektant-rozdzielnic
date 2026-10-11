@@ -67,6 +67,21 @@ Działa tylko w trybie „Ręczne”. Każdy zacisk ma żyłę (`L1 L2 L3 N PE`)
 | info | Przewód fazowy w barwie innej fazy (zalecane L1 brązowy, L2 czarny, L3 szary) | PN-HD 308 S2 |
 | uwaga | Przekrój ustawiony ręcznie mniejszy niż dobrany | PN-HD 60364-4-43 |
 
+### Przekrój przewodu a zaciski aparatu (`termRange()`, `termFit()`, `termIssues()`)
+
+Błąd, gdy przekrój przewodu wpiętego w aparat (albo kabla obwodowego) jest poza zakresem zacisku. Działa w obu trybach okablowania. Zakresy są **orientacyjne** i wymagają sprawdzenia w karcie katalogowej:
+
+| Aparat | Zakres [mm²] |
+|---|---|
+| MCB, RCBO | 1–25 (MCB powyżej 63 A: 2,5–50) |
+| RCD, rozłącznik | 1,5–25 (powyżej 63 A: 2,5–50) |
+| SPD T1+T2 / T2 | 2,5–35 / 1,5–25 |
+| Kontrolki faz | 0,5–6 |
+| Przekaźnik kontroli faz, czasowy, zasilacz | 0,5–2,5 |
+| Licznik / stycznik do 25 A / stycznik większy / gniazdo | 1,5–25 / 1–6 / 2,5–25 / 1–4 |
+
+Na rysunku grubość linii rośnie z przekrojem (`WIRE_W`).
+
 PEN w TN-C-S (żyła ochronno-neutralna WLZ, mostek PEN) jest rysowany jako zielono-żółty z niebieskimi końcami. Kolory żył są takie same w jasnym i ciemnym motywie.
 
 Ciągłość liczona jest po grafie: przewody + tory wewnątrz rozłącznika, RCD, MCB, RCBO (wejście ↔ wyjście tej samej żyły) + szyny grzebieniowe.

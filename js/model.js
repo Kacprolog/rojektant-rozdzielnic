@@ -9,6 +9,13 @@ function width(d){const p=d.p;switch(d.t){
   case 'spd':return p.sys==='1P+N'?2:4;case 'meter':return p.ph==1?1:4;
   case 'contactor':return p.In<=25?(p.poles==2?1:2):(p.poles==2?2:3);
   case 'socket':return 2.5;case 'psu':return p.W<=30?2:4;default:return 1;}}
+/* Zakres przekrojów przewodu w zaciskach aparatu [mm²]. Wartości orientacyjne, typowe dla aparatury modułowej; sprawdź w karcie katalogowej. */
+function termRange(d){const In=(d.p&&d.p.In)||0;switch(d.t){
+  case 'mcb':return In<=63?[1,25]:[2.5,50];case 'rcbo':return [1,25];
+  case 'rcd':case 'sw':return In<=63?[1.5,25]:[2.5,50];
+  case 'spd':return d.p.cls==='T1+T2'?[2.5,35]:[1.5,25];
+  case 'lamp':return [0.5,6];case 'relay':case 'timer':case 'psu':return [0.5,2.5];
+  case 'meter':return [1.5,25];case 'contactor':return In<=25?[1,6]:[2.5,25];case 'socket':return [1,4];}return [0.5,25];}
 const series=d=>(SER[d.m]&&SER[d.m][d.t])||'seria modułowa';
 const clen=d=>(d.c&&d.c.len!=null)?d.c.len:15;
 const isCirc=d=>d.t==='mcb'||d.t==='rcbo';
@@ -47,6 +54,7 @@ function specs(d){const p=d.p,r=[];
   case 'timer':r.push(['Zasilanie','12–240 V AC/DC'],['Funkcje','opóźnione zał./wył., cykl, impuls'],['Zakres','0,1 s – 100 h']);break;
   case 'psu':r.push(['Wejście','100–240 V AC'],['Wyjście','24 V DC, '+fmt(p.W/24,2)+' A'],['Moc',p.W+' W']);break;
   case 'relay':r.push(['Kontrola','zanik, kolejność, asymetria faz'],['Napięcie','3 × 400 V AC'],['Wyjście','1 × CO, 5 A']);break;}
+  const tr=termRange(d);r.push(['Zaciski','przewód '+fmt(tr[0])+'–'+fmt(tr[1])+' mm² (orientacyjnie)']);
   r.push(['Szerokość',fmt(width(d))+' mod. ('+fmt(width(d)*18)+' mm)']);return r;}
 
 /* ---------- state ---------- */
@@ -197,5 +205,6 @@ function checks(){const out=[],D=designations(),e=enc(),T=totals(),devs=Object.v
   if(mx>5&&(mx-mn)/mx>0.25)add('warn',`Asymetria obciążenia faz ${fmt((mx-mn)/mx*100,0)}% (L1 ${fmt(L.L1)} A, L2 ${fmt(L.L2)} A, L3 ${fmt(L.L3)} A).`,'Użyj „Rozłóż fazy” albo zmień fazy obwodów ręcznie.');
   if(T.cap&&(T.cap-T.used)/T.cap<0.2)add('info',`Rezerwa miejsca ${fmt(Math.max(0,T.cap-T.used))} mod. to mniej niż 20%.`,'Zostaw miejsce na rozbudowę instalacji.');
   wireCheck().out.forEach(x=>out.push(x));
+  termIssues().forEach(x=>out.push(x));
   return out;}
 

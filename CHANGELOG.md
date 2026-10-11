@@ -2,6 +2,27 @@
 
 Każdy wpis odpowiada jednemu commitowi. Format: co zrobiono, dlaczego, jak sprawdzono.
 
+## 0.8.0 (11.10.2026) — wygląd przestrzenny, przekroje a zaciski aparatów
+
+Powód: użytkownik chce bardziej trójwymiarowych aparatów i przewodów oraz pilnowania przekrojów w aparaturze.
+
+- **Aparaty:** bryła z boczną ścianką i cieniem, wypukły front, wgłębione zaciski i śruby, dźwignie i okienka z głębią,
+  cień szyny i wnętrza obudowy. To cieniowanie CSS, a nie obracany model 3D: transformacje 3D zniekształciłyby pomiar
+  położenia zacisków, z którego rysowane są przewody.
+- **Przewody:** cień, obrys i połysk dają wrażenie okrągłej żyły; listwy N/PE też mają cień i połysk.
+- **Grubość linii odpowiada przekrojowi:** 1,5 mm² → 1,6 px … 35 mm² → 4,6 px (`WIRE_W` w `js/wiring.js`).
+- **Przekrój a zaciski:** każdy typ aparatu ma zakres przekrojów zacisku (`termRange()` w `js/model.js`, widoczny
+  w „Danych technicznych” jako „Zaciski”). Kontrola zgłasza błąd, gdy przewód jest za gruby albo za cienki dla zacisku:
+  dla przewodów ręcznych (`wireCheck()`, z czerwonym alertem i obwódką), dla przewodów wyliczonych i kabli obwodowych
+  (`termIssues()`, w obu trybach).
+- **Zakresy zacisków są orientacyjne** (typowe dla aparatury modułowej, wpisane bez kart katalogowych):
+  MCB / RCBO 1–25 mm², RCD i rozłącznik do 63 A 1,5–25 mm² (powyżej 2,5–50), SPD T1+T2 2,5–35, SPD T2 1,5–25,
+  kontrolki 0,5–6, przekaźnik 0,5–2,5 mm². Przed wykonaniem trzeba je sprawdzić w kartach producenta.
+- `scripts/podglad-druku.js` zapisuje też zrzuty samej obudowy (`front.png`, `okablowanie.png`); odświeżone `docs/*.png`.
+- Test: rosnąca grubość linii, warstwy cienia i połysku, zakres zacisków w panelu, alert dla 35 mm² w zacisku 25 mm²
+  i 4 mm² w zacisku 2,5 mm², brak uwag dla przykładu.
+- Sprawdzenie: `npm test` → 102/102; wzrokowo na zrzucie okablowania.
+
 ## 0.7.0 (10.10.2026) — kolory żył wg normy w każdym motywie, edycja przewodów
 
 Powód: użytkownik wymaga okablowania w kolorach polskich norm i możliwości modyfikowania przewodów.

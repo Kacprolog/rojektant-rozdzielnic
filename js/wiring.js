@@ -23,6 +23,18 @@ function cableType(d){const c=+d.c.cable,cs=fmt(c);return is3(d)?(c<=4?'YDYp 5×
 let wirePick=null,wireSel=null,wireMove=null;
 function wireReset(){wirePick=wireSel=wireMove=null;}
 const WIRE_MM=[1.5,2.5,4,6,10,16,25,35];
+/* Grubość linii na rysunku rośnie z przekrojem przewodu [mm² → px]. */
+const WIRE_W={1.5:1.6,2.5:2,4:2.4,6:2.8,10:3.2,16:3.7,25:4.2,35:4.6};
+const wireW=mm=>WIRE_W[mm]||(mm>35?5:2.2);
+/* Czy przekrój przewodu mieści się w zaciskach aparatów na jego końcach. Zwraca [komunikat, wskazówka, idAparatu] albo null. */
+function termFit(c,D){const E=[c.a,c.b];for(let i=0;i<2;i++){const e=E[i];if(e.k!=='dev')continue;const d=S.dev[e.id],r=termRange(d);
+  if(c.mm>r[1]||c.mm<r[0])return ['Przewód <b>'+esc(epName(c.a,D))+' → '+esc(epName(c.b,D))+'</b> '+fmt(c.mm)+' mm² nie pasuje do zacisku <b>'+D[d.id]+' '+esc(d.name)+'</b> (zakres '+fmt(r[0])+'–'+fmt(r[1])+' mm²).',
+    c.mm>r[1]?'Za gruby przewód nie wejdzie w zacisk. Zastosuj blok rozdzielczy albo aparat o większych zaciskach; nie wolno odcinać drutów żyły.':'Za cienki przewód nie zostanie pewnie dociśnięty. Zwiększ przekrój albo zastosuj tulejkę zgodnie z kartą aparatu.',d.id];}return null;}
+/* Przekroje a zaciski dla połączeń wyliczonych przez program i dla kabli obwodowych (przewody ręczne sprawdza wireCheck). */
+function termIssues(){const out=[],D=designations();
+  buildConns().C.forEach(c=>{if(c.user||c.kind==='jumper')return;const t=termFit(c,D);if(t)out.push({sev:'crit',msg:t[0],ref:t[1],id:t[2]});});
+  S.rows.flat().map(id=>S.dev[id]).filter(isCirc).forEach(d=>{const r=termRange(d),mm=+d.c.cable;if(mm>r[1]||mm<r[0])out.push({sev:'crit',msg:'<b>'+D[d.id]+' '+esc(d.name)+'</b>: kabel obwodowy '+fmt(mm)+' mm² nie pasuje do zacisków aparatu (zakres '+fmt(r[0])+'–'+fmt(r[1])+' mm²).',ref:'Dobierz aparat o odpowiednich zaciskach albo zmień przekrój kabla.',id:d.id});});
+  return out;}
 const epPh=e=>e.k==='bar'?(e.bar==='PE'?'PE':'N'):e.ph;
 const epKey=e=>e.k==='dev'?e.id+'/'+e.side+'/'+e.ph:e.k==='bar'?'bar/'+e.bar:e.k==='comb'?'comb/'+e.rcd+'/'+e.ph:'wlz/'+e.ph;
 /* Zapisany koniec → koniec z nazwą żyły; null, gdy zacisk już nie istnieje (usunięty aparat, mniej biegunów). */
@@ -73,6 +85,7 @@ function wireCheck(){const out=[],bad={},why={};if(S.wmode!=='manual')return {ou
         else if(fn==='N')add('warn',nm+' jest przewodem neutralnym, a ma izolację '+COL[c.col]+'.','Przewód N powinien być niebieski. '+ref,id,c);
         else add('info',nm+' (faza '+fn+') ma izolację '+COL[c.col]+'.','Dopuszczalne, ale zalecana kolejność to L1 brązowy, L2 czarny, L3 szary; oznacz końce przewodu. '+ref,id,c);}}
     if(c.mm<c.mmAuto)add('warn',nm+' ma przekrój '+fmt(c.mm)+' mm², mniejszy niż dobrany '+fmt(c.mmAuto)+' mm².','Przekrój przewodu w rozdzielnicy musi odpowiadać zabezpieczeniu przed nim (In ≤ Iz, PN-HD 60364-4-43).',id,c);
+    const tf=termFit(c,D);if(tf)add('crit',tf[0],tf[1],tf[2],c);
     if(c.kind==='mostek'){
       if(!tncs)add('crit',nm+' łączy N z PE w układzie '+esc(S.set.siec)+'.','W tym układzie przewody N i PE muszą być rozdzielone w całej instalacji (PN-HD 60364-5-54).',id,c);
       else if(!(c.b.k==='bar'&&c.b.bar==='N')&&!(c.b.k==='dev'&&S.dev[c.b.id]===sw&&c.b.side==='top'))add('crit',nm+' łączy N z PE poza punktem podziału PEN.','Za punktem podziału (listwa PE → główna listwa N) przewodów N i PE nie wolno ponownie łączyć (PN-HD 60364-5-54 p. 543.4).',id,c);
@@ -216,19 +229,21 @@ function drawWires(){const cab=$('#board');
   const touches=c=>!S.sel||[c.a,c.b].some(e=>e.id===S.sel||e.rcd===S.sel||e.bar==='N:'+S.sel);
   const shown=c=>wf[(c.kind==='mostek')?'PE':c.ph];
   /* c (opcjonalnie): przewód dodany ręcznie – dostaje data-w do zaznaczania oraz obwódkę błędu / zaznaczenia. */
-  const paint=(d,ph,mm,title,pe,dim,c)=>{const w=mm>=10?3:2.2,u=c&&c.user,bad=u?wc.bad[c.id]:'',sel=u&&wireSel===c.id,at=u?` data-w="${c.id}"`:'';
+  const paint=(d,ph,mm,title,pe,dim,c)=>{const w=wireW(mm),u=c&&c.user,bad=u?wc.bad[c.id]:'',sel=u&&wireSel===c.id,at=u?` data-w="${c.id}"`:'';
     const mark=bad==='crit'||bad==='warn';
     if(bad){const t=document.createElement('div');t.innerHTML=wc.why[c.id];title+=' · '+(bad==='crit'?'ZŁE PODŁĄCZENIE: ':'UWAGA: ')+t.textContent;}
     /* kolor izolacji: ustawiony ręcznie albo wg żyły; PEN (TN-C-S) = zielono-żółty z niebieskimi końcami (PN-EN 60445) */
     const col=c&&c.col?c.col:(pe?'PE':ph),pen=!!c&&!c.col&&S.set.siec==='TN-C-S'&&(c.kind==='mostek'||(c.a.k==='wlz'&&c.a.ph==='PE'));
-    let s=`<g opacity="${dim&&!sel&&!mark?.16:1}">`+(mark||sel?`<path class="halo" d="${d}" fill="none" stroke="var(--${sel?'accent':bad==='crit'?'crit':'warn'})" stroke-width="${w+7}" stroke-linejoin="round" opacity=".6"/>`:'')+`<path d="${d}" fill="none" stroke="var(--wire-edge)" stroke-width="${w+3}" stroke-linejoin="round"/>`;
+    let s=`<g opacity="${dim&&!sel&&!mark?.16:1}">`+(mark||sel?`<path class="halo" d="${d}" fill="none" stroke="var(--${sel?'accent':bad==='crit'?'crit':'warn'})" stroke-width="${w+7}" stroke-linejoin="round" opacity=".6"/>`:'')+`<path class="sh" d="${d}" transform="translate(1.6 2.4)" fill="none" stroke="var(--wire-sh)" stroke-opacity=".24" stroke-width="${w+1.2}" stroke-linejoin="round"/><path d="${d}" fill="none" stroke="var(--wire-edge)" stroke-width="${w+2}" stroke-linejoin="round"/>`;
+    /* połysk: wąska jasna linia przesunięta ku górze-lewej daje wrażenie okrągłego przewodu */
+    const hl=`<path class="hl" d="${d}" transform="translate(${(-w*.2).toFixed(2)} ${(-w*.2).toFixed(2)})" fill="none" stroke="var(--wire-hl)" stroke-opacity=".4" stroke-width="${Math.max(.6,w*.28).toFixed(2)}" stroke-linejoin="round" pointer-events="none"/>`;
     if(col==='PE')s+=`<path d="${d}" fill="none" stroke="var(--pe2)" stroke-width="${w}" stroke-linejoin="round"/><path class="w"${at} d="${d}" fill="none" stroke="var(--pe)" stroke-width="${w}" stroke-dasharray="5 5" stroke-linejoin="round"><title>${esc(title)}</title></path>`
       +(pen?`<path class="pen" d="${d}" pathLength="1000" fill="none" stroke="var(--n)" stroke-width="${w}" stroke-dasharray="90 820 90" pointer-events="none"/>`:'');
-    else s+=`<path class="w"${at} d="${d}" fill="none" stroke="var(--${col.toLowerCase()})" stroke-width="${w}" stroke-linejoin="round"><title>${esc(title)}</title></path>`;return s+'</g>';};
+    else s+=`<path class="w"${at} d="${d}" fill="none" stroke="var(--${col.toLowerCase()})" stroke-width="${w}" stroke-linejoin="round"><title>${esc(title)}</title></path>`;return s+hl+'</g>';};
   let out='';
   // listwy
-  out+=`<rect x="${x0}" y="${peY-4}" width="${x1-x0}" height="8" rx="2" fill="var(--pe)"/><rect x="${x0}" y="${peY-1}" width="${x1-x0}" height="2" fill="var(--pe2)"/><text x="${x0}" y="${peY+20}" font-size="10.5" font-weight="600" fill="var(--ink)">Listwa PE${S.set.siec==='TN-C-S'?' · punkt podziału PEN':''}</text>`;
-  segs.forEach(s=>{out+=`<rect x="${s.x0}" y="${nY-4}" width="${s.x1-s.x0}" height="8" rx="2" fill="var(--n)"/><text x="${s.x1}" y="${nY+18}" text-anchor="end" font-size="10.5" font-weight="600" fill="var(--ink)">Listwa ${esc(s.lab)}</text>`;
+  out+=`<rect x="${x0+2}" y="${peY-1}" width="${x1-x0}" height="8" rx="2" fill="var(--wire-sh)" opacity=".22"/><rect x="${x0}" y="${peY-4}" width="${x1-x0}" height="8" rx="2" fill="var(--pe)"/><rect x="${x0}" y="${peY-1}" width="${x1-x0}" height="2" fill="var(--pe2)"/><text x="${x0}" y="${peY+20}" font-size="10.5" font-weight="600" fill="var(--ink)">Listwa PE${S.set.siec==='TN-C-S'?' · punkt podziału PEN':''}</text>`;
+  segs.forEach(s=>{out+=`<rect x="${s.x0+2}" y="${nY-1}" width="${s.x1-s.x0}" height="8" rx="2" fill="var(--wire-sh)" opacity=".22"/><rect x="${s.x0}" y="${nY-4}" width="${s.x1-s.x0}" height="8" rx="2" fill="var(--n)"/><rect x="${s.x0+1}" y="${nY-3.4}" width="${s.x1-s.x0-2}" height="1.6" rx=".8" fill="var(--wire-hl)" opacity=".4"/><text x="${s.x1}" y="${nY+18}" text-anchor="end" font-size="10.5" font-weight="600" fill="var(--ink)">Listwa ${esc(s.lab)}</text>`;
     for(let x=s.x0+6;x<=s.x1-6;x+=12)out+=`<circle cx="${x}" cy="${nY}" r="1.6" fill="var(--cabinet)"/>`;});
   for(let x=x0+6;x<=x1-6;x+=12)out+=`<circle cx="${x}" cy="${peY}" r="1.6" fill="var(--cabinet)"/>`;
   out+=`<text x="${x0+44}" y="14" font-size="11" font-weight="600" fill="var(--ink)">WLZ: ${esc(wlzType())} · zab. przedlicznikowe ${S.set.przedl} A · ${esc(S.set.siec)}</text>`;
