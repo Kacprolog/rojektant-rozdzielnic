@@ -20,6 +20,23 @@ Tabela Iz [A] (A1, Cu, PVC):
 | 2 żyły obciążone | 14,5 | 19,5 | 26 | 34 | 46 | 61 |
 | 3 żyły obciążone | 13,5 | 18 | 24 | 31 | 42 | 56 |
 
+## Spadki napięcia i zwarcia (`netCalc()`, `circCalc()`)
+
+Uproszczenia: tylko rezystancja przewodów Cu, γ = 56 m/(Ω·mm²), bez reaktancji; pętla zwarcia z rezystancją × 1,25 (nagrzanie); przewód ochronny o przekroju fazowego; spadek napięcia przy cos φ ≈ 1; U0 = 230 V, U = 400 V.
+
+| Wielkość | Wzór |
+|---|---|
+| Pętla zwarcia w rozdzielnicy | Zs,R = Zs,złącze + 1,25 · 2 · L_WLZ / (γ · S_WLZ) |
+| Pętla zwarcia na końcu obwodu | Zs = Zs,R + 1,25 · 2 · L / (γ · S) |
+| Prąd zwarcia jednofazowego | Ik1 = U0 / Zs |
+| Próg wyzwalania | Ia = k · In, k = 5 (B), 10 (C), 20 (D) |
+| Warunek samoczynnego wyłączenia (TN) | Zs · Ia ≤ U0 |
+| Prąd zwarciowy trójfazowy w rozdzielnicy | Ik = U / (√3 · (U / (√3 · Ik,złącze) + L_WLZ / (γ · S_WLZ))) |
+| Spadek napięcia 1F / 3F | ΔU% = 200 · P · L / (γ · S · U0²) / ΔU% = 100 · P · L / (γ · S · U²) |
+| Spadek napięcia w WLZ | jak 3F, z mocą szczytową Pd |
+
+Dane wejściowe w `S.set` (czytane przez `sv()`): `zs0` 0,3 Ω, `ik0` 6 kA, `wlzLen` 15 m, `duObw` 3%, `duWlz` 0,5%.
+
 ## Kontrola projektu (`checks()`)
 
 | Poziom | Reguła | Podstawa |
@@ -43,6 +60,11 @@ Tabela Iz [A] (A1, Cu, PVC):
 | uwaga | Moc szczytowa > moc przyłączeniowa | warunki przyłączenia OSD |
 | uwaga | Asymetria faz > 25% | – |
 | info | Rezerwa miejsca < 20% | dobra praktyka |
+| uwaga | Prąd szczytowy jednej fazy (z ks) > zabezpieczenie przedlicznikowe | – |
+| uwaga | Spadek napięcia w obwodzie > `duObw`; w WLZ > `duWlz` | PN-HD 60364-5-52 zał. G |
+| błąd / uwaga | Zs · Ia > U0 (uwaga, gdy obwód ma RCD) | PN-HD 60364-4-41 p. 411.4 |
+| błąd | Układ TT: obwód bez RCD | PN-HD 60364-4-41 p. 411.5 |
+| błąd | Icn aparatu < Ik w rozdzielnicy | PN-HD 60364-4-43 p. 434.5.1 |
 
 ## Kontrola okablowania ręcznego (`wireCheck()`)
 
@@ -116,4 +138,4 @@ Kolory żył (PN-EN 60445): L1 brązowy, L2 czarny, L3 szary, N niebieski, PE zi
 
 ## Czego jeszcze nie sprawdzamy
 
-Spadek napięcia, impedancja pętli zwarcia i czas samoczynnego wyłączenia, prąd zwarciowy względem Icn, współczynniki poprawkowe (temperatura, grupowanie), selektywność według charakterystyk, rozpływ prądu w przewodzie N, dobór SPD do strefy LPZ, ciepło wydzielane w obudowie. To jest w planie w `HANDOFF.md`.
+Czas samoczynnego wyłączenia, reaktancja przewodów, przekrój PE inny niż fazowy, rezystancja uziemienia w TT, współczynniki poprawkowe (temperatura, grupowanie), selektywność według charakterystyk, rozpływ prądu w przewodzie N, dobór SPD do strefy LPZ, ciepło wydzielane w obudowie. To jest w planie w `HANDOFF.md`.

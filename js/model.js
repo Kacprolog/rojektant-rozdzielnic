@@ -82,7 +82,7 @@ function sample(){
   const r2=add(2,newDev('rcd',m,{In:40,poles:4,idn:30,kind:'B',sel:false},null,'RCD ładowarka EV'));
   let d=newDev('mcb',m,{In:20,curve:'C',poles:3,icn:6},{kind:'ev',P:11,cable:6,len:24},'Ładowarka EV 11 kW');d.rcd=r2.id;add(2,d);
   d=newDev('mcb',m,{In:16,curve:'B',poles:3,icn:6},{kind:'plyta',P:7.2,cable:2.5,len:10},'Płyta indukcyjna');d.rcd=r1.id;add(2,d);
-  add(2,newDev('rcbo',m,{In:16,curve:'B',poles:2,idn:30,kind:'A'},{kind:'zewn',P:1.5,cable:2.5,ph:'L3',len:30},'Gniazda garaż / ogród'));
+  add(2,newDev('rcbo',m,{In:16,curve:'B',poles:2,idn:30,kind:'A'},{kind:'zewn',P:1.5,cable:2.5,ph:'L2',len:30},'Gniazda garaż / ogród'));
   add(2,newDev('mcb',m,{In:16,curve:'B',poles:1,icn:6},{kind:'bojler',P:2,cable:2.5,ph:'L3'},'Podgrzewacz wody'));
   add(2,newDev('mcb',m,{In:16,curve:'C',poles:3,icn:6},{kind:'pc',P:5,cable:2.5,len:18},'Pompa ciepła'));
 }
@@ -122,7 +122,8 @@ function cleanConn(s){const out=[],seen={};(Array.isArray(s.conn)?s.conn:[]).for
 function normalize(s){
   s.name=typeof s.name==='string'?s.name:'Projekt';
   const set=Object.assign({moc:22,przedl:32,ks:0.5,cos:0.95,siec:'TN-C-S'},s.set||{});
-  s.set={moc:num(set.moc,22)||22,przedl:num(set.przedl,32)||32,ks:num(set.ks,0.5)||0.5,cos:num(set.cos,0.95)||0.95,siec:oneOf(set.siec,['TN-C-S','TN-S','TT'])};
+  const extra={};['zs0','ik0','wlzLen','duObw','duWlz'].forEach(k=>{const v=num(set[k],0);if(v>0)extra[k]=v;});
+  s.set={moc:num(set.moc,22)||22,przedl:num(set.przedl,32)||32,ks:num(set.ks,0.5)||0.5,cos:num(set.cos,0.95)||0.95,siec:oneOf(set.siec,['TN-C-S','TN-S','TT'])};Object.assign(s.set,extra);
   const list=ENC[s.enc.mfr];s.enc={mfr:s.enc.mfr,series:list.some(e=>e.id===s.enc.series)?s.enc.series:list[0].id,rows:s.rows.length};
   const used={};s.rows.forEach(r=>r.forEach(id=>used[id]=1));Object.keys(s.dev).forEach(id=>{if(!used[id])delete s.dev[id];});
   Object.values(s.dev).forEach(d=>{cleanDev(d);if(d.t==='mcb'&&!(d.rcd&&s.dev[d.rcd]&&s.dev[d.rcd].t==='rcd'))d.rcd=null;});
@@ -169,6 +170,21 @@ function load(){PR.list=[];PR.cur=null;
 function designations(){const cnt={},map={};S.rows.forEach(r=>r.forEach(id=>{const d=S.dev[id];const pf=PREFIX[d.t];cnt[pf]=(cnt[pf]||0)+1;map[id]='-'+pf+cnt[pf];}));return map;}
 function ib(d){if(!isCirc(d))return 0;const P=+d.c.P||0,cos=+S.set.cos||0.95;return is3(d)?P*1000/(Math.sqrt(3)*400*cos):P*1000/(230*cos);}
 function iz(d){const t=is3(d)?IZ3:IZ2;return t[d.c.cable]||0;}
+/* ---------- spadki napięcia, pętla zwarcia, prądy zwarciowe ----------
+   Uproszczenia: tylko rezystancja przewodów miedzianych (γ = 56 m/(Ω·mm²)), bez reaktancji (dopuszczalne do ok. 35 mm²);
+   pętla zwarcia liczona z rezystancją × 1,25 (nagrzanie przewodu); przewód ochronny o przekroju fazowego;
+   spadek napięcia przy cos φ ≈ 1. Dane sieci (Zs i Ik w złączu, długość WLZ) podaje użytkownik w zakładce Bilans. */
+const SET_DEF={moc:22,przedl:32,ks:0.5,cos:0.95,siec:'TN-C-S',zs0:0.3,ik0:6,wlzLen:15,duObw:3,duWlz:0.5};
+const sv=k=>(S.set[k]!=null&&S.set[k]!=='')?S.set[k]:SET_DEF[k];   /* ustawienie zasilania z wartością domyślną (starsze projekty nie mają nowych pól) */
+const GAMMA=56,KT=1.25,TRIP={B:5,C:10,D:20};                          /* TRIP: górna krotność In członu zwarciowego wg charakterystyki */
+/* Wielkości w rozdzielnicy: zsB pętla L–PE [Ω], ik1B prąd zwarcia jednofazowego [A], ikB prąd zwarcia trójfazowego [kA], duWlz spadek w WLZ [%]. */
+function netCalc(){const Sw=wlzMm(),Lw=+sv('wlzLen'),T=totals();
+  const zsB=+sv('zs0')+KT*2*Lw/(GAMMA*Sw),zk=400/(Math.sqrt(3)*sv('ik0')*1000)+Lw/(GAMMA*Sw);
+  return {zsB,ik1B:230/zsB,ikB:400/(Math.sqrt(3)*zk)/1000,duWlz:100*T.Pd*1000*Lw/(GAMMA*Sw*160000)};}
+/* Obwód (opcjonalnie dla innego przekroju mm): du spadek [%], zs pętla na końcu [Ω], ik1 prąd zwarcia [A], ia próg wyzwalania [A], trip: czy Zs·Ia ≤ U0. */
+function circCalc(d,mm){const n=netCalc(),s=mm||+d.c.cable,L=+clen(d)||0,P=(+d.c.P||0)*1000;
+  const du=is3(d)?100*P*L/(GAMMA*s*160000):200*P*L/(GAMMA*s*52900),zs=n.zsB+KT*2*L/(GAMMA*s),ia=(TRIP[d.p.curve]||5)*d.p.In;
+  return {du,zs,ik1:230/zs,ia,zsMax:230/ia,trip:zs*ia<=230};}
 function protRcd(d){if(d.t==='rcbo')return d;if(d.t==='mcb'&&d.rcd&&S.dev[d.rcd])return S.dev[d.rcd];return null;}
 function phases(d){return is3(d)?['L1','L2','L3']:[d.c.ph];}
 function phaseLoads(filter){const L={L1:0,L2:0,L3:0};Object.values(S.dev).forEach(d=>{if(!isCirc(d)||(filter&&!filter(d)))return;const i=ib(d);phases(d).forEach(p=>L[p]+=i);});return L;}
@@ -198,6 +214,7 @@ function checks(){const out=[],D=designations(),e=enc(),T=totals(),devs=Object.v
   if(!devs.some(d=>d.t==='spd')){const row=rowWithRoom(4,0);
     add('warn','Brak <b>ogranicznika przepięć</b>.','PN-HD 60364-4-443 wymaga oceny ryzyka; w budynkach mieszkalnych SPD stosuje się standardowo.',undefined,
       row<0?undefined:{l:'Dodaj ogranicznik T1+T2 3P+N',f:()=>{const ids=S.rows[row];let at=0;ids.forEach((id,k)=>{if(S.dev[id].t==='sw')at=k+1;});putDev(newDev('spd',S.mfr,{cls:'T1+T2',sys:'3P+N'},null,'Ochrona przepięciowa'),row,at);}});}
+  const nB=netCalc();
   devs.filter(isCirc).forEach(d=>{const i=ib(d),z=iz(d),n=D[d.id]+' '+esc(d.name);
     if(i>d.p.In){const In2=STD_IN.find(x=>x>=i),mm2=In2?cableFor(d,In2):null,up=mm2&&mm2>d.c.cable;
       add('crit',`<b>${n}</b>: prąd obciążenia ${fmt(i)} A przekracza In ${d.p.In} A.`,'Warunek Ib ≤ In. Zwiększ prąd zabezpieczenia lub podziel obwód.',d.id,
@@ -217,7 +234,17 @@ function checks(){const out=[],D=designations(),e=enc(),T=totals(),devs=Object.v
             putDev(nd,row,row===here?S.rows[row].indexOf(d.id):undefined);d.rcd=nd.id;}};}}
       add('crit',`<b>${n}</b> (${KINDS[d.c.kind]}) nie ma ochrony różnicowoprądowej 30 mA.`,'Wymóg ochrony uzupełniającej, PN-HD 60364-4-41 p. 411.3.3 oraz części 7xx.',d.id,fix);}
     if(d.c.kind==='ev'&&r&&r.p.kind!=='B')add('warn',`<b>${n}</b>: ładowarka EV za RCD typu ${r.p.kind}.`,'PN-HD 60364-7-722: RCD typu B albo typ A z modułem RDC-DD 6 mA DC w ładowarce.',d.id,{l:'Zmień typ '+D[r.id]+' na B',f:()=>{r.p.kind='B';}});
-    if(r&&r.p.kind==='AC')add('info',`<b>${n}</b> chroniony RCD typu AC.`,'Dla odbiorników z elektroniką zalecany jest typ A lub F.',d.id,{l:'Zmień typ '+D[r.id]+' na A',f:()=>{r.p.kind='A';}});});
+    if(r&&r.p.kind==='AC')add('info',`<b>${n}</b> chroniony RCD typu AC.`,'Dla odbiorników z elektroniką zalecany jest typ A lub F.',d.id,{l:'Zmień typ '+D[r.id]+' na A',f:()=>{r.p.kind='A';}});
+    /* spadek napięcia, samoczynne wyłączenie, zdolność zwarciowa */
+    const cc=circCalc(d),lim=+sv('duObw'),bigger=test=>{const m=STD_MM.find(x=>x>d.c.cable&&test(circCalc(d,x)));return m?{l:'Zwiększ przewód do '+fmt(m)+' mm²',f:()=>{d.c.cable=m;}}:undefined;};
+    if(cc.du>lim)add('warn',`<b>${n}</b>: spadek napięcia ${fmt(cc.du,2)}% przekracza ${fmt(lim)}% (${fmt(clen(d))} m, ${fmt(d.c.cable)} mm², ${fmt(+d.c.P)} kW).`,'PN-HD 60364-5-52 zał. G. Zwiększ przekrój albo skróć obwód.',d.id,bigger(x=>x.du<=lim));
+    if(S.set.siec==='TT'){if(!r)add('crit',`<b>${n}</b>: w układzie TT samoczynne wyłączenie zasilania wymaga wyłącznika różnicowoprądowego.`,'PN-HD 60364-4-41 p. 411.5 (warunek RA·IΔn ≤ 50 V).',d.id);}
+    else if(!cc.trip){const txt=`<b>${n}</b>: pętla zwarcia ${fmt(cc.zs,2)} Ω daje prąd zwarcia ${fmt(cc.ik1,0)} A, mniej niż próg wyzwalania ${fmt(cc.ia,0)} A (${d.p.curve}${d.p.In}).`,fix=bigger(x=>x.trip);
+      if(r)add('warn',txt+' Wyłączenie przy zwarciu do PE zapewnia '+D[r.id]+'.','PN-HD 60364-4-41 p. 411.4. Zwarcie L–N nie zostanie wyłączone bezzwłocznie: skróć obwód, zwiększ przekrój albo zmień charakterystykę.',d.id,fix);
+      else add('crit',txt,'Warunek samoczynnego wyłączenia Zs·Ia ≤ U0 nie jest spełniony (PN-HD 60364-4-41 p. 411.4).',d.id,fix);}
+    const icn=d.t==='mcb'?d.p.icn:6;
+    if(icn<nB.ikB)add('crit',`<b>${n}</b>: zdolność zwarciowa ${icn} kA jest mniejsza niż prąd zwarciowy w rozdzielnicy ${fmt(nB.ikB,1)} kA.`,'Warunek Icn ≥ Ik (PN-HD 60364-4-43 p. 434.5.1).',d.id,d.t==='mcb'&&nB.ikB<=10?{l:'Ustaw Icn 10 kA',f:()=>{d.p.icn=10;}}:undefined);});
+  if(nB.duWlz>+sv('duWlz'))add('warn',`Spadek napięcia w WLZ ${fmt(nB.duWlz,2)}% przekracza ${fmt(+sv('duWlz'))}% (${fmt(+sv('wlzLen'))} m, ${fmt(wlzMm())} mm², moc szczytowa ${fmt(T.Pd)} kW).`,'Zwiększ przekrój WLZ (większe zabezpieczenie przedlicznikowe dobiera większy przekrój) albo zmniejsz moc szczytową.');
   devs.filter(d=>d.t==='rcd').forEach(r=>{const L=phaseLoads(d=>d.t==='mcb'&&d.rcd===r.id);const mx=Math.max(L.L1,L.L2,L.L3)*S.set.ks;
     const nn=devs.filter(d=>d.t==='mcb'&&d.rcd===r.id).length;
     if(!nn)add('info',`<b>${D[r.id]} ${esc(r.name)}</b> nie ma przypisanych obwodów.`,'Przypisz obwody w panelu aparatu (pole „Ochrona RCD”).',r.id);
@@ -231,6 +258,8 @@ function checks(){const out=[],D=designations(),e=enc(),T=totals(),devs=Object.v
   if(T.Pd>S.set.moc)add('warn',`Moc szczytowa ${fmt(T.Pd)} kW przekracza moc przyłączeniową ${fmt(S.set.moc)} kW.`,'Zmień warunki przyłączenia u OSD lub ogranicz moc.');
   const L=phaseLoads(),mx=Math.max(L.L1,L.L2,L.L3),mn=Math.min(L.L1,L.L2,L.L3);
   if(mx>5&&(mx-mn)/mx>0.25)add('warn',`Asymetria obciążenia faz ${fmt((mx-mn)/mx*100,0)}% (L1 ${fmt(L.L1)} A, L2 ${fmt(L.L2)} A, L3 ${fmt(L.L3)} A).`,'Użyj „Rozłóż fazy” albo zmień fazy obwodów ręcznie.',undefined,{l:'Rozłóż fazy',f:()=>{balance();}});
+  /* prąd szczytowy każdej fazy osobno: średnia z trzech faz (T.Ibm) nie pokazuje przeciążenia jednej z nich */
+  ['L1','L2','L3'].forEach(ph=>{const ip=L[ph]*S.set.ks;if(ip>S.set.przedl)add('warn',`Prąd szczytowy fazy ${ph} (${fmt(ip)} A) przekracza zabezpieczenie przedlicznikowe ${S.set.przedl} A.`,'Przenieś obwody jednofazowe na mniej obciążone fazy albo zmniejsz moc.',undefined,{l:'Rozłóż fazy',f:()=>{balance();}});});
   if(T.cap&&(T.cap-T.used)/T.cap<0.2)add('info',`Rezerwa miejsca ${fmt(Math.max(0,T.cap-T.used))} mod. to mniej niż 20%.`,'Zostaw miejsce na rozbudowę instalacji.');
   wireCheck().out.forEach(x=>out.push(x));
   termIssues().forEach(x=>out.push(x));

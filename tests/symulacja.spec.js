@@ -115,8 +115,8 @@ test('zanik fazy gasi obwody jednofazowe tej fazy i zostawia trójfazowe z niepe
   await page.click('#bSim');
   const d = await ids(page);
   await page.selectOption('[data-simph]', 'L2');
-  // L2: oświetlenie piętro, łazienka, zmywarka (bez napięcia) oraz 3 obwody trójfazowe (niepełne).
-  await expect(count(page)).toHaveText('Zasilone obwody: 7/13');
+  // L2: oświetlenie piętro, łazienka, zmywarka, gniazda garaż (bez napięcia) oraz 3 obwody trójfazowe (niepełne).
+  await expect(count(page)).toHaveText('Zasilone obwody: 6/13');
   await expect(slot(page, d['Łazienka'])).toHaveClass(/s-dead/);
   await expect(slot(page, d['Pompa ciepła'])).toHaveClass(/s-part/);
   await expect(slot(page, d['Kontrolki faz']).locator('.leds i.dim')).toHaveCount(1);

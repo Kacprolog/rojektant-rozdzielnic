@@ -118,7 +118,13 @@ function panelDev(){const d=S.dev[S.sel];
     calc=`<div class="calc"><div class="${i>p.In?'bad':'good'}"><div class="k">Ib obciążenia</div><div class="v">${fmt(i)} A</div></div>
       <div><div class="k">In zabezp.</div><div class="v">${p.In} A</div></div>
       <div class="${p.In>z?'bad':'good'}"><div class="k">Iz przewodu</div><div class="v">${fmt(z)} A</div></div></div>
-      <p class="note">Warunek Ib ≤ In ≤ Iz ${i<=p.In&&p.In<=z?'<b style="color:var(--ok)">spełniony</b>':'<b style="color:var(--crit)">niespełniony</b>'}. ${is3(d)?'Obwód trójfazowy, 3 żyły obciążone.':'Obwód jednofazowy, 2 żyły obciążone.'} Ochrona różnicowoprądowa: ${r?r.p.idn+' mA typ '+r.p.kind:'brak'}.</p>`;}
+      <p class="note">Warunek Ib ≤ In ≤ Iz ${i<=p.In&&p.In<=z?'<b style="color:var(--ok)">spełniony</b>':'<b style="color:var(--crit)">niespełniony</b>'}. ${is3(d)?'Obwód trójfazowy, 3 żyły obciążone.':'Obwód jednofazowy, 2 żyły obciążone.'} Ochrona różnicowoprądowa: ${r?r.p.idn+' mA typ '+r.p.kind:'brak'}.</p>`;
+    const cc=circCalc(d),lim=+sv('duObw'),tt=S.set.siec==='TT';
+    calc+=`<div class="calc"><div class="${cc.du>lim?'bad':'good'}"><div class="k">Spadek napięcia ΔU</div><div class="v">${fmt(cc.du,2)} %</div></div>
+      <div class="${tt?'':cc.trip?'good':'bad'}"><div class="k">Pętla zwarcia Zs</div><div class="v">${fmt(cc.zs,2)} Ω</div></div>
+      <div class="${tt?'':cc.trip?'good':'bad'}"><div class="k">Prąd zwarcia Ik1</div><div class="v">${fmt(cc.ik1,0)} A</div></div></div>
+      <p class="note">ΔU dopuszczalny ${fmt(lim)}%. ${tt?'Układ TT: samoczynne wyłączenie zapewnia wyłącznik różnicowoprądowy.':`Samoczynne wyłączenie: próg ${d.p.curve}${d.p.In} to ${fmt(cc.ia,0)} A, więc Zs ≤ ${fmt(cc.zsMax,2)} Ω — ${cc.trip?'<b style="color:var(--ok)">spełnione</b>':'<b style="color:var(--crit)">niespełnione</b>'}.`} Obliczenia uproszczone (sama rezystancja przewodów); dane sieci ustawisz w zakładce Bilans.</p>`;
+    calc=`<div id="calcBox">${calc}</div>`;}
   return `<div class="insp-h"><span class="code">${D[d.id]}</span><div><div class="nm">${esc(desc(d))}</div><div class="mf">${MFR[d.m].n} · seria ${esc(series(d))}</div></div></div>
     <div class="tools"><button class="btn sm" data-act="left">← W lewo</button><button class="btn sm" data-act="right">W prawo →</button><button class="btn sm" data-act="dup">Duplikuj</button><button class="btn sm danger" data-act="del">Usuń</button></div>
     ${calc}${f}<h3>Dane techniczne</h3><dl class="specs">${specs(d).map(([k,v])=>`<dt>${k}</dt><dd>${esc(v)}</dd>`).join('')}</dl>
@@ -149,7 +155,15 @@ function panelBal(){const L=phaseLoads(),T=totals(),ks=S.set.ks;
       ${fsel('sPrz','Zab. przedlicznikowe [A]','',[16,20,25,32,40,50,63],S.set.przedl).replace('data-k=""','data-s="przedl"')}
       <div class="fld"><label for="sKs">Wsp. jednoczesności ks</label><input id="sKs" type="number" step="0.05" min="0.1" max="1" data-s="ks" value="${S.set.ks}"></div>
       <div class="fld"><label for="sCos">cos φ</label><input id="sCos" type="number" step="0.01" min="0.5" max="1" data-s="cos" value="${S.set.cos}"></div>
-      ${fsel('sSiec','Układ sieci','',['TN-C-S','TN-S','TT'],S.set.siec).replace('data-k=""','data-s="siec"')}</div>`;}
+      ${fsel('sSiec','Układ sieci','',['TN-C-S','TN-S','TT'],S.set.siec).replace('data-k=""','data-s="siec"')}</div>
+    <h3>Sieć i WLZ (do obliczeń zwarciowych)</h3><div class="fld2">
+      <div class="fld"><label for="sZs">Pętla zwarcia w złączu Zs [Ω]</label><input id="sZs" type="number" step="0.01" min="0.01" data-s="zs0" value="${sv('zs0')}"></div>
+      <div class="fld"><label for="sIk">Prąd zwarciowy w złączu Ik [kA]</label><input id="sIk" type="number" step="0.5" min="0.5" data-s="ik0" value="${sv('ik0')}"></div>
+      <div class="fld"><label for="sWl">Długość WLZ [m]</label><input id="sWl" type="number" step="1" min="1" data-s="wlzLen" value="${sv('wlzLen')}"></div>
+      <div class="fld"><label for="sDw">Dopuszczalny ΔU w WLZ [%]</label><input id="sDw" type="number" step="0.1" min="0.1" data-s="duWlz" value="${sv('duWlz')}"></div>
+      <div class="fld"><label for="sDo">Dopuszczalny ΔU w obwodach [%]</label><input id="sDo" type="number" step="0.5" min="0.5" data-s="duObw" value="${sv('duObw')}"></div></div>
+    ${(()=>{const n=netCalc();return `<dl class="specs" id="netSpecs"><dt>WLZ</dt><dd>${esc(wlzType())}, ${fmt(+sv('wlzLen'))} m</dd><dt>Spadek napięcia w WLZ</dt><dd>${fmt(n.duWlz,2)} %</dd><dt>Pętla zwarcia w rozdzielnicy</dt><dd>${fmt(n.zsB,2)} Ω (Ik1 ≈ ${fmt(n.ik1B,0)} A)</dd><dt>Prąd zwarciowy w rozdzielnicy</dt><dd>${fmt(n.ikB,1)} kA</dd></dl>`;})()}
+    <p class="note">Zs i Ik w złączu podaje operator sieci albo pomiar. Wartości domyślne (0,3 Ω, 6 kA) są przykładowe. Obliczenia uwzględniają tylko rezystancję przewodów miedzianych; nie zastępują pomiarów odbiorczych.</p>`;}
 function panelTree(){const D=designations(),devs=S.rows.flat().map(id=>S.dev[id]);
   const node=d=>`<span class="node" data-id="${d.id}"><code>${D[d.id]}</code>${esc(d.name)}<small>${esc(rate(d).join(' '))}${isCirc(d)?' · '+fmt(+d.c.P)+' kW · '+(is3(d)?'3F':d.c.ph):''}</small></span>`;
   const sw=devs.filter(d=>d.t==='sw'),aux=devs.filter(d=>!['sw','rcd','mcb'].includes(d.t));

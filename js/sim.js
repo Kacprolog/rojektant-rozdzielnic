@@ -51,7 +51,9 @@ function simFault(type){const d=S.dev[S.sel],D=designations();
   const a=simCalc(),nm=D[d.id]+' '+d.name,n0=S.sim.log.length;
   if(a.dev[d.id].st!=='on')simLog('info',nm+': obwód nie jest zasilony, więc nic się nie dzieje.');
   else if(type==='short'){S.sim.off[d.id]=1;
-    simLog('crit','Zwarcie w obwodzie '+nm+': zadziałał '+D[d.id]+' (człon zwarciowy, '+d.p.curve+d.p.In+').');
+    const cc=circCalc(d);
+    if(S.set.siec!=='TT'&&!cc.trip)simLog('crit','Zwarcie w obwodzie '+nm+': prąd zwarcia na końcu obwodu ok. '+fmt(cc.ik1,0)+' A jest mniejszy niż próg '+fmt(cc.ia,0)+' A, więc człon zwarciowy nie zadziała. '+D[d.id]+' wyłączy dopiero członem termicznym, po dłuższym czasie.');
+    else simLog('crit','Zwarcie w obwodzie '+nm+': zadziałał '+D[d.id]+' (człon zwarciowy, '+d.p.curve+d.p.In+').'+(S.set.siec!=='TT'?' Prąd zwarcia ok. '+fmt(cc.ik1,0)+' A.':''));
     if(S.set.przedl<1.6*d.p.In)simLog('warn','Brak selektywności: zabezpieczenie przedlicznikowe '+S.set.przedl+' A może zadziałać razem z '+D[d.id]+' i wyłączyć całą instalację.');}
   else if(type==='over'){S.sim.off[d.id]=1;const z=iz(d);
     simLog('warn','Przeciążenie obwodu '+nm+': zadziałał '+D[d.id]+' (człon termiczny, po czasie zależnym od krotności prądu).');
@@ -82,4 +84,4 @@ function renderSim(){const bar=$('#simBar');$('#bSim').setAttribute('aria-presse
       <button class="chip" data-sim="reset">Załącz wszystko</button></div>
     ${S.sim.log.length?`<ol class="simlog">${S.sim.log.slice(-5).map(l=>`<li class="${l.sev}">${esc(l.msg)}</li>`).join('')}</ol>`
       :'<p class="encsub">Kliknij dźwignię aparatu, aby go wyłączyć lub załączyć. Przycisk T testuje różnicówkę. Zaznacz obwód i wywołaj awarię.</p>'}
-    <p class="encsub">Symulacja uproszczona: pokazuje, co zostaje bez napięcia. Nie liczy czasów zadziałania, impedancji pętli ani prądów zwarciowych.</p>`;}
+    <p class="encsub">Symulacja uproszczona: pokazuje, co zostaje bez napięcia, i nie liczy czasów zadziałania. Prądy zwarcia są szacowane z danych sieci w zakładce Bilans.</p>`;}

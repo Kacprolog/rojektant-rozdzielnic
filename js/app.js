@@ -122,8 +122,9 @@ function parseV(v){if(v==='true')return true;if(v==='false')return false;if(v!==
 panel.addEventListener('input',e=>{const t=e.target;const d=S.dev[S.sel];
   if(t.dataset.k==='name'&&d){d.name=t.value;histTag='name:'+d.id;render(true);return;}
   if(t.dataset.k==='c.P'&&d){d.c.P=Math.max(0,+t.value||0);histTag='P:'+d.id;render(true);updCalc();return;}
-  if(t.dataset.k==='c.len'&&d){d.c.len=Math.max(0,+t.value||0);histTag='len:'+d.id;save();renderTop();return;}});
-function updCalc(){const d=S.dev[S.sel];if(!d)return;const c=panel.querySelector('.calc');if(!c)return;const tmp=document.createElement('div');tmp.innerHTML=panelDev();const nc=tmp.querySelector('.calc'),nn=tmp.querySelector('.calc + .note'),on=panel.querySelector('.calc + .note');if(nc)c.replaceWith(nc);if(nn&&on)on.replaceWith(nn);}
+  if(t.dataset.k==='c.len'&&d){d.c.len=Math.max(0,+t.value||0);histTag='len:'+d.id;render(true);updCalc();return;}});
+/* Odświeża same wyniki obliczeń w panelu aparatu, bez przerysowania pól (żeby nie zgubić kursora podczas pisania). */
+function updCalc(){const box=panel.querySelector('#calcBox');if(!box||!S.dev[S.sel])return;const tmp=document.createElement('div');tmp.innerHTML=panelDev();const nb=tmp.querySelector('#calcBox');if(nb)box.innerHTML=nb.innerHTML;}
 panel.addEventListener('change',e=>{const t=e.target,d=S.dev[S.sel];
   if(t.dataset.s){const v=t.dataset.s==='siec'?t.value:+t.value;if(t.dataset.s==='siec'||v>0)S.set[t.dataset.s]=v;render();return;}
   const k=t.dataset.k;if(!k||!d||k==='name'||k==='c.P'||k==='c.len'){if(k==='c.P')render();return;}

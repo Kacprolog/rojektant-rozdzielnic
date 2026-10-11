@@ -2,6 +2,36 @@
 
 Każdy wpis odpowiada jednemu commitowi. Format: co zrobiono, dlaczego, jak sprawdzono.
 
+## 0.12.0 (11.10.2026) — obliczenia: spadek napięcia, pętla zwarcia, zdolność zwarciowa
+
+Powód: zadanie P1.9 z planu; bez tych obliczeń kontrola i symulacja nie były wiarygodne dla elektryka.
+
+- **Dane sieci** w zakładce Bilans (nowe pola projektu w `S.set`): pętla zwarcia w złączu `zs0` (domyślnie 0,3 Ω),
+  prąd zwarciowy w złączu `ik0` (6 kA), długość WLZ `wlzLen` (15 m), dopuszczalny ΔU w WLZ `duWlz` (0,5%)
+  i w obwodach `duObw` (3%). Wartości domyślne są przykładowe; właściwe podaje operator sieci albo pomiar.
+  Starsze projekty i pliki dostają wartości domyślne (`sv()`).
+- **Obliczenia** (`netCalc()`, `circCalc()` w `js/model.js`): spadek napięcia w WLZ i w każdym obwodzie, pętla zwarcia
+  w rozdzielnicy i na końcu obwodu, prąd zwarcia jednofazowego, prąd zwarciowy trójfazowy w rozdzielnicy.
+- **Nowe reguły kontroli:** spadek napięcia w obwodzie i w WLZ (uwaga), warunek samoczynnego wyłączenia Zs·Ia ≤ U0
+  (błąd; uwaga, gdy wyłączenie przy zwarciu do PE zapewnia różnicówka), zdolność zwarciowa Icn ≥ Ik (błąd),
+  w układzie TT obwód bez różnicówki (błąd; pętla zwarcia nie jest wtedy oceniana).
+  Naprawy: „Zwiększ przewód do … mm²”, „Ustaw Icn 10 kA”.
+- **Nowa reguła: prąd szczytowy każdej fazy osobno** względem zabezpieczenia przedlicznikowego (uwaga, naprawa
+  „Rozłóż fazy”). Dotąd sprawdzany był tylko średni prąd trzech faz, więc przeciążenie jednej fazy przechodziło jako „OK”.
+  **Przykładowy projekt sam łamał tę regułę** (L3 35,2 A przy 32 A); gniazda garażowe przeniesiono z L3 na L2
+  (teraz L1 27,2 A, L2 31,1 A, L3 31,8 A). Wykryte na zrzucie wykresu w zakładce Bilans, nie w testach.
+- **Panel aparatu** pokazuje ΔU, Zs i Ik1 obwodu oraz dopuszczalne Zs; wyniki odświeżają się podczas wpisywania mocy
+  i długości. **Symulacja zwarcia** korzysta z obliczonego prądu: gdy jest mniejszy niż próg członu zwarciowego, dziennik
+  mówi, że wyłącznik zadziała dopiero termicznie.
+- **Uproszczenia, które trzeba znać:** tylko rezystancja przewodów miedzianych (γ = 56 m/(Ω·mm²)), bez reaktancji;
+  pętla zwarcia z rezystancją × 1,25; przewód ochronny o przekroju fazowego; spadek napięcia przy cos φ ≈ 1;
+  próg wyzwalania to górna granica charakterystyki (B 5×, C 10×, D 20× In). Bez współczynników poprawkowych Iz,
+  bez selektywności wg charakterystyk czasowo-prądowych. Wyniki nie zastępują pomiarów odbiorczych.
+- Testy `tests/obliczenia.spec.js` (9), z rachunkiem ręcznym w komentarzach: wielkości sieci i obwodu przykładu,
+  za długi obwód, samoczynne wyłączenie z RCD i bez, zdolność zwarciowa, układ TT, panel na żywo, starszy projekt,
+  symulacja, prąd szczytowy faz.
+- Sprawdzenie: `npm test` → 165/165; wzrokowo na zrzutach paneli Aparat i Bilans.
+
 ## 0.11.0 (11.10.2026) — kontrola z naprawami, szybka edycja na aparacie
 
 Powód: kolejne dwa kroki z planu interaktywności (HANDOFF.md); użytkownik polecił kontynuować.

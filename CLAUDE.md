@@ -12,7 +12,7 @@ Szczegóły przekazania, znane problemy i plan prac: `HANDOFF.md`. Dziennik zmia
 npm start            # serwer statyczny bez zależności: http://localhost:4173
 npm install          # tylko dla testów (@playwright/test)
 npx playwright install chromium webkit   # raz, jeśli nie ma przeglądarek
-npm test             # 46 testów × 3 projekty: desktop 1600 px i telefon 390 px (Chromium), safari (WebKit)
+npm test             # 55 testów × 3 projekty: desktop 1600 px i telefon 390 px (Chromium), safari (WebKit)
 node scripts/podglad-druku.js            # PDF i zrzuty stron wydruku w test-results/druk/
 ```
 
@@ -37,6 +37,7 @@ scripts/serve.js    serwer statyczny (Node, bez zależności)
 scripts/podglad-druku.js   PDF i zrzuty stron wydruku (Playwright)
 tests/smoke.spec.js testy dymne: start, okablowanie, zakładki, migracja starego stanu
 tests/okablowanie.spec.js   okablowanie ręczne i alerty złego podłączenia
+tests/obliczenia.spec.js    spadki napięcia, pętla zwarcia, Icn, prąd szczytowy faz (z rachunkiem ręcznym)
 tests/naprawy.spec.js       naprawy z kontroli, pasek szybkiej edycji
 tests/symulacja.spec.js     symulacja, awarie, przeciąganie przewodów
 tests/p0.spec.js    plik projektu, lista projektów, cofanie, druk
@@ -56,6 +57,7 @@ Skrypty są **klasyczne** i ładowane po kolei. Wszystkie `const`/`function` z n
 - **Pola formularzy w panelu** mają `data-k="ścieżka"` (np. `p.In`, `c.cable`, `rcd`, `row`) albo `data-s="klucz"` (ustawienia zasilania). Obsługa w `panel.addEventListener('change')` w `app.js` przez `setPath()` + `parseV()`.
 - **Widok okablowania** (`S.wires`) jest nakładką SVG mierzoną z DOM po wyrenderowaniu obudowy; `drawWires()` sam ustawia marginesy obudowy (`style.padding*`, `marginTop` rzędów) tak, żeby każdy przewód miał własny tor. Opis algorytmu: `docs/DATA_MODEL.md` → „Routing przewodów”.
 - **Symulacja** (`S.sim`, `js/sim.js`): `renderBoard()` liczy `SIMC=simCalc()` i na tej podstawie nadaje klasy `s-on/off/dead/part` aparatom, a `paint()` w `drawWires()` wygasza przewody bez napięcia i dodaje animację prądu. To stan widoku: żadna akcja symulacji nie może zmieniać `DATA_KEYS`.
+- **Ustawienia zasilania** czytaj przez `sv(klucz)` (wartość domyślna z `SET_DEF`), nie wprost z `S.set`: starsze projekty nie mają nowszych pól.
 - **Naprawy**: uwaga z `checks()` / `wireCheck()` może mieć `fix = { l: etykieta, f: funkcja }`. `f` tylko zmienia `S`; `render()` woła obsługa kliknięcia, więc naprawa jest jednym krokiem cofania. Dodawaj `fix` tylko wtedy, gdy zmiana jest jednoznaczna.
 - **Druk**: `printView()` renderuje obudowę w `#board` dwa razy (front, okablowanie), kopiuje HTML do `#print` i przywraca widok. `#print` jest widoczny tylko w `@media print`.
 

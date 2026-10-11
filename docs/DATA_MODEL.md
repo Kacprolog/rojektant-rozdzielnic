@@ -6,7 +6,8 @@
 S = {
   name: 'Dom jednorodzinny – rozdzielnica RG',   // nazwa projektu (edytowalna w nagłówku)
   enc:  { mfr: 'hager', series: 'volta', rows: 3 }, // obudowa → ENC[mfr].find(id===series)
-  set:  { moc: 22, przedl: 32, ks: 0.5, cos: 0.95, siec: 'TN-C-S' }, // kW, A, -, -, 'TN-C-S'|'TN-S'|'TT'
+  set:  { moc: 22, przedl: 32, ks: 0.5, cos: 0.95, siec: 'TN-C-S',    // kW, A, -, -, 'TN-C-S'|'TN-S'|'TT'
+          zs0: 0.3, ik0: 6, wlzLen: 15, duObw: 3, duWlz: 0.5 },      // Ω, kA, m, %, % — opcjonalne, czytaj przez sv()
   rows: [['d1','d2',...], [...], [...]],          // kolejność aparatów na szynach, od lewej
   dev:  { d1: Device, ... },                      // wszystkie aparaty po id
   sel: 'd7' | null,      // zaznaczony aparat
