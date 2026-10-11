@@ -70,6 +70,9 @@ const board=$('#board');
 board.addEventListener('click',e=>{
   const tp=e.target.closest('[data-ep]');if(tp){wireClick(JSON.parse(tp.getAttribute('data-ep')));return;}
   const wp=e.target.closest('[data-w]');if(wp){wireReset();wireSel=wp.getAttribute('data-w');render(true);return;}
+  if(simOn()){const sl=e.target.closest('.slot');
+    if(sl&&e.target.closest('.lever')){simLever(sl.dataset.id);return;}
+    if(sl&&e.target.closest('.tbtn')){simTest(sl.dataset.id);return;}}
   const s=e.target.closest('.slot');if(s){S.sel=s.dataset.id;S.active=rowOf(s.dataset.id);S.tab='aparat';render();return;}
   const r=e.target.closest('[data-row]');if(r){S.active=+r.dataset.row;render(true);}});
 board.addEventListener('dragstart',e=>{const s=e.target.closest('.slot');if(!s)return;dragInfo={id:s.dataset.id};e.dataTransfer.setData('text/plain','move');e.dataTransfer.effectAllowed='move';});
@@ -124,6 +127,28 @@ $('#bSample').addEventListener('click',()=>{sample();render();toast('Wczytano pr
 $('#bBalance').addEventListener('click',balance);
 $('#bPrint').addEventListener('click',printView);
 window.addEventListener('afterprint',()=>{const pv=$('#print');if(pv)pv.innerHTML='';});
+$('#bSim').addEventListener('click',simToggle);
+$('#simBar').addEventListener('click',e=>{const b=e.target.closest('[data-sim]');if(!b)return;if(b.dataset.sim==='reset')simReset();else simFault(b.dataset.sim);});
+$('#simBar').addEventListener('change',e=>{if(e.target.hasAttribute('data-simph'))simPhase(e.target.value);});
+/* Przeciąganie przewodu między zaciskami (mysz i dotyk). Krótkie naciśnięcie bez ruchu zostaje zwykłym kliknięciem. */
+let wDrag=null;
+function wireDragStart(){const svg=$('svg.wires');if(!svg)return;const a=JSON.parse(wDrag.ep);
+  /* podgląd: każdy zacisk dostaje kolor wyniku kontroli dla przewodu, który by powstał */
+  svg.querySelectorAll('.tp').forEach(t=>{const s=t.getAttribute('data-ep');if(s===wDrag.ep){t.classList.add('on');return;}
+    S.conn.push({id:'w0',a:a,b:JSON.parse(s)});const sev=wireCheck().bad.w0;S.conn.pop();t.classList.add(sev==='crit'?'bad':sev==='warn'?'warnc':'ok');});
+  const l=document.createElementNS('http://www.w3.org/2000/svg','line');l.setAttribute('class','rb');
+  ['x1','x2'].forEach(k=>l.setAttribute(k,wDrag.x));['y1','y2'].forEach(k=>l.setAttribute(k,wDrag.y));svg.appendChild(l);wDrag.line=l;}
+board.addEventListener('pointerdown',e=>{const tp=e.target.closest&&e.target.closest('[data-ep]');if(!tp||S.wmode!=='manual'||wireMove||wirePick)return;
+  const r=tp.ownerSVGElement.getBoundingClientRect(),b=tp.getBoundingClientRect();
+  wDrag={ep:tp.getAttribute('data-ep'),x:b.left+b.width/2-r.left,y:b.top+b.height/2-r.top,sx:e.clientX,sy:e.clientY,moved:false,line:null};});
+document.addEventListener('pointermove',e=>{if(!wDrag)return;
+  if(!wDrag.moved){if(Math.abs(e.clientX-wDrag.sx)+Math.abs(e.clientY-wDrag.sy)<6)return;wDrag.moved=true;wireDragStart();}
+  const svg=$('svg.wires');if(!svg||!wDrag.line)return;const r=svg.getBoundingClientRect();wDrag.line.setAttribute('x2',e.clientX-r.left);wDrag.line.setAttribute('y2',e.clientY-r.top);});
+const wireDragEnd=e=>{if(!wDrag)return;const d=wDrag;wDrag=null;if(!d.moved)return;
+  const el=e.type==='pointercancel'?null:document.elementFromPoint(e.clientX,e.clientY),tp=el&&el.closest&&el.closest('[data-ep]');
+  wireReset();
+  if(tp&&tp.getAttribute('data-ep')!==d.ep){wirePick=JSON.parse(d.ep);wireClick(JSON.parse(tp.getAttribute('data-ep')));}else render(true);};
+document.addEventListener('pointerup',wireDragEnd);document.addEventListener('pointercancel',wireDragEnd);
 $('#bUndo').addEventListener('click',undo);
 $('#bRedo').addEventListener('click',redo);
 $('#wireFilter').addEventListener('click',e=>{const wm=e.target.closest('[data-wmode]');if(wm){setWmode(wm.dataset.wmode);return;}

@@ -226,20 +226,22 @@ function drawWires(){const cab=$('#board');
     if(e.k==='bar'){if(e.bar==='PE')return {x:barX('PE',o?o.x:x0,x0,x1),y:peY};
       const s=segs.find(z=>z.k===e.bar)||segs[0];return {x:barX(s.k,o?o.x:s.x0,s.x0,s.x1),y:nY};}
     return {x:x0+8+ord[e.ph]*SP,y:0};};
-  const touches=c=>!S.sel||[c.a,c.b].some(e=>e.id===S.sel||e.rcd===S.sel||e.bar==='N:'+S.sel);
+  const touches=c=>!S.sel||!!SIMC||[c.a,c.b].some(e=>e.id===S.sel||e.rcd===S.sel||e.bar==='N:'+S.sel);
   const shown=c=>wf[(c.kind==='mostek')?'PE':c.ph];
   /* c (opcjonalnie): przewód dodany ręcznie – dostaje data-w do zaznaczania oraz obwódkę błędu / zaznaczenia. */
   const paint=(d,ph,mm,title,pe,dim,c)=>{const w=wireW(mm),u=c&&c.user,bad=u?wc.bad[c.id]:'',sel=u&&wireSel===c.id,at=u?` data-w="${c.id}"`:'';
     const mark=bad==='crit'||bad==='warn';
+    /* symulacja: przewód bez napięcia jest przygaszony, a po przewodzie z prądem przesuwają się kreski */
+    const sd=!!(SIMC&&c&&!SIMC.live(epKey(c.a))),fl=SIMC&&c&&SIMC.flows(c)?`<path class="flow" d="${d}" fill="none" stroke="var(--wire-hl)" stroke-opacity=".9" stroke-width="${Math.max(1,w*.42).toFixed(2)}" stroke-dasharray="3 11" stroke-linecap="round" pointer-events="none"/>`:'';
     if(bad){const t=document.createElement('div');t.innerHTML=wc.why[c.id];title+=' · '+(bad==='crit'?'ZŁE PODŁĄCZENIE: ':'UWAGA: ')+t.textContent;}
     /* kolor izolacji: ustawiony ręcznie albo wg żyły; PEN (TN-C-S) = zielono-żółty z niebieskimi końcami (PN-EN 60445) */
     const col=c&&c.col?c.col:(pe?'PE':ph),pen=!!c&&!c.col&&S.set.siec==='TN-C-S'&&(c.kind==='mostek'||(c.a.k==='wlz'&&c.a.ph==='PE'));
-    let s=`<g opacity="${dim&&!sel&&!mark?.16:1}">`+(mark||sel?`<path class="halo" d="${d}" fill="none" stroke="var(--${sel?'accent':bad==='crit'?'crit':'warn'})" stroke-width="${w+7}" stroke-linejoin="round" opacity=".6"/>`:'')+`<path class="sh" d="${d}" transform="translate(1.6 2.4)" fill="none" stroke="var(--wire-sh)" stroke-opacity=".24" stroke-width="${w+1.2}" stroke-linejoin="round"/><path d="${d}" fill="none" stroke="var(--wire-edge)" stroke-width="${w+2}" stroke-linejoin="round"/>`;
+    let s=`<g opacity="${sd?.2:dim&&!sel&&!mark?.16:1}">`+(mark||sel?`<path class="halo" d="${d}" fill="none" stroke="var(--${sel?'accent':bad==='crit'?'crit':'warn'})" stroke-width="${w+7}" stroke-linejoin="round" opacity=".6"/>`:'')+`<path class="sh" d="${d}" transform="translate(1.6 2.4)" fill="none" stroke="var(--wire-sh)" stroke-opacity=".24" stroke-width="${w+1.2}" stroke-linejoin="round"/><path d="${d}" fill="none" stroke="var(--wire-edge)" stroke-width="${w+2}" stroke-linejoin="round"/>`;
     /* połysk: wąska jasna linia przesunięta ku górze-lewej daje wrażenie okrągłego przewodu */
     const hl=`<path class="hl" d="${d}" transform="translate(${(-w*.2).toFixed(2)} ${(-w*.2).toFixed(2)})" fill="none" stroke="var(--wire-hl)" stroke-opacity=".4" stroke-width="${Math.max(.6,w*.28).toFixed(2)}" stroke-linejoin="round" pointer-events="none"/>`;
     if(col==='PE')s+=`<path d="${d}" fill="none" stroke="var(--pe2)" stroke-width="${w}" stroke-linejoin="round"/><path class="w"${at} d="${d}" fill="none" stroke="var(--pe)" stroke-width="${w}" stroke-dasharray="5 5" stroke-linejoin="round"><title>${esc(title)}</title></path>`
       +(pen?`<path class="pen" d="${d}" pathLength="1000" fill="none" stroke="var(--n)" stroke-width="${w}" stroke-dasharray="90 820 90" pointer-events="none"/>`:'');
-    else s+=`<path class="w"${at} d="${d}" fill="none" stroke="var(--${col.toLowerCase()})" stroke-width="${w}" stroke-linejoin="round"><title>${esc(title)}</title></path>`;return s+hl+'</g>';};
+    else s+=`<path class="w"${at} d="${d}" fill="none" stroke="var(--${col.toLowerCase()})" stroke-width="${w}" stroke-linejoin="round"><title>${esc(title)}</title></path>`;return s+hl+fl+'</g>';};
   let out='';
   // listwy
   out+=`<rect x="${x0+2}" y="${peY-1}" width="${x1-x0}" height="8" rx="2" fill="var(--wire-sh)" opacity=".22"/><rect x="${x0}" y="${peY-4}" width="${x1-x0}" height="8" rx="2" fill="var(--pe)"/><rect x="${x0}" y="${peY-1}" width="${x1-x0}" height="2" fill="var(--pe2)"/><text x="${x0}" y="${peY+20}" font-size="10.5" font-weight="600" fill="var(--ink)">Listwa PE${S.set.siec==='TN-C-S'?' · punkt podziału PEN':''}</text>`;
@@ -267,14 +269,14 @@ function drawWires(){const cab=$('#board');
   out+=dots.join('');
   // szyny grzebieniowe i zworki
   combs.forEach(cb=>{const els=cb.ids.map(id=>devEl[id]),rr=devEl[cb.rcd],l=els[0].l+2,r=els[els.length-1].r-2,y=els[0].t+3,gx=(rr.r+els[0].l)/2;
-    const dim=S.sel&&S.sel!==cb.rcd&&!cb.ids.includes(S.sel);
+    const dim=!SIMC&&S.sel&&S.sel!==cb.rcd&&!cb.ids.includes(S.sel);
     C.filter(c=>c.kind==='jumper'&&c.b.rcd===cb.rcd).forEach((c,k)=>{if(!shown(c))return;const A=pt(c.a);
-      out+=paint(`M${A.x} ${A.y}V${rr.b+4+k*4}H${gx}V${y+3.5}H${l+4+k*5}`,c.ph,c.mm,`${epName(c.a,D)} → szyna grzebieniowa · ${PHN[c.ph]} · ${fmt(c.mm)} mm²`,false,dim);});
+      out+=paint(`M${A.x} ${A.y}V${rr.b+4+k*4}H${gx}V${y+3.5}H${l+4+k*5}`,c.ph,c.mm,`${epName(c.a,D)} → szyna grzebieniowa · ${PHN[c.ph]} · ${fmt(c.mm)} mm²`,false,dim,c);});
     out+=`<g opacity="${dim?.25:1}"><rect class="w" x="${l}" y="${y}" width="${r-l}" height="7" rx="1.5" fill="var(--cu)" stroke="var(--cu-edge)"><title>Szyna grzebieniowa ${cb.type==='3F'?'3-fazowa':'1-fazowa'}, ${fmt(cb.mod)} mod., zasilana z ${D[cb.rcd]}</title></rect>`;
     cb.ids.forEach(id=>{const d=S.dev[id],e=devEl[id],t=terms(d).top;t.forEach((ph,k)=>{if(ph==='N')return;out+=`<circle cx="${e.l+e.w*(k+.5)/t.length}" cy="${y+3.5}" r="2.4" fill="var(--${ph.toLowerCase()})" stroke="var(--cu-edge)" stroke-width=".8"/>`;});});out+='</g>';});
   // odejścia do obwodów
   S.rows.forEach((row,ri)=>row.forEach(id=>{const d=S.dev[id];if(!isCirc(d))return;const e=devEl[id],t=terms(d).bot,yb=rails[ri].b+10;
-    const dim=S.sel&&S.sel!==id&&S.sel!==d.rcd;let g='';
+    const dim=SIMC?SIMC.dev[id].st!=='on':(S.sel&&S.sel!==id&&S.sel!==d.rcd);let g='';
     t.forEach((ph,k)=>{if(ph==='N'&&d.t!=='rcbo')return;if(!wf[ph])return;const x=e.l+e.w*(k+.5)/t.length,col=`var(--${ph.toLowerCase()})`;
       g+=`<path d="M${x} ${e.b-7}V${yb}" stroke="${col}" stroke-width="2" fill="none"/><path d="M${x-3} ${yb-3}L${x} ${yb+1}L${x+3} ${yb-3}" stroke="${col}" stroke-width="1.6" fill="none"/>`;});
     const ct=cableType(d).split(' ')[1];g+=`<text x="${e.l+e.w/2}" y="${yb+11}" font-size="8.5" text-anchor="middle" fill="var(--ink)" font-family="JetBrains Mono, monospace">${ct}<title>${esc(D[id]+' '+d.name+': '+cableType(d)+', '+(clen(d))+' m')}</title></text>`;

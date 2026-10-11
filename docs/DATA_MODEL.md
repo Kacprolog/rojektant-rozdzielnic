@@ -15,7 +15,8 @@ S = {
   tab: 'aparat'|'kontrola'|'bilans'|'struktura'|'kable'|'bom',
   q: '',                 // wyszukiwanie w bibliotece
   wires: false,          // widok okablowania
-  wf: { L1:1, L2:1, L3:1, N:1, PE:1 }  // filtr żył (może nie istnieć w starym stanie)
+  wf: { L1:1, L2:1, L3:1, N:1, PE:1 }, // filtr żył (może nie istnieć w starym stanie)
+  sim: null | { on:true, off:{ d7:1 }, dead:{ L2:1 }, log:[{ sev, msg }] }  // symulacja: wyłączone aparaty, zanik fazy, dziennik; zerowane przy wczytaniu
 }
 uid  // licznik do id aparatów: 'd' + uid++
 ```

@@ -25,14 +25,14 @@ function renderLib(){
     return `<button class="libitem" draggable="true" data-preset="${i}"><span class="mods">${bars}</span><span class="t"><b>${esc(p.l)}</b><span>${MFR[S.mfr].s==='LEGRAND'?'Legrand':MFR[S.mfr].n} ${esc(series(d))}</span></span><span class="w">${fmt(w)} mod</span></button>`;}).join('')).join('');
   $('#libList').innerHTML=html||'<p class="empty">Brak aparatów pasujących do wyszukiwania.</p>';}
 function screws(n){return Array.from({length:Math.max(1,Math.round(n))},()=>'<span class="scr"></span>').join('');}
-function face(d){const w=width(d);switch(d.t){
-  case 'mcb':return `<div class="lever ${w>1?'wide':''}"></div>`;
-  case 'rcbo':return `<div class="lever ${w>2?'wide':''}"></div><span class="tbtn">T</span>`;
-  case 'rcd':return `<div class="lever wide blue"></div><span class="tbtn">T</span>`;
-  case 'sw':return `<div class="lever wide red"></div>`;
+function face(d){const w=width(d),lo=simOn()&&S.sim.off[d.id]?' off':'';switch(d.t){
+  case 'mcb':return `<div class="lever ${w>1?'wide':''}${lo}"></div>`;
+  case 'rcbo':return `<div class="lever ${w>2?'wide':''}${lo}"></div><span class="tbtn">T</span>`;
+  case 'rcd':return `<div class="lever wide blue${lo}"></div><span class="tbtn">T</span>`;
+  case 'sw':return `<div class="lever wide red${lo}"></div>`;
   case 'spd':return `<div class="spdwin">${'<i></i>'.repeat(d.p.sys==='1P+N'?2:4)}</div>`;
   case 'meter':return d.p.ph==3?`<div class="lcd">01284,7</div>`:`<div class="lcd" style="font-size:7px">0412</div>`;
-  case 'lamp':return `<div class="leds"><i></i><i></i><i></i></div>`;
+  case 'lamp':return `<div class="leds">${['L1','L2','L3'].map(ph=>`<i class="${SIMC&&!SIMC.live(d.id+'/top/'+ph)?'dim':''}"></i>`).join('')}</div>`;
   case 'contactor':return `<div class="lever" style="width:12px;height:18px"></div>`;
   case 'socket':return `<div class="sock"></div>`;
   case 'timer':case 'relay':return `<div class="dial"></div>`;
@@ -48,15 +48,16 @@ function renderWireFilter(){const f=$('#wireFilter');f.hidden=!S.wires;if(!S.wir
   const bg={L1:'var(--l1)',L2:'var(--l2)',L3:'var(--l3)',N:'var(--n)',PE:'linear-gradient(90deg,var(--pe) 50%,var(--pe2) 50%)'};
   const man=S.wmode==='manual',wsel=man&&wireSel?buildConns().C.find(c=>c.id===wireSel):null,Dn=designations();
   f.innerHTML='<span class="seg" role="group" aria-label="Tryb okablowania"><button data-wmode="auto" aria-pressed="'+!man+'" title="Przewody wylicza program">Automatyczne</button><button data-wmode="manual" aria-pressed="'+man+'" title="Przewody dodajesz sam, a Kontrola je sprawdza">Ręczne</button></span>'
-    +(man?'<button class="chip" data-wact="adopt">Przejmij automatyczne</button><button class="chip" data-wact="clear">Usuń przewody</button>'+(wsel&&!wireMove?wireEditor(wsel,Dn):'<span class="encsub" id="wireHelp" style="align-self:center">'+(wireMove?'Kliknij zacisk, do którego przepiąć koniec przewodu (Esc anuluje).':wirePick?'Kliknij drugi zacisk (Esc anuluje).':'Kliknij zacisk, potem drugi, aby dodać przewód. Kliknij przewód, aby go zaznaczyć i usunąć.')+'</span>'):'')
+    +(man?'<button class="chip" data-wact="adopt">Przejmij automatyczne</button><button class="chip" data-wact="clear">Usuń przewody</button>'+(wsel&&!wireMove?wireEditor(wsel,Dn):'<span class="encsub" id="wireHelp" style="align-self:center">'+(wireMove?'Kliknij zacisk, do którego przepiąć koniec przewodu (Esc anuluje).':wirePick?'Kliknij drugi zacisk (Esc anuluje).':'Przeciągnij przewód od zacisku do zacisku: zielone zaciski są poprawne, czerwone dadzą błąd. Kliknij zacisk, potem drugi – to też działa. Kliknij przewód, aby go edytować.')+'</span>'):'')
     +'<span class="encsub" style="align-self:center">Pokaż żyły:</span>'+Object.keys(bg).map(k=>`<button class="chip" data-wf="${k}" aria-pressed="${!!wf[k]}"><span class="dot" style="background:${bg[k]}"></span>${k}</button>`).join('')
     +(S.sel&&S.dev[S.sel]?`<button class="chip" data-wsel="1" aria-pressed="true">Wyróżnione: ${designations()[S.sel]} ✕</button>`:'');}
-function renderBoard(){const e=enc(),D=designations(),M=34;$('#board').className='cabinet'+(S.wires?' wiring':'');
+function renderBoard(){const e=enc(),D=designations(),M=34;$('#board').className='cabinet'+(S.wires?' wiring':'')+(simOn()?' sim':'');
+  SIMC=simOn()?simCalc():null;renderSim();
   $('#viewSeg').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String((b.dataset.view==='wires')===!!S.wires)));$('#wireHint').hidden=!S.wires;renderWireFilter();
   $('#board').innerHTML=S.rows.map((r,i)=>{const u=rowUse(i),wpx=Math.max(e.mpr,u)*M;
     const devs=r.map(id=>{const d=S.dev[id],w=width(d),[a,b]=rate(d);
       const phs=isCirc(d)?phases(d).map(p=>`<i style="background:var(--${p.toLowerCase()})"></i>`).join(''):'';
-      return `<div class="slot ${S.sel===id?'sel':''}" draggable="true" data-id="${id}" style="width:${w*M}px" title="${esc(D[id]+' '+d.name+' · '+desc(d))}">
+      return `<div class="slot ${S.sel===id?'sel':''}${SIMC?' s-'+SIMC.dev[id].st:''}" draggable="true" data-id="${id}" style="width:${w*M}px" title="${esc(D[id]+' '+d.name+' · '+desc(d))}">
         <div class="dev m-${d.m}${['mcb','rcbo','rcd','sw'].indexOf(d.t)>=0?' lv':''}" style="--b:${MFR[d.m].c}"><div class="trm">${screwsFor(d,'top')}</div><div class="mk">${w>=2?MFR[d.m].s:MFR[d.m].s.slice(0,4)}</div>
         <div class="rt">${esc(a)}</div><div class="sub">${esc(b)}</div>${face(d)}<div class="trm b">${screwsFor(d,'bot')}</div></div>
         <div class="tag"><b>${D[id]}</b><span>${esc(d.name)}</span><span class="ph">${phs}</span></div></div>`;}).join('');
@@ -165,12 +166,12 @@ function panelBom(){const r=bomRows();
 /* Buduje #print (widoczny tylko w @media print): front, okablowanie, struktura i kontrola, zestawienie i kable.
    Obudowa jest renderowana dwa razy w #board (front i okablowanie), kopiowana z wymiarami i skalowana do strony A4 poziomo. */
 function printView(){let pv=$('#print');if(!pv){pv=document.createElement('div');pv.id='print';document.body.appendChild(pv);}
-  const b=$('#board'),keep={wires:S.wires,sel:S.sel,wf:S.wf},PW=1040,PH=570;
+  const b=$('#board'),keep={wires:S.wires,sel:S.sel,wf:S.wf,sim:S.sim},PW=1040,PH=570;
   const shot=w=>{S.wires=w;renderBoard();const sc=Math.min(1,PW/b.offsetWidth,PH/b.offsetHeight);
     return `<div class="pfit" style="width:${Math.ceil(b.offsetWidth*sc)}px;height:${Math.ceil(b.offsetHeight*sc)}px"><div class="${b.className}" style="${esc(b.getAttribute('style')||'')};width:${b.offsetWidth}px;min-width:0;transform:scale(${sc.toFixed(4)});transform-origin:0 0">${b.innerHTML}</div></div>`;};
-  S.sel=null;S.wf={L1:1,L2:1,L3:1,N:1,PE:1};wireReset();
+  S.sel=null;S.sim=null;S.wf={L1:1,L2:1,L3:1,N:1,PE:1};wireReset();
   let front,wires;
-  try{front=shot(false);wires=shot(true);}finally{S.wires=keep.wires;S.sel=keep.sel;S.wf=keep.wf;renderBoard();}
+  try{front=shot(false);wires=shot(true);}finally{S.wires=keep.wires;S.sel=keep.sel;S.wf=keep.wf;S.sim=keep.sim;renderBoard();}
   const e=enc(),T=totals(),date=new Date().toLocaleDateString('pl-PL'),noId=h=>h.replace(/ id="[^"]*"/g,'');
   const legend=$('.legend').innerHTML.replace(/<span[^>]*id="wireHint"[\s\S]*$/,'');
   const pages=[

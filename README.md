@@ -4,6 +4,10 @@ Interaktywny konfigurator rozdzielnic modułowych działający w przeglądarce: 
 
 ![Okablowanie](docs/okablowanie.png)
 
+Symulacja po upływie do PE: różnicówka wybita, obwody za nią bez napięcia.
+
+![Symulacja](docs/symulacja.png)
+
 Fronty aparatów pięciu producentów (rysunki własne, uproszczone):
 
 ![Producenci](docs/marki.png)
@@ -17,10 +21,12 @@ Fronty aparatów pięciu producentów (rysunki własne, uproszczone):
 | Układanie aparatów | Przeciągnij z biblioteki na szynę albo kliknij (trafi do aktywnego rzędu) |
 | Kontrola projektu | Zakładka „Kontrola”: 19 reguł, klik przenosi do aparatu |
 | Okablowanie | Przełącznik „Front / Okablowanie” nad obudową; tryb „Automatyczne” rysuje przewody sam |
-| Własne przewody | W okablowaniu wybierz „Ręczne”: kliknij zacisk, potem drugi. Kliknij przewód i Delete, żeby usunąć. „Przejmij automatyczne” daje gotowy punkt wyjścia |
+| Własne przewody | W okablowaniu wybierz „Ręczne”: przeciągnij przewód od zacisku do zacisku (zielone zaciski są poprawne, czerwone dadzą błąd) albo kliknij zacisk, potem drugi. Kliknij przewód i Delete, żeby usunąć. „Przejmij automatyczne” daje gotowy punkt wyjścia |
 | Edycja przewodu | Kliknij przewód w trybie ręcznym: przekrój, kolor izolacji, „Przepnij początek / koniec”, „Usuń przewód” |
 | Kolory żył | Wg PN-EN 60445 w jasnym i ciemnym motywie: L1 brązowy, L2 czarny, L3 szary, N niebieski, PE zielono-żółty, PEN zielono-żółty z niebieskimi końcami; kolor niezgodny z normą daje alert |
 | Alerty złego podłączenia | W trybie ręcznym: czerwony komunikat od razu, obwódka na przewodzie i wpis w „Kontroli” (zwarcia, ominięta różnicówka, wspólny N, brak zasilania) |
+| Symulacja | „▶ Symulacja”: klikaj dźwignie, żeby wyłączać aparaty; widać, co traci napięcie i którędy płynie prąd. Przycisk T testuje różnicówkę |
+| Awarie | W symulacji zaznacz obwód i wybierz „Zwarcie”, „Przeciążenie” albo „Upływ do PE”; „Zanik fazy” dotyczy zasilania. Dziennik opisuje, co zadziałało |
 | Wiele projektów | Lista „Projekt” oraz „Nowy”, „Duplikuj”, „Usuń”; nazwa to tytuł w nagłówku |
 | Plik projektu | „Zapisz projekt” pobiera `.rozdz.json`; „Otwórz projekt” albo przeciągnięcie pliku na stronę |
 | Cofanie | „Cofnij” / „Ponów”, Ctrl+Z, Ctrl+Shift+Z, Ctrl+Y (50 kroków) |

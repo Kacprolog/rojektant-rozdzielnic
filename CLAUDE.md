@@ -12,7 +12,7 @@ Szczegóły przekazania, znane problemy i plan prac: `HANDOFF.md`. Dziennik zmia
 npm start            # serwer statyczny bez zależności: http://localhost:4173
 npm install          # tylko dla testów (@playwright/test)
 npx playwright install chromium webkit   # raz, jeśli nie ma przeglądarek
-npm test             # 35 testów × 3 projekty: desktop 1600 px i telefon 390 px (Chromium), safari (WebKit)
+npm test             # 42 testów × 3 projekty: desktop 1600 px i telefon 390 px (Chromium), safari (WebKit)
 node scripts/podglad-druku.js            # PDF i zrzuty stron wydruku w test-results/druk/
 ```
 
@@ -31,11 +31,13 @@ js/model.js         stan S, newDev, sample(), valid/normalize, lista projektów 
 js/render.js        render(), renderTop/Enc/Lib/Board/Tabs/Panel, panele: aparat, kontrola, bilans, struktura, zestawienie,
                     printView() (druk / PDF)
 js/wiring.js        terms(), buildConns(), drawWires() (routing SVG), panelKable(), materiały przewodów
+js/sim.js           symulacja: simCalc() (kto ma napięcie), dźwignie, test RCD, awarie, pasek renderSim()
 js/app.js           akcje (dodaj/przenieś/usuń/rozłóż fazy/kopiuj), plik projektu, lista projektów, ask(), zdarzenia, boot()
 scripts/serve.js    serwer statyczny (Node, bez zależności)
 scripts/podglad-druku.js   PDF i zrzuty stron wydruku (Playwright)
 tests/smoke.spec.js testy dymne: start, okablowanie, zakładki, migracja starego stanu
 tests/okablowanie.spec.js   okablowanie ręczne i alerty złego podłączenia
+tests/symulacja.spec.js     symulacja, awarie, przeciąganie przewodów
 tests/p0.spec.js    plik projektu, lista projektów, cofanie, druk
 .github/workflows/pages.yml   CI: testy w 3 silnikach, potem publikacja na GitHub Pages
 ```
@@ -45,13 +47,14 @@ Skrypty są **klasyczne** i ładowane po kolei. Wszystkie `const`/`function` z n
 ## Jak działa aplikacja
 
 - **Jeden obiekt stanu `S`** (+ licznik `uid`). Każda zmiana: zmodyfikuj `S`, wywołaj `render()` (albo `render(true)`, żeby nie przerysowywać panelu bocznego, np. podczas pisania w polu). `render()` woła `save()`, które dopisuje migawkę do historii cofania i zapisuje listę projektów do `localStorage` pod kluczem `rozdz-v2`.
-- **Dane a widok.** `DATA_KEYS` (`name, enc, set, rows, dev, wmode, conn`) to dane projektu: trafiają do pliku `.rozdz.json` i do historii cofania. Reszta `S` (`sel, active, mfr, tab, q, wires, wf`) to stan widoku. Nowe pole danych dopisz do `DATA_KEYS` i do `normalize()`.
+- **Dane a widok.** `DATA_KEYS` (`name, enc, set, rows, dev, wmode, conn`) to dane projektu: trafiają do pliku `.rozdz.json` i do historii cofania. Reszta `S` (`sel, active, mfr, tab, q, wires, wf, sim`) to stan widoku. Nowe pole danych dopisz do `DATA_KEYS` i do `normalize()`.
 - **Lista projektów `PR`**: `S` to zawsze projekt `PR.cur`. Przełączaj tylko przez `projUse()` (normalizuje stan i resetuje historię).
 - **Cofanie** działa samo dla każdej akcji, która kończy się `render()` albo `save()`. Dla pól pisanych znak po znaku ustaw wcześniej `histTag`, żeby seria zmian była jednym krokiem.
 - **Pełne przerysowanie przez `innerHTML`** + delegacja zdarzeń na kontenerach (`#board`, `#panel`, `#libList`, `#tabs`). Nie podpinaj nasłuchiwaczy do elementów, które są przerysowywane.
 - **Wartości pochodne nie są przechowywane**: oznaczenia (`designations()`), prądy (`ib`, `iz`), połączenia (`buildConns()`), materiały liczone są zawsze od nowa z `S`.
 - **Pola formularzy w panelu** mają `data-k="ścieżka"` (np. `p.In`, `c.cable`, `rcd`, `row`) albo `data-s="klucz"` (ustawienia zasilania). Obsługa w `panel.addEventListener('change')` w `app.js` przez `setPath()` + `parseV()`.
 - **Widok okablowania** (`S.wires`) jest nakładką SVG mierzoną z DOM po wyrenderowaniu obudowy; `drawWires()` sam ustawia marginesy obudowy (`style.padding*`, `marginTop` rzędów) tak, żeby każdy przewód miał własny tor. Opis algorytmu: `docs/DATA_MODEL.md` → „Routing przewodów”.
+- **Symulacja** (`S.sim`, `js/sim.js`): `renderBoard()` liczy `SIMC=simCalc()` i na tej podstawie nadaje klasy `s-on/off/dead/part` aparatom, a `paint()` w `drawWires()` wygasza przewody bez napięcia i dodaje animację prądu. To stan widoku: żadna akcja symulacji nie może zmieniać `DATA_KEYS`.
 - **Druk**: `printView()` renderuje obudowę w `#board` dwa razy (front, okablowanie), kopiuje HTML do `#print` i przywraca widok. `#print` jest widoczny tylko w `@media print`.
 
 ## Zasady przy zmianach

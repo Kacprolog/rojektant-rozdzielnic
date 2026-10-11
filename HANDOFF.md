@@ -1,6 +1,6 @@
 # Przekazanie projektu: Projektant Rozdzielnic
 
-Stan na 10.10.2026, wersja 0.9.0. Projekt powstał w czacie z Claude jako pojedyncza strona (artefakt claude.ai), został podzielony na pliki i jest rozwijany w Claude Code jako zwykła strona w przeglądarce. Wersja 0.5.0 zamyka zadania P0 (1–5 w całości, 6 przygotowane, czeka na decyzję o hostingu). Szczegóły każdej zmiany: `CHANGELOG.md`.
+Stan na 10.10.2026, wersja 0.10.0. Projekt powstał w czacie z Claude jako pojedyncza strona (artefakt claude.ai), został podzielony na pliki i jest rozwijany w Claude Code jako zwykła strona w przeglądarce. Wersja 0.5.0 zamyka zadania P0 (1–5 w całości, 6 przygotowane, czeka na decyzję o hostingu). Szczegóły każdej zmiany: `CHANGELOG.md`.
 
 ![Widok frontu](docs/front.png)
 
@@ -8,7 +8,7 @@ Stan na 10.10.2026, wersja 0.9.0. Projekt powstał w czacie z Claude jako pojedy
 
 Narzędzie dla elektryka lub projektanta do wstępnego zaprojektowania rozdzielnicy mieszkaniowej / małej komercyjnej: dobór obudowy, rozmieszczenie aparatów różnych producentów, kontrola zgodności z podstawowymi wymaganiami PN-HD 60364, okablowanie wnętrza i zestawienie materiałów do zamówienia.
 
-## Co działa (zweryfikowane testami, `npm test`, 105/105: 35 testów × desktop, telefon, safari)
+## Co działa (zweryfikowane testami, `npm test`, 126/126: 42 testów × desktop, telefon, safari)
 
 **Obudowa i aparaty**
 - 5 producentów: Hager, Schneider Electric, ABB, Eaton, Legrand; 9 serii obudów (12–24 mod./rząd, 1–6 rzędów, IP40–IP65).
@@ -30,6 +30,8 @@ Narzędzie dla elektryka lub projektanta do wstępnego zaprojektowania rozdzieln
 - Struktura: drzewo zasilania WLZ → rozłącznik → RCD → obwody.
 - Kable: WLZ, kable obwodowe, przewody w rozdzielnicy według przekroju i koloru, lista połączeń, kopiowanie CSV.
 - Zestawienie: aparaty + akcesoria + przewody, kopiowanie CSV i opisówki.
+
+**Symulacja** (0.10.0, `js/sim.js`): klikane dźwignie i przycisk T, napięcie na aparatach i przewodach, animacja prądu, awarie (zwarcie, przeciążenie, upływ do PE, zanik fazy) z dziennikiem zdarzeń. Uproszczona: liczy tylko ciągłość torów.
 
 **Okablowanie** (przełącznik Front / Okablowanie)
 
@@ -93,6 +95,14 @@ Kolejność według wartości dla użytkownika. Każde zadanie kończy się ziel
 4. ✅ **Cofnij / Ponów.**
 5. ✅ **Widok do druku / PDF.**
 6. ✅ **Hosting.** GitHub Pages: https://kacprolog.github.io/rojektant-rozdzielnic/ (repozytorium `Kacprolog/rojektant-rozdzielnic`). Każdy push na `main` uruchamia testy w Chromium, WebKit i Firefoksie, a po sukcesie publikuje `index.html`, `css/`, `js/`.
+
+### Interaktywność — kolejne kroki (z burzy mózgów 11.10.2026)
+
+- Edycja na aparacie zamiast w panelu (kliknięcie „B16” na froncie zmienia wartość w miejscu).
+- Kontrola jako przewodnik: przy błędzie przycisk naprawy („dodaj różnicówkę”, „zwiększ przekrój”, „przepnij na L2”).
+- Powiększanie i przesuwanie obudowy, przeciąganie aparatów palcem (HTML5 drag and drop nie działa na dotyku).
+- Symulacja oparta na obliczeniach (impedancja pętli, prądy zwarciowe, czasy) zamiast samej ciągłości: wymaga P1.9.
+- Odłożone: budowanie rozdzielnicy z listy pomieszczeń i odbiorników.
 
 ### P1 — merytoryka
 

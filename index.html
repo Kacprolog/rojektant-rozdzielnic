@@ -71,9 +71,10 @@
     <section class="boardcol">
       <div class="boardhead">
         <div><div class="enc" id="encTitle"></div><div class="encsub" id="encSub"></div></div>
-        <div class="seg" role="group" aria-label="Widok obudowy" id="viewSeg"><button data-view="front">Front</button><button data-view="wires">Okablowanie</button></div>
+        <div class="headtools"><button class="btn sm" id="bSim" aria-pressed="false" title="Żywa rozdzielnica: klikane dźwignie, napięcie na przewodach, awarie">▶ Symulacja</button><div class="seg" role="group" aria-label="Widok obudowy" id="viewSeg"><button data-view="front">Front</button><button data-view="wires">Okablowanie</button></div></div>
       </div>
       <div class="chips" id="wireFilter" hidden role="group" aria-label="Pokazywane żyły"></div>
+      <div class="simbar" id="simBar" hidden></div>
       <div class="boardscroll"><div class="cabinet" id="board"></div></div>
       <div class="legend">
         <span><i style="background:var(--l1)"></i>L1 (brązowy)</span>
@@ -102,6 +103,7 @@
 <script src="js/model.js"></script>
 <script src="js/render.js"></script>
 <script src="js/wiring.js"></script>
+<script src="js/sim.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

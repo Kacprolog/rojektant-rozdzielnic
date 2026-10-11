@@ -86,6 +86,21 @@ PEN w TN-C-S (żyła ochronno-neutralna WLZ, mostek PEN) jest rysowany jako ziel
 
 Ciągłość liczona jest po grafie: przewody + tory wewnątrz rozłącznika, RCD, MCB, RCBO (wejście ↔ wyjście tej samej żyły) + szyny grzebieniowe.
 
+## Symulacja (`simCalc()`, `simFault()` w `js/sim.js`)
+
+Liczy wyłącznie ciągłość torów: przewody + szyny grzebieniowe + tory wewnątrz **załączonych** aparatów (rozłącznik, RCD, MCB, RCBO), od żył WLZ bez zaniku. Nie liczy czasów zadziałania, impedancji pętli ani prądów zwarciowych.
+
+| Zdarzenie | Skutek w symulacji |
+|---|---|
+| Dźwignia | Aparat przerywa wszystkie swoje tory (także N w RCD i RCBO) |
+| Przycisk T | Wybija RCD / RCBO, tylko gdy jest załączony i ma napięcie |
+| Zwarcie w obwodzie | Wyłącza wyłącznik tego obwodu; ostrzeżenie, gdy zabezpieczenie przedlicznikowe < 1,6 × In obwodu |
+| Przeciążenie | Wyłącza wyłącznik tego obwodu; błąd, gdy In > Iz przewodu |
+| Upływ do PE | Wyłącza RCD chroniący obwód (albo RCBO); bez RCD nic nie zadziała; uwaga dla IΔn > 30 mA |
+| Zanik fazy | Obwody 1F tej fazy bez napięcia, obwody 3F oznaczone jako zasilane niepełnie |
+
+Obwód jednofazowy jest „zasilony”, gdy ma fazę **i** N (z wyjścia RCBO, z listwy N swojej różnicówki albo z głównej listwy N).
+
 ## Przekroje przewodów w rozdzielnicy
 
 | Połączenie | Przekrój |

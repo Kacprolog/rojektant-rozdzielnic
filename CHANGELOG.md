@@ -2,6 +2,32 @@
 
 Każdy wpis odpowiada jednemu commitowi. Format: co zrobiono, dlaczego, jak sprawdzono.
 
+## 0.10.0 (11.10.2026) — żywa rozdzielnica: symulacja, awarie, przeciąganie przewodów
+
+Powód: użytkownik chce bardzo interaktywnej aplikacji i dał wolną rękę; wybrany kierunek z burzy mózgów to
+„rozdzielnica odpowiada”, a nie tylko „wygodniejszy edytor”.
+
+- **Symulacja** (przycisk „▶ Symulacja”, działa we froncie i w okablowaniu, w trybie automatycznym i ręcznym):
+  kliknięcie dźwigni wyłącza albo załącza aparat; aparaty bez napięcia szarzeją, kontrolki faz gasną osobno dla każdej
+  fazy, przewody bez napięcia są wygaszone, a po przewodach z prądem przesuwają się kreski. Pasek pokazuje liczbę
+  zasilonych obwodów i pobór na fazach przy wszystkich odbiornikach naraz.
+- **Przycisk T** na różnicówce i RCBO wybija aparat, ale tylko gdy jest załączony i pod napięciem.
+- **Awarie** w zaznaczonym obwodzie: zwarcie (wyłącza swój wyłącznik; ostrzega o braku selektywności z zabezpieczeniem
+  przedlicznikowym), przeciążenie (ostrzega, gdy przewód jest słabszy niż zabezpieczenie), upływ do PE (wybija
+  różnicówkę i pokazuje, ile obwodów zgasło; bez różnicówki mówi wprost, że nic nie wyłączy). **Zanik fazy** w zasilaniu
+  gasi obwody jednofazowe tej fazy i oznacza trójfazowe jako zasilane niepełnie. Dziennik pokazuje 5 ostatnich zdarzeń.
+- **Przeciąganie przewodu** w trybie ręcznym (mysz i dotyk): ciągniesz od zacisku, a pozostałe zaciski świecą na zielono
+  (poprawne), żółto (uwaga) albo czerwono (błąd), zanim puścisz. Klikanie dwóch zacisków działa jak dotąd.
+- Technicznie: nowy plik `js/sim.js` (`simCalc()` liczy ciągłość torów tym samym grafem co kontrola okablowania, z otwartymi
+  łącznikami). `S.sim` to stan widoku: nie trafia do pliku ani do historii cofania i jest zerowany przy wczytaniu.
+  W symulacji zaznaczenie aparatu nie przygasza przewodów (pierwsza wersja to robiła i przewody pod napięciem wyglądały
+  jak martwe; wykryte na zrzucie, poprawione).
+- **Symulacja jest uproszczona:** pokazuje, co zostaje bez napięcia. Nie liczy czasów zadziałania, impedancji pętli ani
+  prądów zwarciowych i nie wolno jej traktować jako dowodu selektywności. Informacja o tym jest stale widoczna w pasku.
+- Testy `tests/symulacja.spec.js` (7): dźwignie, test różnicówki, cztery rodzaje awarii, zanik fazy, brak wpływu na
+  projekt, symulacja przy pustym okablowaniu ręcznym, przeciąganie z podglądem.
+- Sprawdzenie: `npm test` → 126/126; wzrokowo na zrzucie `docs/symulacja.png`.
+
 ## Publikacja (11.10.2026)
 
 - Strona działa pod https://kacprolog.github.io/rojektant-rozdzielnic/ (GitHub Pages włączone przez użytkownika).

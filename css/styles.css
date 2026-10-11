@@ -298,3 +298,37 @@ footer{margin-top:22px;font-size:12px;color:var(--muted);max-width:90ch}
 .dev.m-legrand::before{left:3px;right:3px;bottom:19px;height:8px;border:1px solid var(--dev-edge);border-radius:1px;background:repeating-linear-gradient(90deg,rgba(0,0,0,.06) 0 3px,rgba(0,0,0,0) 3px 6px),rgba(255,255,255,.65)}
 .dev.m-legrand .mk{border-top:0;margin-top:3px;padding:0 3px;border:1px solid var(--b);border-radius:6px;color:var(--b)}
 .dev.m-legrand .lever::after{border-bottom:2px solid rgba(255,255,255,.8)}
+
+/* Symulacja: dźwignie, stan napięcia, przepływ prądu, pasek zdarzeń. */
+.headtools{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.btn[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.simbar{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:10px}
+.simbar p{margin:4px 0 0}
+.simrow{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin-bottom:6px}
+.simrow select{border:1px solid var(--line);background:var(--panel2);color:var(--ink);border-radius:6px;padding:2px 6px;font-size:13px}
+.simload{display:inline-flex;flex-wrap:wrap;align-items:center;gap:4px 12px;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.simload span{display:inline-flex;align-items:center;gap:5px}
+.simload i{width:9px;height:9px;border-radius:50%;box-shadow:0 0 0 1px var(--muted)}
+.simload .over{color:var(--crit);font-weight:600}
+.simwarn{color:var(--crit);font-size:12.5px}
+.simlog{margin:6px 0 2px;padding-left:22px;font-size:13px}
+.simlog li{padding:1px 0}
+.simlog .crit{color:var(--crit)} .simlog .warn{color:var(--warn)}
+.cabinet.sim .lever,.cabinet.sim .tbtn{cursor:pointer}
+.cabinet.sim .lever:hover{outline:2px solid var(--accent);outline-offset:1px}
+.lever.off::after{top:auto;bottom:3px;filter:brightness(.78)}
+.slot.s-dead .dev,.slot.s-part .dev{filter:saturate(.3) brightness(.94)}
+.slot.s-dead .tag{opacity:.55}
+.slot.s-off .tag{box-shadow:inset 0 0 0 2px var(--warn)}
+.slot.s-part .tag{box-shadow:inset 0 0 0 2px var(--crit)}
+.leds i.dim{background:#75625f;box-shadow:none}
+svg.wires .flow{animation:flow .7s linear infinite}
+@keyframes flow{to{stroke-dashoffset:-14}}
+@media (prefers-reduced-motion: reduce){svg.wires .flow{animation:none}}
+#print .flow{display:none}
+/* Przeciąganie przewodu: gumka i podgląd wyniku na zaciskach */
+svg.wires .tp{touch-action:none}
+svg.wires .tp.ok{stroke:var(--ok);fill:var(--ok);stroke-opacity:1;fill-opacity:.3;stroke-width:2}
+svg.wires .tp.bad{stroke:var(--crit);fill:var(--crit);stroke-opacity:1;fill-opacity:.3;stroke-width:2}
+svg.wires .tp.warnc{stroke:var(--warn);fill:var(--warn);stroke-opacity:1;fill-opacity:.3;stroke-width:2}
+svg.wires .rb{stroke:var(--accent);stroke-width:3;stroke-dasharray:6 4;stroke-linecap:round;pointer-events:none}

@@ -16,6 +16,12 @@ const fs = require('fs'), path = require('path');
     await p.locator('#board').screenshot({ path: path.join(out, 'front.png') });
     await p.click('[data-view="wires"]');
     await p.locator('#board').screenshot({ path: path.join(out, 'okablowanie.png') });
+    // Symulacja: upływ do PE w obwodzie za wspólną różnicówką.
+    await p.click('#bSim');
+    await p.locator('#board .slot', { hasText: 'Gniazda kuchnia' }).locator('.rt').click();
+    await p.click('[data-sim="leak"]');
+    await p.locator('.boardcol').screenshot({ path: path.join(out, 'symulacja.png') });
+    await p.click('#bSim');
     await p.click('[data-view="front"]');
     await p.evaluate(() => { window.print = () => {}; });
     await p.click('#bPrint');
