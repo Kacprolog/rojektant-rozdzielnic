@@ -2,6 +2,27 @@
 
 Każdy wpis odpowiada jednemu commitowi. Format: co zrobiono, dlaczego, jak sprawdzono.
 
+## 0.11.0 (11.10.2026) — kontrola z naprawami, szybka edycja na aparacie
+
+Powód: kolejne dwa kroki z planu interaktywności (HANDOFF.md); użytkownik polecił kontynuować.
+
+- **Naprawy w zakładce Kontrola.** Uwaga, którą da się rozwiązać jedną zmianą, ma przycisk z nazwą tej zmiany:
+  „Ustaw In 25 A i przewód 4 mm²”, „Zwiększ przewód do 2,5 mm²”, „Przypisz do -F11”, „Dodaj różnicówkę 40 A / 30 mA
+  typ A” (wstawiana bezpośrednio przed obwodem, żeby powstała szyna grzebieniowa), „Dodaj rozłącznik”, „Dodaj ogranicznik”,
+  „Zmień typ RCD”, „Zmień fazę obwodu”, „Ustaw In rozłącznika”, „Rozłóż fazy”, a dla przewodów ręcznych „Usuń ten
+  przewód”, „Przywróć kolor wg normy”, „Ustaw przekrój automatycznie”, „Przejmij automatyczne”.
+  Każda naprawa to jeden krok cofania. Uwagi bez jednoznacznej naprawy (przepełniony rząd, prąd szczytowy, brak zasilania
+  zacisku) nie mają przycisku.
+- Naprawa obwodu nie obiecuje naprawy instalacji: po zwiększeniu In może pozostać np. błąd prądu szczytowego.
+- **Pasek szybkiej edycji** pod zaznaczonym aparatem (widok frontu, poza symulacją): faza L1/L2/L3 dla obwodów
+  jednofazowych, prąd znamionowy − / + po typoszeregu, charakterystyka, przesunięcie w lewo / prawo, kopia, usunięcie.
+  Panel boczny zostaje dla pozostałych parametrów.
+- Technicznie: `add()` w `checks()` i `wireCheck()` przyjmuje `fix = { l, f }`; `panelChecks()` zapisuje uwagi w `CK`
+  i rysuje przyciski `data-fix`; pomocnicze `cableFor()`, `rowWithRoom()`, `putDev()`; `quickBar()` i `quickAct()`.
+- Testy `tests/naprawy.spec.js` (4). Trzy asercje w pierwszej wersji testów były błędne (oczekiwały braku uwag tam, gdzie
+  aplikacja słusznie zgłasza prąd szczytowy i asymetrię); poprawione zostały testy, nie aplikacja.
+- Sprawdzenie: `npm test` → 138/138; wzrokowo na zrzucie ekranu (pasek i przyciski napraw).
+
 ## 0.10.0 (11.10.2026) — żywa rozdzielnica: symulacja, awarie, przeciąganie przewodów
 
 Powód: użytkownik chce bardzo interaktywnej aplikacji i dał wolną rękę; wybrany kierunek z burzy mózgów to

@@ -70,6 +70,7 @@ const board=$('#board');
 board.addEventListener('click',e=>{
   const tp=e.target.closest('[data-ep]');if(tp){wireClick(JSON.parse(tp.getAttribute('data-ep')));return;}
   const wp=e.target.closest('[data-w]');if(wp){wireReset();wireSel=wp.getAttribute('data-w');render(true);return;}
+  const qb=e.target.closest('[data-q]');if(qb&&S.sel){quickAct(qb.dataset.q);return;}
   if(simOn()){const sl=e.target.closest('.slot');
     if(sl&&e.target.closest('.lever')){simLever(sl.dataset.id);return;}
     if(sl&&e.target.closest('.tbtn')){simTest(sl.dataset.id);return;}}
@@ -91,7 +92,9 @@ board.addEventListener('drop',e=>{const rail=e.target.closest('.rail');if(!rail|
 document.addEventListener('dragend',()=>{dragInfo=null;board.querySelectorAll('.dropline').forEach(x=>x.remove());});
 $('#tabs').addEventListener('click',e=>{const t=e.target.closest('[data-tab]');if(!t)return;S.tab=t.dataset.tab;renderTabs();renderPanel();save();});
 const panel=$('#panel');
-panel.addEventListener('click',e=>{const a=e.target.closest('[data-act]');
+panel.addEventListener('click',e=>{const fx=e.target.closest('[data-fix]');
+  if(fx){const c=CK[+fx.dataset.fix];if(c&&c.fix){c.fix.f();render();toast('Naprawiono: '+c.fix.l+'. „Cofnij” przywraca poprzedni stan.',4500);}return;}
+  const a=e.target.closest('[data-act]');
   if(a){const act=a.dataset.act,id=S.sel;
     if(act==='csv'){const r=bomRows();copy(['Lp;Producent;Seria;Pozycja;Moduly;Ilosc',...r.map((x,i)=>[i+1,x.m,x.s,x.d,x.w===''?'':String(x.w).replace('.',','),x.n].join(';'))].join('\n'),'Zestawienie');return;}
     if(act==='wcsv'){const {C}=buildConns(),D=designations();copy(['Od;Do;Zyla;Przekroj mm2;Rodzaj;Dlugosc m',...C.map(c=>[epName(c.a,D),epName(c.b,D),c.kind==='mostek'?'mostek PEN':PHN[c.ph],String(c.mm).replace('.',','),c.kind,c.kind==='wlz'?'':connLen(c).toFixed(2).replace('.',',')].join(';'))].join('\n'),'Listę połączeń');return;}
@@ -103,6 +106,17 @@ panel.addEventListener('click',e=>{const a=e.target.closest('[data-act]');
     if(act==='dup'){const d=JSON.parse(JSON.stringify(S.dev[id]));d.id='d'+(uid++);S.dev[d.id]=d;S.rows[r].splice(i+1,0,d.id);S.sel=d.id;render();}
     if(act==='del')delDev(id);return;}
   const n=e.target.closest('[data-id]');if(n&&S.dev[n.dataset.id]){S.sel=n.dataset.id;S.active=rowOf(S.sel);S.tab='aparat';render();}});
+/* Akcje paska szybkiej edycji zaznaczonego aparatu. */
+function quickAct(q){const d=S.dev[S.sel];if(!d)return;const r=rowOf(d.id),ids=S.rows[r],i=ids.indexOf(d.id);
+  if(q.slice(0,3)==='ph:')d.c.ph=q.slice(3);
+  else if(q==='in-'||q==='in+'){const L=QIN[d.t];let k=L.indexOf(d.p.In);if(k<0)k=L.findIndex(x=>x>=d.p.In);
+    const n=k+(q==='in+'?1:-1);if(n<0||n>=L.length){toast('To skrajna wartość w typoszeregu');return;}d.p.In=L[n];}
+  else if(q==='curve'){const L=d.t==='rcbo'?['B','C']:['B','C','D'];d.p.curve=L[(L.indexOf(d.p.curve)+1)%L.length];}
+  else if(q==='left'){if(i<1)return;ids.splice(i,1);ids.splice(i-1,0,d.id);}
+  else if(q==='right'){if(i>=ids.length-1)return;ids.splice(i,1);ids.splice(i+1,0,d.id);}
+  else if(q==='dup'){const c=JSON.parse(JSON.stringify(d));c.id='d'+(uid++);S.dev[c.id]=c;ids.splice(i+1,0,c.id);S.sel=c.id;}
+  else if(q==='del'){delDev(d.id);return;}
+  render();}
 function setPath(obj,path,v){const k=path.split('.');let o=obj;for(let i=0;i<k.length-1;i++)o=o[k[i]];o[k[k.length-1]]=v;}
 function parseV(v){if(v==='true')return true;if(v==='false')return false;if(v!==''&&!isNaN(v)&&!/^L\d$/.test(v))return +v;return v;}
 panel.addEventListener('input',e=>{const t=e.target;const d=S.dev[S.sel];

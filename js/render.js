@@ -51,6 +51,15 @@ function renderWireFilter(){const f=$('#wireFilter');f.hidden=!S.wires;if(!S.wir
     +(man?'<button class="chip" data-wact="adopt">Przejmij automatyczne</button><button class="chip" data-wact="clear">Usuń przewody</button>'+(wsel&&!wireMove?wireEditor(wsel,Dn):'<span class="encsub" id="wireHelp" style="align-self:center">'+(wireMove?'Kliknij zacisk, do którego przepiąć koniec przewodu (Esc anuluje).':wirePick?'Kliknij drugi zacisk (Esc anuluje).':'Przeciągnij przewód od zacisku do zacisku: zielone zaciski są poprawne, czerwone dadzą błąd. Kliknij zacisk, potem drugi – to też działa. Kliknij przewód, aby go edytować.')+'</span>'):'')
     +'<span class="encsub" style="align-self:center">Pokaż żyły:</span>'+Object.keys(bg).map(k=>`<button class="chip" data-wf="${k}" aria-pressed="${!!wf[k]}"><span class="dot" style="background:${bg[k]}"></span>${k}</button>`).join('')
     +(S.sel&&S.dev[S.sel]?`<button class="chip" data-wsel="1" aria-pressed="true">Wyróżnione: ${designations()[S.sel]} ✕</button>`:'');}
+/* Pasek szybkiej edycji pod zaznaczonym aparatem (widok frontu): faza, prąd, charakterystyka, przesuwanie, kopia, usunięcie. */
+const QIN={mcb:[6,10,13,16,20,25,32,40,50,63],rcbo:[6,10,13,16,20,25,32,40],rcd:[25,40,63,80,100],sw:[32,40,63,80,100,125]};
+function quickBar(d,row){const before=row.slice(0,row.indexOf(d.id)).reduce((a,x)=>a+width(S.dev[x]),0);
+  const b=(q,l,t,cls)=>`<button class="qb ${cls||''}" data-q="${q}" title="${t}" aria-label="${t}">${l}</button>`;let h='';
+  if(isCirc(d)&&!is3(d))h+=['L1','L2','L3'].map(ph=>`<button class="qb${d.c.ph===ph?' on':''}" data-q="ph:${ph}" title="Faza ${ph}" aria-pressed="${d.c.ph===ph}"><i style="background:var(--${ph.toLowerCase()})"></i>${ph}</button>`).join('');
+  if(QIN[d.t])h+=b('in-','−','Mniejszy prąd znamionowy')+`<span class="qv">${d.p.In} A</span>`+b('in+','+','Większy prąd znamionowy');
+  if(isCirc(d))h+=b('curve',d.p.curve,'Zmień charakterystykę');
+  h+=b('left','←','Przesuń w lewo')+b('right','→','Przesuń w prawo')+b('dup','⧉','Duplikuj')+b('del','✕','Usuń aparat','danger');
+  return `<div class="quick${before>enc().mpr/2?' qr':''}" role="toolbar" aria-label="Szybka edycja aparatu">${h}</div>`;}
 function renderBoard(){const e=enc(),D=designations(),M=34;$('#board').className='cabinet'+(S.wires?' wiring':'')+(simOn()?' sim':'');
   SIMC=simOn()?simCalc():null;renderSim();
   $('#viewSeg').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String((b.dataset.view==='wires')===!!S.wires)));$('#wireHint').hidden=!S.wires;renderWireFilter();
@@ -60,7 +69,7 @@ function renderBoard(){const e=enc(),D=designations(),M=34;$('#board').className
       return `<div class="slot ${S.sel===id?'sel':''}${SIMC?' s-'+SIMC.dev[id].st:''}" draggable="true" data-id="${id}" style="width:${w*M}px" title="${esc(D[id]+' '+d.name+' · '+desc(d))}">
         <div class="dev m-${d.m}${['mcb','rcbo','rcd','sw'].indexOf(d.t)>=0?' lv':''}" style="--b:${MFR[d.m].c}"><div class="trm">${screwsFor(d,'top')}</div><div class="mk">${w>=2?MFR[d.m].s:MFR[d.m].s.slice(0,4)}</div>
         <div class="rt">${esc(a)}</div><div class="sub">${esc(b)}</div>${face(d)}<div class="trm b">${screwsFor(d,'bot')}</div></div>
-        <div class="tag"><b>${D[id]}</b><span>${esc(d.name)}</span><span class="ph">${phs}</span></div></div>`;}).join('');
+        <div class="tag"><b>${D[id]}</b><span>${esc(d.name)}</span><span class="ph">${phs}</span></div>${S.sel===id&&!S.wires&&!simOn()?quickBar(d,r):''}</div>`;}).join('');
     const free=e.mpr-u;
     const blank=free>0?`<div class="blank" style="width:${free*M}px">${free>=2?'rezerwa<br>'+fmt(free)+' mod.':''}</div>`:'';
     const limit=u>e.mpr?`<div class="limit" style="left:${e.mpr*M}px"><span>koniec szyny</span></div>`:'';
@@ -114,11 +123,12 @@ function panelDev(){const d=S.dev[S.sel];
     <div class="tools"><button class="btn sm" data-act="left">← W lewo</button><button class="btn sm" data-act="right">W prawo →</button><button class="btn sm" data-act="dup">Duplikuj</button><button class="btn sm danger" data-act="del">Usuń</button></div>
     ${calc}${f}<h3>Dane techniczne</h3><dl class="specs">${specs(d).map(([k,v])=>`<dt>${k}</dt><dd>${esc(v)}</dd>`).join('')}</dl>
     <p class="note">Oznaczenie serii jest orientacyjne. Numer katalogowy dobierz w katalogu producenta.</p>`;}
-function panelChecks(){const ck=checks();const order={crit:0,warn:1,info:2};ck.sort((a,b)=>order[a.sev]-order[b.sev]);
+let CK=[];                                       /* uwagi w kolejności wyświetlania; indeks trafia do data-fix */
+function panelChecks(){const ck=checks();const order={crit:0,warn:1,info:2};ck.sort((a,b)=>order[a.sev]-order[b.sev]);CK=ck;
   const L={crit:'błąd',warn:'uwaga',info:'info'};
   if(!ck.length)return `<ul class="issues"><li class="issue"><span class="sev ok">OK</span><span class="msg">Projekt przeszedł wszystkie kontrole.</span></li></ul>`;
-  return `<ul class="issues">${ck.map(c=>`<li class="issue" ${c.id?`data-id="${c.id}"`:''}><span class="sev ${c.sev}">${L[c.sev]}</span><span class="msg">${c.msg}</span>${c.ref?`<span class="ref">${c.ref}</span>`:''}</li>`).join('')}</ul>
-  <p class="note">Kliknij pozycję powiązaną z aparatem, aby go zaznaczyć.</p>`;}
+  return `<ul class="issues">${ck.map((c,i)=>`<li class="issue" ${c.id?`data-id="${c.id}"`:''}><span class="sev ${c.sev}">${L[c.sev]}</span><span class="msg">${c.msg}</span>${c.ref?`<span class="ref">${c.ref}</span>`:''}${c.fix?`<span class="ref"><button class="btn sm pri" data-fix="${i}">${esc(c.fix.l)}</button></span>`:''}</li>`).join('')}</ul>
+  <p class="note">Kliknij pozycję powiązaną z aparatem, aby go zaznaczyć. Przycisk przy uwadze wykonuje proponowaną naprawę; „Cofnij” ją odwraca.</p>`;}
 function panelBal(){const L=phaseLoads(),T=totals(),ks=S.set.ks;
   const vals=['L1','L2','L3'].map(p=>[p,L[p]*ks,L[p]]);const max=Math.max(S.set.przedl,...vals.map(v=>v[1]))*1.15||1;
   const W=320,lx=34,bw=W-lx-10,sx=v=>lx+v/max*bw;

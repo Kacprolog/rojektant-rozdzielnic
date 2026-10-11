@@ -19,7 +19,8 @@ Fronty aparatów pięciu producentów (rysunki własne, uproszczone):
 | Funkcja | Jak użyć |
 |---|---|
 | Układanie aparatów | Przeciągnij z biblioteki na szynę albo kliknij (trafi do aktywnego rzędu) |
-| Kontrola projektu | Zakładka „Kontrola”: 19 reguł, klik przenosi do aparatu |
+| Kontrola projektu | Zakładka „Kontrola”: klik przenosi do aparatu, a przycisk przy uwadze wykonuje naprawę (np. „Ustaw In 25 A i przewód 4 mm²”, „Dodaj różnicówkę”) |
+| Szybka edycja | Kliknij aparat w widoku frontu: pod nim pojawia się pasek z fazą, prądem − / +, charakterystyką, przesuwaniem, kopią i usunięciem |
 | Okablowanie | Przełącznik „Front / Okablowanie” nad obudową; tryb „Automatyczne” rysuje przewody sam |
 | Własne przewody | W okablowaniu wybierz „Ręczne”: przeciągnij przewód od zacisku do zacisku (zielone zaciski są poprawne, czerwone dadzą błąd) albo kliknij zacisk, potem drugi. Kliknij przewód i Delete, żeby usunąć. „Przejmij automatyczne” daje gotowy punkt wyjścia |
 | Edycja przewodu | Kliknij przewód w trybie ręcznym: przekrój, kolor izolacji, „Przepnij początek / koniec”, „Usuń przewód” |

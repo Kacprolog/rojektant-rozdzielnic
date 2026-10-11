@@ -332,3 +332,16 @@ svg.wires .tp.ok{stroke:var(--ok);fill:var(--ok);stroke-opacity:1;fill-opacity:.
 svg.wires .tp.bad{stroke:var(--crit);fill:var(--crit);stroke-opacity:1;fill-opacity:.3;stroke-width:2}
 svg.wires .tp.warnc{stroke:var(--warn);fill:var(--warn);stroke-opacity:1;fill-opacity:.3;stroke-width:2}
 svg.wires .rb{stroke:var(--accent);stroke-width:3;stroke-dasharray:6 4;stroke-linecap:round;pointer-events:none}
+
+/* Pasek szybkiej edycji pod zaznaczonym aparatem (jasny jak aparaty, także w ciemnym motywie). */
+.cabinet:not(.wiring) .slot.sel{z-index:7}
+.quick{position:absolute;left:0;top:100%;margin-top:5px;z-index:8;display:flex;align-items:center;gap:3px;padding:4px;background:var(--dev);color:var(--dev-ink);border:1px solid var(--accent);border-radius:8px;box-shadow:0 8px 18px rgba(0,0,0,.3);white-space:nowrap;cursor:default}
+.quick.qr{left:auto;right:0}
+.qb{display:inline-flex;align-items:center;justify-content:center;gap:4px;min-width:28px;height:28px;padding:0 6px;border:1px solid var(--dev-edge);background:rgba(255,255,255,.6);color:var(--dev-ink);border-radius:5px;font-size:12px;font-weight:600;cursor:pointer}
+.qb:hover{border-color:var(--accent)}
+.qb.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.qb.danger{color:var(--crit)}
+.qb i{width:8px;height:8px;border-radius:50%}
+.qv{min-width:38px;text-align:center;font-size:12px;font-weight:700;font-variant-numeric:tabular-nums}
+#print .quick{display:none}
+.issue .btn{margin-top:4px}

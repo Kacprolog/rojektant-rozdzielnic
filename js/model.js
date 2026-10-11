@@ -176,34 +176,61 @@ function rowUse(i){return S.rows[i].reduce((a,id)=>a+width(S.dev[id]),0);}
 function totals(){let P=0;Object.values(S.dev).forEach(d=>{if(isCirc(d))P+=+d.c.P||0;});const Pd=P*S.set.ks;const Ibm=Pd*1000/(Math.sqrt(3)*400*S.set.cos);
   const e=enc(),cap=e.mpr*S.enc.rows;let used=0;S.rows.forEach((r,i)=>used+=rowUse(i));return {P,Pd,Ibm,cap,used};}
 
+/* ---------- naprawy proponowane przez kontrolę ---------- */
+/* Uwaga z checks() może mieć pole fix = { l: etykieta przycisku, f: funkcja zmieniająca S }. Po f() wołany jest render(),
+   więc każda naprawa jest jednym krokiem cofania. */
+const STD_IN=[6,10,13,16,20,25,32,40,50,63],STD_MM=[1.5,2.5,4,6,10,16],SW_IN=[32,40,63,80,100,125];
+/* Najmniejszy przekrój kabla obwodu, dla którego Iz ≥ In; null, gdy tabela go nie zawiera. */
+function cableFor(d,In){const t=is3(d)?IZ3:IZ2;return STD_MM.find(m=>t[m]>=In)||null;}
+/* Rząd, w którym zmieści się aparat o szerokości w: najpierw wskazany, potem kolejne; -1, gdy brak miejsca. */
+function rowWithRoom(w,pref){const m=enc().mpr,r=[pref].concat(S.rows.map((_,i)=>i)).find(i=>i>=0&&i<S.rows.length&&rowUse(i)+w<=m);return r==null?-1:r;}
+function putDev(d,row,idx){S.dev[d.id]=d;S.rows[row].splice(idx==null?S.rows[row].length:idx,0,d.id);return d;}
+function devRow(id){return S.rows.findIndex(r=>r.indexOf(id)>=0);}
 function checks(){const out=[],D=designations(),e=enc(),T=totals(),devs=Object.values(S.dev);
-  const add=(sev,msg,ref,id)=>out.push({sev,msg,ref,id});
+  const add=(sev,msg,ref,id,fix)=>out.push({sev,msg,ref,id,fix});
   S.rows.forEach((r,i)=>{const u=rowUse(i);if(u>e.mpr)add('crit',`<b>Rząd ${i+1}</b> jest przepełniony: ${fmt(u)} z ${e.mpr} modułów.`,'Przenieś aparaty do innego rzędu lub wybierz większą obudowę.');
     const ms=new Set(r.map(id=>S.dev[id].m).filter(Boolean));if(ms.size>1)add('info',`<b>Rząd ${i+1}</b> łączy aparaty kilku producentów.`,'Sprawdź, czy szyna grzebieniowa pasuje do wszystkich aparatów w rzędzie.');});
   if(!devs.length){add('info','Obudowa jest pusta. Dodaj aparaty z biblioteki.');return out;}
   const sws=devs.filter(d=>d.t==='sw');
-  if(!sws.length)add('warn','Brak <b>rozłącznika głównego</b>.','Rozdzielnica powinna mieć łącznik odłączający całą instalację (PN-HD 60364-5-53).');
-  if(!devs.some(d=>d.t==='spd'))add('warn','Brak <b>ogranicznika przepięć</b>.','PN-HD 60364-4-443 wymaga oceny ryzyka; w budynkach mieszkalnych SPD stosuje się standardowo.');
+  if(!sws.length){const In=SW_IN.find(x=>x>=S.set.przedl)||125,row=rowWithRoom(3,0);
+    add('warn','Brak <b>rozłącznika głównego</b>.','Rozdzielnica powinna mieć łącznik odłączający całą instalację (PN-HD 60364-5-53).',undefined,
+      row<0?undefined:{l:'Dodaj rozłącznik '+In+' A 3P',f:()=>{putDev(newDev('sw',S.mfr,{In:In,poles:3},null,'Rozłącznik główny'),row,0);}});}
+  if(!devs.some(d=>d.t==='spd')){const row=rowWithRoom(4,0);
+    add('warn','Brak <b>ogranicznika przepięć</b>.','PN-HD 60364-4-443 wymaga oceny ryzyka; w budynkach mieszkalnych SPD stosuje się standardowo.',undefined,
+      row<0?undefined:{l:'Dodaj ogranicznik T1+T2 3P+N',f:()=>{const ids=S.rows[row];let at=0;ids.forEach((id,k)=>{if(S.dev[id].t==='sw')at=k+1;});putDev(newDev('spd',S.mfr,{cls:'T1+T2',sys:'3P+N'},null,'Ochrona przepięciowa'),row,at);}});}
   devs.filter(isCirc).forEach(d=>{const i=ib(d),z=iz(d),n=D[d.id]+' '+esc(d.name);
-    if(i>d.p.In)add('crit',`<b>${n}</b>: prąd obciążenia ${fmt(i)} A przekracza In ${d.p.In} A.`,'Warunek Ib ≤ In. Zwiększ prąd zabezpieczenia lub podziel obwód.',d.id);
-    if(z&&d.p.In>z)add('crit',`<b>${n}</b>: In ${d.p.In} A > Iz ${fmt(z)} A przewodu ${fmt(d.c.cable)} mm².`,'Warunek In ≤ Iz. Zwiększ przekrój przewodu lub zmniejsz In.',d.id);
+    if(i>d.p.In){const In2=STD_IN.find(x=>x>=i),mm2=In2?cableFor(d,In2):null,up=mm2&&mm2>d.c.cable;
+      add('crit',`<b>${n}</b>: prąd obciążenia ${fmt(i)} A przekracza In ${d.p.In} A.`,'Warunek Ib ≤ In. Zwiększ prąd zabezpieczenia lub podziel obwód.',d.id,
+        mm2?{l:'Ustaw In '+In2+' A'+(up?' i przewód '+fmt(mm2)+' mm²':''),f:()=>{d.p.In=In2;if(up)d.c.cable=mm2;}}:undefined);}
+    if(z&&d.p.In>z){const mm2=cableFor(d,d.p.In);
+      add('crit',`<b>${n}</b>: In ${d.p.In} A > Iz ${fmt(z)} A przewodu ${fmt(d.c.cable)} mm².`,'Warunek In ≤ Iz. Zwiększ przekrój przewodu lub zmniejsz In.',d.id,
+        mm2?{l:'Zwiększ przewód do '+fmt(mm2)+' mm²',f:()=>{d.c.cable=mm2;}}:undefined);}
     const r=protRcd(d);
-    if(NEED30.includes(d.c.kind)&&(!r||r.p.idn>30))add('crit',`<b>${n}</b> (${KINDS[d.c.kind]}) nie ma ochrony różnicowoprądowej 30 mA.`,'Wymóg ochrony uzupełniającej, PN-HD 60364-4-41 p. 411.3.3 oraz części 7xx.',d.id);
-    if(d.c.kind==='ev'&&r&&r.p.kind!=='B')add('warn',`<b>${n}</b>: ładowarka EV za RCD typu ${r.p.kind}.`,'PN-HD 60364-7-722: RCD typu B albo typ A z modułem RDC-DD 6 mA DC w ładowarce.',d.id);
-    if(r&&r.p.kind==='AC')add('info',`<b>${n}</b> chroniony RCD typu AC.`,'Dla odbiorników z elektroniką zalecany jest typ A lub F.',d.id);});
+    if(NEED30.includes(d.c.kind)&&(!r||r.p.idn>30)){let fix;
+      if(d.t==='rcbo')fix={l:'Ustaw IΔn 30 mA',f:()=>{d.p.idn=30;}};
+      else{/* istniejąca różnicówka 30 mA pasująca do obwodu (4P albo 2P na tej samej fazie), najmniej obciążona */
+        const cnt=id=>devs.filter(m=>m.t==='mcb'&&m.rcd===id).length;
+        const ok=devs.filter(x=>x.t==='rcd'&&x.p.idn<=30&&(x.p.poles==4||(!is3(d)&&rcdPh(x)===d.c.ph))).sort((a,b)=>cnt(a.id)-cnt(b.id))[0];
+        if(ok)fix={l:'Przypisz do '+D[ok.id],f:()=>{d.rcd=ok.id;}};
+        else{const here=devRow(d.id),row=rowWithRoom(4,here);
+          if(row>=0)fix={l:'Dodaj różnicówkę 40 A / 30 mA typ A',f:()=>{const nd=newDev('rcd',d.m,{In:40,poles:4,idn:30,kind:'A',sel:false},null,'Różnicówka');
+            putDev(nd,row,row===here?S.rows[row].indexOf(d.id):undefined);d.rcd=nd.id;}};}}
+      add('crit',`<b>${n}</b> (${KINDS[d.c.kind]}) nie ma ochrony różnicowoprądowej 30 mA.`,'Wymóg ochrony uzupełniającej, PN-HD 60364-4-41 p. 411.3.3 oraz części 7xx.',d.id,fix);}
+    if(d.c.kind==='ev'&&r&&r.p.kind!=='B')add('warn',`<b>${n}</b>: ładowarka EV za RCD typu ${r.p.kind}.`,'PN-HD 60364-7-722: RCD typu B albo typ A z modułem RDC-DD 6 mA DC w ładowarce.',d.id,{l:'Zmień typ '+D[r.id]+' na B',f:()=>{r.p.kind='B';}});
+    if(r&&r.p.kind==='AC')add('info',`<b>${n}</b> chroniony RCD typu AC.`,'Dla odbiorników z elektroniką zalecany jest typ A lub F.',d.id,{l:'Zmień typ '+D[r.id]+' na A',f:()=>{r.p.kind='A';}});});
   devs.filter(d=>d.t==='rcd').forEach(r=>{const L=phaseLoads(d=>d.t==='mcb'&&d.rcd===r.id);const mx=Math.max(L.L1,L.L2,L.L3)*S.set.ks;
     const nn=devs.filter(d=>d.t==='mcb'&&d.rcd===r.id).length;
     if(!nn)add('info',`<b>${D[r.id]} ${esc(r.name)}</b> nie ma przypisanych obwodów.`,'Przypisz obwody w panelu aparatu (pole „Ochrona RCD”).',r.id);
     if(mx>r.p.In)add('warn',`<b>${D[r.id]} ${esc(r.name)}</b>: obciążenie szczytowe ${fmt(mx)} A > In ${r.p.In} A.`,'Rozdziel obwody na kilka wyłączników różnicowoprądowych.',r.id);
-    if(r.p.poles==2){const ph=rcdPh(r);devs.filter(d=>d.t==='mcb'&&d.rcd===r.id&&!is3(d)&&d.c.ph!==ph).forEach(d=>add('crit',`<b>${D[d.id]} ${esc(d.name)}</b> ma fazę ${d.c.ph}, a ${D[r.id]} 2P podaje fazę ${ph}.`,'Obwody za RCD 2P muszą być na tej samej fazie co różnicówka.',d.id));}
+    if(r.p.poles==2){const ph=rcdPh(r);devs.filter(d=>d.t==='mcb'&&d.rcd===r.id&&!is3(d)&&d.c.ph!==ph).forEach(d=>add('crit',`<b>${D[d.id]} ${esc(d.name)}</b> ma fazę ${d.c.ph}, a ${D[r.id]} 2P podaje fazę ${ph}.`,'Obwody za RCD 2P muszą być na tej samej fazie co różnicówka.',d.id,{l:'Zmień fazę obwodu na '+ph,f:()=>{d.c.ph=ph;}}));}
     if(r.p.poles==2&&devs.some(d=>d.t==='mcb'&&d.rcd===r.id&&is3(d)))add('crit',`<b>${D[r.id]}</b> 2P zasila obwód trójfazowy.`,'Obwody 3F wymagają RCD 4P.',r.id);});
   const maxIn=Math.max(0,...devs.filter(isCirc).map(d=>d.p.In));
   if(maxIn&&maxIn*1.6>S.set.przedl)add('warn',`Zabezpieczenie przedlicznikowe ${S.set.przedl} A może nie być selektywne względem ${maxIn} A w obwodach.`,'Przyjmuje się stosunek prądów co najmniej 1,6 : 1 dla selektywności nadprądowej.');
-  sws.forEach(s=>{if(s.p.In<S.set.przedl)add('crit',`<b>${D[s.id]} rozłącznik ${s.p.In} A</b> ma mniejszy prąd niż zabezpieczenie przedlicznikowe ${S.set.przedl} A.`,'In rozłącznika ≥ In zabezpieczenia przed nim.',s.id);});
+  sws.forEach(s=>{if(s.p.In<S.set.przedl)add('crit',`<b>${D[s.id]} rozłącznik ${s.p.In} A</b> ma mniejszy prąd niż zabezpieczenie przedlicznikowe ${S.set.przedl} A.`,'In rozłącznika ≥ In zabezpieczenia przed nim.',s.id,{l:'Ustaw In rozłącznika '+(SW_IN.find(x=>x>=S.set.przedl)||125)+' A',f:()=>{s.p.In=SW_IN.find(x=>x>=S.set.przedl)||125;}});});
   if(T.Ibm>S.set.przedl)add('crit',`Prąd szczytowy ${fmt(T.Ibm)} A przekracza zabezpieczenie przedlicznikowe ${S.set.przedl} A.`,'Zmniejsz moc obwodów, sprawdź współczynnik jednoczesności lub wnioskuj o większą moc.');
   if(T.Pd>S.set.moc)add('warn',`Moc szczytowa ${fmt(T.Pd)} kW przekracza moc przyłączeniową ${fmt(S.set.moc)} kW.`,'Zmień warunki przyłączenia u OSD lub ogranicz moc.');
   const L=phaseLoads(),mx=Math.max(L.L1,L.L2,L.L3),mn=Math.min(L.L1,L.L2,L.L3);
-  if(mx>5&&(mx-mn)/mx>0.25)add('warn',`Asymetria obciążenia faz ${fmt((mx-mn)/mx*100,0)}% (L1 ${fmt(L.L1)} A, L2 ${fmt(L.L2)} A, L3 ${fmt(L.L3)} A).`,'Użyj „Rozłóż fazy” albo zmień fazy obwodów ręcznie.');
+  if(mx>5&&(mx-mn)/mx>0.25)add('warn',`Asymetria obciążenia faz ${fmt((mx-mn)/mx*100,0)}% (L1 ${fmt(L.L1)} A, L2 ${fmt(L.L2)} A, L3 ${fmt(L.L3)} A).`,'Użyj „Rozłóż fazy” albo zmień fazy obwodów ręcznie.',undefined,{l:'Rozłóż fazy',f:()=>{balance();}});
   if(T.cap&&(T.cap-T.used)/T.cap<0.2)add('info',`Rezerwa miejsca ${fmt(Math.max(0,T.cap-T.used))} mod. to mniej niż 20%.`,'Zostaw miejsce na rozbudowę instalacji.');
   wireCheck().out.forEach(x=>out.push(x));
   termIssues().forEach(x=>out.push(x));

@@ -60,8 +60,9 @@ function buildConns(){const A=autoConns();if(S.wmode!=='manual')return A;
 /* Kontrola okablowania ręcznego. Zwraca { out: uwagi jak w checks(), bad: {idPrzewodu: 'crit'|'warn'}, why: {idPrzewodu: komunikat} }. */
 function wireCheck(){const out=[],bad={},why={};if(S.wmode!=='manual')return {out,bad,why};
   const {C,combs}=buildConns(),D=designations(),devs=S.rows.flat().map(id=>S.dev[id]),U=C.filter(c=>c.user),tncs=S.set.siec==='TN-C-S',sw=devs.find(d=>d.t==='sw');
-  const rank={crit:3,warn:2,info:1},add=(sev,msg,ref,id,c)=>{out.push({sev,msg,ref,id});if(c&&!(rank[bad[c.id]]>=rank[sev])){bad[c.id]=sev;why[c.id]=msg;}};
-  if(!U.length){add('info','Okablowanie ręczne jest puste.','W widoku Okablowanie kliknij zacisk, a potem drugi, aby połączyć je przewodem, albo użyj „Przejmij automatyczne”.');return {out,bad,why};}
+  /* domyślna naprawa uwagi do przewodu ręcznego to jego usunięcie; fix pozwala podać inną */
+  const rank={crit:3,warn:2,info:1},add=(sev,msg,ref,id,c,fix)=>{out.push({sev,msg,ref,id,fix:fix||(c?{l:'Usuń ten przewód',f:()=>{S.conn=S.conn.filter(w=>w.id!==c.id);}}:undefined)});if(c&&!(rank[bad[c.id]]>=rank[sev])){bad[c.id]=sev;why[c.id]=msg;}};
+  if(!U.length){add('info','Okablowanie ręczne jest puste.','W widoku Okablowanie kliknij zacisk, a potem drugi, aby połączyć je przewodem, albo użyj „Przejmij automatyczne”.',undefined,undefined,{l:'Przejmij automatyczne',f:()=>{wireAdopt();}});return {out,bad,why};}
   const isL=p=>p.charAt(0)==='L',devId=c=>c.a.k==='dev'?c.a.id:c.b.k==='dev'?c.b.id:undefined;
   const zn=z=>z==='pre'?'przed rozłącznikiem głównym':z==='main'?'przed różnicówkami':'za różnicówką '+D[z];
   /* Strefa zacisku: 'pre' przed rozłącznikiem, 'main' za nim, id różnicówki za jej wyjściem; null = nie dotyczy. */
@@ -75,17 +76,18 @@ function wireCheck(){const out=[],bad={},why={};if(S.wmode!=='manual')return {ou
     if(d.t==='mcb')return (d.rcd&&S.dev[d.rcd])?d.rcd:'main';
     return 'main';};
   const COL={L1:'brązową',L2:'czarną',L3:'szarą',N:'niebieską',PE:'zielono-żółtą'};
-  U.forEach(c=>{const pa=epPh(c.a),pb=epPh(c.b),nm='Przewód <b>'+esc(epName(c.a,D))+' → '+esc(epName(c.b,D))+'</b>',id=devId(c);
+  const unset=(c,k)=>()=>{const w=S.conn.find(x=>x.id===c.id);if(w)delete w[k];};
+  U.forEach(c=>{const fixCol={l:'Przywróć kolor wg normy',f:unset(c,'col')},fixMm={l:'Ustaw przekrój automatycznie',f:unset(c,'mm')};const pa=epPh(c.a),pb=epPh(c.b),nm='Przewód <b>'+esc(epName(c.a,D))+' → '+esc(epName(c.b,D))+'</b>',id=devId(c);
     /* kolor izolacji zmieniony ręcznie: zgodność z PN-EN 60445 (żyła przewodu = c.ph, dla mostka PEN i PE: ochronna) */
     if(c.col&&(pa===pb||c.kind==='mostek')){const fn=c.kind==='mostek'?'PE':c.ph,ref='Kolory wg PN-EN 60445 (PN-HD 308 S2): L1 brązowy, L2 czarny, L3 szary, N niebieski, PE i PEN zielono-żółty.';
       if(c.col!==fn){
-        if(c.col==='PE')add('crit',nm+' ma izolację zielono-żółtą, a nie jest przewodem ochronnym.','Kombinacja zielono-żółta jest zastrzeżona wyłącznie dla PE i PEN. '+ref,id,c);
-        else if(fn==='PE')add('crit',nm+' jest przewodem ochronnym, a ma izolację '+COL[c.col]+'.','Przewód PE i PEN musi być zielono-żółty na całej długości. '+ref,id,c);
-        else if(c.col==='N')add('warn',nm+' ma izolację niebieską, a jest przewodem fazowym '+fn+'.','Kolor niebieski jest przeznaczony dla przewodu neutralnego. '+ref,id,c);
-        else if(fn==='N')add('warn',nm+' jest przewodem neutralnym, a ma izolację '+COL[c.col]+'.','Przewód N powinien być niebieski. '+ref,id,c);
-        else add('info',nm+' (faza '+fn+') ma izolację '+COL[c.col]+'.','Dopuszczalne, ale zalecana kolejność to L1 brązowy, L2 czarny, L3 szary; oznacz końce przewodu. '+ref,id,c);}}
-    if(c.mm<c.mmAuto)add('warn',nm+' ma przekrój '+fmt(c.mm)+' mm², mniejszy niż dobrany '+fmt(c.mmAuto)+' mm².','Przekrój przewodu w rozdzielnicy musi odpowiadać zabezpieczeniu przed nim (In ≤ Iz, PN-HD 60364-4-43).',id,c);
-    const tf=termFit(c,D);if(tf)add('crit',tf[0],tf[1],tf[2],c);
+        if(c.col==='PE')add('crit',nm+' ma izolację zielono-żółtą, a nie jest przewodem ochronnym.','Kombinacja zielono-żółta jest zastrzeżona wyłącznie dla PE i PEN. '+ref,id,c,fixCol);
+        else if(fn==='PE')add('crit',nm+' jest przewodem ochronnym, a ma izolację '+COL[c.col]+'.','Przewód PE i PEN musi być zielono-żółty na całej długości. '+ref,id,c,fixCol);
+        else if(c.col==='N')add('warn',nm+' ma izolację niebieską, a jest przewodem fazowym '+fn+'.','Kolor niebieski jest przeznaczony dla przewodu neutralnego. '+ref,id,c,fixCol);
+        else if(fn==='N')add('warn',nm+' jest przewodem neutralnym, a ma izolację '+COL[c.col]+'.','Przewód N powinien być niebieski. '+ref,id,c,fixCol);
+        else add('info',nm+' (faza '+fn+') ma izolację '+COL[c.col]+'.','Dopuszczalne, ale zalecana kolejność to L1 brązowy, L2 czarny, L3 szary; oznacz końce przewodu. '+ref,id,c,fixCol);}}
+    if(c.mm<c.mmAuto)add('warn',nm+' ma przekrój '+fmt(c.mm)+' mm², mniejszy niż dobrany '+fmt(c.mmAuto)+' mm².','Przekrój przewodu w rozdzielnicy musi odpowiadać zabezpieczeniu przed nim (In ≤ Iz, PN-HD 60364-4-43).',id,c,fixMm);
+    const tf=termFit(c,D);if(tf)add('crit',tf[0],tf[1],tf[2],c,c.mm!==c.mmAuto?fixMm:undefined);
     if(c.kind==='mostek'){
       if(!tncs)add('crit',nm+' łączy N z PE w układzie '+esc(S.set.siec)+'.','W tym układzie przewody N i PE muszą być rozdzielone w całej instalacji (PN-HD 60364-5-54).',id,c);
       else if(!(c.b.k==='bar'&&c.b.bar==='N')&&!(c.b.k==='dev'&&S.dev[c.b.id]===sw&&c.b.side==='top'))add('crit',nm+' łączy N z PE poza punktem podziału PEN.','Za punktem podziału (listwa PE → główna listwa N) przewodów N i PE nie wolno ponownie łączyć (PN-HD 60364-5-54 p. 543.4).',id,c);
