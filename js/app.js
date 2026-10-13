@@ -80,7 +80,7 @@ board.addEventListener('dragstart',e=>{const s=e.target.closest('.slot');if(!s)r
 function dropIndex(rail,x){const slots=[...rail.querySelectorAll('.slot')].filter(s=>s.dataset.id!==(dragInfo&&dragInfo.id));let idx=slots.length,pos=null;
   for(let i=0;i<slots.length;i++){const r=slots[i].getBoundingClientRect();if(x<r.left+r.width/2){idx=i;pos=r.left;break;}}
   const rr=rail.getBoundingClientRect();if(pos==null){const last=slots[slots.length-1];pos=last?last.getBoundingClientRect().right:rr.left;}
-  const ids=slots.map(s=>s.dataset.id);return {idx,px:pos-rr.left,ids};}
+  const ids=slots.map(s=>s.dataset.id);return {idx,px:(pos-rr.left)/zf(),ids};}
 board.addEventListener('dragover',e=>{const rail=e.target.closest('.rail');if(!rail||!dragInfo)return;e.preventDefault();const {px}=dropIndex(rail,e.clientX);
   board.querySelectorAll('.dropline').forEach(x=>x.remove());const l=document.createElement('div');l.className='dropline';l.style.left=(px-1)+'px';rail.appendChild(l);});
 board.addEventListener('dragleave',e=>{if(!board.contains(e.relatedTarget))board.querySelectorAll('.dropline').forEach(x=>x.remove());});
@@ -143,6 +143,27 @@ $('#bBalance').addEventListener('click',balance);
 $('#bPrint').addEventListener('click',printView);
 window.addEventListener('afterprint',()=>{const pv=$('#print');if(pv)pv.innerHTML='';});
 $('#bSim').addEventListener('click',simToggle);
+/* Powiększenie: przyciski oraz Ctrl + kółko myszy nad obudową. */
+$('#zoomSeg').addEventListener('click',e=>{const b=e.target.closest('[data-zoom]');if(b)setZoom(b.dataset.zoom);});
+$('#boardScroll').addEventListener('wheel',e=>{if(!e.ctrlKey)return;e.preventDefault();setZoom(e.deltaY<0?'+':'-');},{passive:false});
+/* Przenoszenie aparatu palcem: przytrzymaj 0,35 s, potem przeciągnij na miejsce. Zwykłe przesunięcie palcem przewija stronę.
+   Działa tylko na ekranach dotykowych (COARSE); tam aparaty nie mają draggable, bo HTML5 drag and drop z dotykiem jest zawodne. */
+let tDrag=null;
+function dropDev(id,rail,x){dragInfo={id:id};const row=+rail.dataset.row,di=dropIndex(rail,x),fr=rowOf(id);S.rows[fr].splice(S.rows[fr].indexOf(id),1);
+  const before=(row===fr?di.ids:S.rows[row])[di.idx],at=before?S.rows[row].indexOf(before):S.rows[row].length;S.rows[row].splice(at,0,id);S.active=row;S.sel=id;dragInfo=null;render();}
+board.addEventListener('touchstart',e=>{if(!COARSE||!e.touches||e.touches.length!==1||simOn())return;
+  const s=e.target.closest&&e.target.closest('.slot');if(!s||e.target.closest('[data-q]')||e.target.closest('[data-ep]'))return;
+  const t=e.touches[0];tDrag={id:s.dataset.id,x:t.clientX,y:t.clientY,on:false,rail:null,cx:0,
+    timer:setTimeout(()=>{if(!tDrag)return;tDrag.on=true;dragInfo={id:tDrag.id};s.classList.add('lifting');if(navigator.vibrate)navigator.vibrate(15);},350)};},{passive:true});
+board.addEventListener('touchmove',e=>{if(!tDrag)return;const t=e.touches[0];
+  if(!tDrag.on){if(Math.abs(t.clientX-tDrag.x)+Math.abs(t.clientY-tDrag.y)>10){clearTimeout(tDrag.timer);tDrag=null;}return;}
+  e.preventDefault();const el=document.elementFromPoint(t.clientX,t.clientY),rail=el&&el.closest?el.closest('.rail'):null;
+  board.querySelectorAll('.dropline').forEach(x=>x.remove());tDrag.rail=rail;tDrag.cx=t.clientX;
+  if(rail){const l=document.createElement('div');l.className='dropline';l.style.left=(dropIndex(rail,t.clientX).px-1)+'px';rail.appendChild(l);}},{passive:false});
+const touchEnd=()=>{if(!tDrag)return;clearTimeout(tDrag.timer);const d=tDrag;tDrag=null;board.querySelectorAll('.dropline').forEach(x=>x.remove());
+  if(!d.on)return;dragInfo=null;
+  if(d.rail){dropDev(d.id,d.rail,d.cx);toast('Przeniesiono aparat');}else render(true);};
+board.addEventListener('touchend',touchEnd);board.addEventListener('touchcancel',touchEnd);
 $('#simBar').addEventListener('click',e=>{const b=e.target.closest('[data-sim]');if(!b)return;if(b.dataset.sim==='reset')simReset();else simFault(b.dataset.sim);});
 $('#simBar').addEventListener('change',e=>{if(e.target.hasAttribute('data-simph'))simPhase(e.target.value);});
 /* Przeciąganie przewodu między zaciskami (mysz i dotyk). Krótkie naciśnięcie bez ruchu zostaje zwykłym kliknięciem. */
@@ -155,10 +176,10 @@ function wireDragStart(){const svg=$('svg.wires');if(!svg)return;const a=JSON.pa
   ['x1','x2'].forEach(k=>l.setAttribute(k,wDrag.x));['y1','y2'].forEach(k=>l.setAttribute(k,wDrag.y));svg.appendChild(l);wDrag.line=l;}
 board.addEventListener('pointerdown',e=>{const tp=e.target.closest&&e.target.closest('[data-ep]');if(!tp||S.wmode!=='manual'||wireMove||wirePick)return;
   const r=tp.ownerSVGElement.getBoundingClientRect(),b=tp.getBoundingClientRect();
-  wDrag={ep:tp.getAttribute('data-ep'),x:b.left+b.width/2-r.left,y:b.top+b.height/2-r.top,sx:e.clientX,sy:e.clientY,moved:false,line:null};});
+  wDrag={ep:tp.getAttribute('data-ep'),x:(b.left+b.width/2-r.left)/zf(),y:(b.top+b.height/2-r.top)/zf(),sx:e.clientX,sy:e.clientY,moved:false,line:null};});
 document.addEventListener('pointermove',e=>{if(!wDrag)return;
   if(!wDrag.moved){if(Math.abs(e.clientX-wDrag.sx)+Math.abs(e.clientY-wDrag.sy)<6)return;wDrag.moved=true;wireDragStart();}
-  const svg=$('svg.wires');if(!svg||!wDrag.line)return;const r=svg.getBoundingClientRect();wDrag.line.setAttribute('x2',e.clientX-r.left);wDrag.line.setAttribute('y2',e.clientY-r.top);});
+  const svg=$('svg.wires');if(!svg||!wDrag.line)return;const r=svg.getBoundingClientRect();wDrag.line.setAttribute('x2',(e.clientX-r.left)/zf());wDrag.line.setAttribute('y2',(e.clientY-r.top)/zf());});
 const wireDragEnd=e=>{if(!wDrag)return;const d=wDrag;wDrag=null;if(!d.moved)return;
   const el=e.type==='pointercancel'?null:document.elementFromPoint(e.clientX,e.clientY),tp=el&&el.closest&&el.closest('[data-ep]');
   wireReset();

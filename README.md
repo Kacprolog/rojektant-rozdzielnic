@@ -21,6 +21,8 @@ Fronty aparatów pięciu producentów (rysunki własne, uproszczone):
 | Układanie aparatów | Przeciągnij z biblioteki na szynę albo kliknij (trafi do aktywnego rzędu) |
 | Kontrola projektu | Zakładka „Kontrola”: klik przenosi do aparatu, a przycisk przy uwadze wykonuje naprawę (np. „Ustaw In 25 A i przewód 4 mm²”, „Dodaj różnicówkę”) |
 | Obliczenia | Panel aparatu pokazuje spadek napięcia, pętlę zwarcia i prąd zwarcia obwodu; dane sieci (Zs i Ik w złączu, długość WLZ) ustawiasz w zakładce „Bilans” |
+| Powiększenie | Przyciski − / + nad obudową albo Ctrl + kółko myszy; środkowy przycisk dopasowuje obudowę do szerokości okna |
+| Telefon i tablet | Przytrzymaj aparat palcem i przeciągnij go na nowe miejsce; przewody ciągnie się od zacisku do zacisku |
 | Szybka edycja | Kliknij aparat w widoku frontu: pod nim pojawia się pasek z fazą, prądem − / +, charakterystyką, przesuwaniem, kopią i usunięciem |
 | Okablowanie | Przełącznik „Front / Okablowanie” nad obudową; tryb „Automatyczne” rysuje przewody sam |
 | Własne przewody | W okablowaniu wybierz „Ręczne”: przeciągnij przewód od zacisku do zacisku (zielone zaciski są poprawne, czerwone dadzą błąd) albo kliknij zacisk, potem drugi. Kliknij przewód i Delete, żeby usunąć. „Przejmij automatyczne” daje gotowy punkt wyjścia |

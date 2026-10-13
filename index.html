@@ -71,11 +71,11 @@
     <section class="boardcol">
       <div class="boardhead">
         <div><div class="enc" id="encTitle"></div><div class="encsub" id="encSub"></div></div>
-        <div class="headtools"><button class="btn sm" id="bSim" aria-pressed="false" title="Żywa rozdzielnica: klikane dźwignie, napięcie na przewodach, awarie">▶ Symulacja</button><div class="seg" role="group" aria-label="Widok obudowy" id="viewSeg"><button data-view="front">Front</button><button data-view="wires">Okablowanie</button></div></div>
+        <div class="headtools"><button class="btn sm" id="bSim" aria-pressed="false" title="Żywa rozdzielnica: klikane dźwignie, napięcie na przewodach, awarie">▶ Symulacja</button><div class="seg" role="group" aria-label="Powiększenie obudowy" id="zoomSeg"><button data-zoom="-" title="Pomniejsz (Ctrl + kółko myszy)" aria-label="Pomniejsz">−</button><button data-zoom="fit" title="Dopasuj obudowę do szerokości okna" id="zoomVal">100%</button><button data-zoom="+" title="Powiększ (Ctrl + kółko myszy)" aria-label="Powiększ">+</button></div><div class="seg" role="group" aria-label="Widok obudowy" id="viewSeg"><button data-view="front">Front</button><button data-view="wires">Okablowanie</button></div></div>
       </div>
       <div class="chips" id="wireFilter" hidden role="group" aria-label="Pokazywane żyły"></div>
       <div class="simbar" id="simBar" hidden></div>
-      <div class="boardscroll"><div class="cabinet" id="board"></div></div>
+      <div class="boardscroll" id="boardScroll"><div class="boardzoom" id="boardZoom"><div class="cabinet" id="board"></div></div></div>
       <div class="legend">
         <span><i style="background:var(--l1)"></i>L1 (brązowy)</span>
         <span><i style="background:var(--l2)"></i>L2 (czarny)</span>

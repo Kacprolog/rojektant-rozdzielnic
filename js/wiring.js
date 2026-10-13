@@ -208,8 +208,9 @@ function drawWires(){const cab=$('#board');
   const botH=STUB+cnt[n]*SP+10;
   cab.style.paddingBottom=(botH+18+30+30)+'px';
   // 3. pomiar
-  const cr=cab.getBoundingClientRect(),ox=cr.left+cab.clientLeft,oy=cr.top+cab.clientTop;
-  const rel=el=>{const r=el.getBoundingClientRect();return {l:r.left-ox,r:r.right-ox,t:r.top-oy,b:r.bottom-oy,w:r.width};};
+  /* pomiar w układzie obudowy: przy powiększeniu prostokąty z DOM są przeskalowane, więc dzielimy przez zf() */
+  const z=zf(),cr=cab.getBoundingClientRect(),ox=cr.left+cab.clientLeft*z,oy=cr.top+cab.clientTop*z;
+  const rel=el=>{const r=el.getBoundingClientRect();return {l:(r.left-ox)/z,r:(r.right-ox)/z,t:(r.top-oy)/z,b:(r.bottom-oy)/z,w:r.width/z};};
   const rails=[...cab.querySelectorAll('.rail')].map(rel);if(!rails.length)return;
   const W=cab.clientWidth,H=cab.clientHeight;
   const ch=[];for(let i=0;i<=n;i++){const start=i?rails[i-1].b+4+STUB:30;ch.push({start,c:0});}

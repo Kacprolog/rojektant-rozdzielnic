@@ -2,6 +2,28 @@
 
 Każdy wpis odpowiada jednemu commitowi. Format: co zrobiono, dlaczego, jak sprawdzono.
 
+## 0.13.0 (13.10.2026) — powiększanie obudowy i przenoszenie aparatów palcem
+
+Powód: kolejny krok planu interaktywności; bez tego aplikacja była niewygodna na telefonie i tablecie.
+
+- **Powiększenie obudowy:** przyciski − / + nad obudową (40%–200%) oraz Ctrl + kółko myszy. Środkowy przycisk pokazuje
+  bieżącą skalę; kliknięty przy 100% dopasowuje obudowę do szerokości okna, a przy innej skali wraca do 100%.
+  Powiększoną obudowę przewija się w obu kierunkach.
+- **Przenoszenie aparatu palcem:** przytrzymaj aparat ok. 0,35 s (uniesie się), przeciągnij na miejsce i puść; linia
+  pokazuje, gdzie trafi. Zwykłe przesunięcie palcem dalej przewija stronę. Dotyczy ekranów dotykowych; myszą działa
+  dotychczasowe przeciąganie.
+- **Komunikaty nie przechwytują kliknięć** (`.toast{pointer-events:none}`): komunikat u dołu ekranu potrafił zasłonić
+  zacisk albo przycisk na kilka sekund. Wykryte przez test przeciągania przewodu na szerokości telefonu.
+- Większe przyciski paska szybkiej edycji i przełączników na ekranach dotykowych.
+- Technicznie: `S.zoom` to stan widoku (nie trafia do pliku ani historii). `renderBoard()` ustawia `transform: scale`
+  na `#board` i wymiary `#boardZoom`; `drawWires()`, linia upuszczenia i gumka przewodu dzielą pomiary z DOM przez
+  `zf()`. Wydruk zawsze powstaje w skali 1. `COARSE` (ekran dotykowy) wyłącza atrybut `draggable`, żeby HTML5 drag and
+  drop nie kolidował z obsługą dotyku.
+- Testy `tests/dotyk.spec.js` (3): zaciski na rysunku pokrywają się ze śrubami aparatów przy 67% i 150%, dodanie przewodu
+  w powiększeniu, dopasowanie do szerokości, Ctrl + kółko, przeniesienie aparatu dotykiem (zdarzenia dotyku są w teście
+  symulowane; na fizycznym telefonie nie sprawdzano).
+- Sprawdzenie: `npm test` → 174/174; wzrokowo na zrzucie 390 px (obudowa w całości przy 41%).
+
 ## 0.12.0 (11.10.2026) — obliczenia: spadek napięcia, pętla zwarcia, zdolność zwarciowa
 
 Powód: zadanie P1.9 z planu; bez tych obliczeń kontrola i symulacja nie były wiarygodne dla elektryka.

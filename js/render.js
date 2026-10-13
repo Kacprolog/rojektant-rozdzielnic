@@ -60,13 +60,24 @@ function quickBar(d,row){const before=row.slice(0,row.indexOf(d.id)).reduce((a,x
   if(isCirc(d))h+=b('curve',d.p.curve,'Zmień charakterystykę');
   h+=b('left','←','Przesuń w lewo')+b('right','→','Przesuń w prawo')+b('dup','⧉','Duplikuj')+b('del','✕','Usuń aparat','danger');
   return `<div class="quick${before>enc().mpr/2?' qr':''}" role="toolbar" aria-label="Szybka edycja aparatu">${h}</div>`;}
+/* Powiększenie obudowy: transform: scale na #board, a #boardZoom dostaje wymiary po skalowaniu, żeby przewijanie działało.
+   Wszystko, co mierzy getBoundingClientRect() wewnątrz obudowy (przewody, linia upuszczenia), dzieli wynik przez zf(). */
+const ZOOMS=[0.4,0.5,0.67,0.8,1,1.25,1.5,2];
+let COARSE=!!(window.matchMedia&&window.matchMedia('(pointer: coarse)').matches);   /* ekran dotykowy jako główne urządzenie wskazujące */
+function zf(){return S.zoom>0?S.zoom:1;}
+function setZoom(how){const cur=zf();let z=cur;
+  if(how==='+')z=ZOOMS.find(x=>x>cur+0.001)||cur;
+  else if(how==='-'){const lower=ZOOMS.filter(x=>x<cur-0.001);z=lower.length?lower[lower.length-1]:cur;}
+  else if(how==='fit'){const w=$('#board').offsetWidth,room=$('#boardScroll').clientWidth;z=cur!==1?1:Math.max(0.3,Math.min(1,Math.floor(room/w*100)/100));}
+  else z=+how;
+  S.zoom=z;render(true);}
 function renderBoard(){const e=enc(),D=designations(),M=34;$('#board').className='cabinet'+(S.wires?' wiring':'')+(simOn()?' sim':'');
   SIMC=simOn()?simCalc():null;renderSim();
   $('#viewSeg').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String((b.dataset.view==='wires')===!!S.wires)));$('#wireHint').hidden=!S.wires;renderWireFilter();
   $('#board').innerHTML=S.rows.map((r,i)=>{const u=rowUse(i),wpx=Math.max(e.mpr,u)*M;
     const devs=r.map(id=>{const d=S.dev[id],w=width(d),[a,b]=rate(d);
       const phs=isCirc(d)?phases(d).map(p=>`<i style="background:var(--${p.toLowerCase()})"></i>`).join(''):'';
-      return `<div class="slot ${S.sel===id?'sel':''}${SIMC?' s-'+SIMC.dev[id].st:''}" draggable="true" data-id="${id}" style="width:${w*M}px" title="${esc(D[id]+' '+d.name+' · '+desc(d))}">
+      return `<div class="slot ${S.sel===id?'sel':''}${SIMC?' s-'+SIMC.dev[id].st:''}" draggable="${COARSE?'false':'true'}" data-id="${id}" style="width:${w*M}px" title="${esc(D[id]+' '+d.name+' · '+desc(d))}">
         <div class="dev m-${d.m}${['mcb','rcbo','rcd','sw'].indexOf(d.t)>=0?' lv':''}" style="--b:${MFR[d.m].c}"><div class="trm">${screwsFor(d,'top')}</div><div class="mk">${w>=2?MFR[d.m].s:MFR[d.m].s.slice(0,4)}</div>
         <div class="rt">${esc(a)}</div><div class="sub">${esc(b)}</div>${face(d)}<div class="trm b">${screwsFor(d,'bot')}</div></div>
         <div class="tag"><b>${D[id]}</b><span>${esc(d.name)}</span><span class="ph">${phs}</span></div>${S.sel===id&&!S.wires&&!simOn()?quickBar(d,r):''}</div>`;}).join('');
@@ -75,7 +86,11 @@ function renderBoard(){const e=enc(),D=designations(),M=34;$('#board').className
     const limit=u>e.mpr?`<div class="limit" style="left:${e.mpr*M}px"><span>koniec szyny</span></div>`:'';
     return `<div class="rowwrap"><div class="rowlab" data-row="${i}"><b>Rząd ${i+1}</b><span class="fill ${u>e.mpr?'over':''}">${fmt(u)} / ${e.mpr} mod.</span>${S.active===i?'<span class="act">aktywny</span>':''}</div>
       <div class="rail ${S.active===i?'active':''}" data-row="${i}" style="width:${wpx}px">${devs}${blank}${limit}</div></div>`;}).join('');
-  try{drawWires();}catch(err){console.error(err);}}
+  const cab=$('#board'),wrap=$('#boardZoom'),z=zf();
+  cab.style.transformOrigin='0 0';cab.style.transform=z!==1?'scale('+z+')':'';cab.style.minWidth=z!==1?'0':'';wrap.style.width=wrap.style.height='';
+  $('#zoomVal').textContent=Math.round(z*100)+'%';
+  try{drawWires();}catch(err){console.error(err);}
+  if(z!==1){wrap.style.width=Math.ceil(cab.offsetWidth*z)+'px';wrap.style.height=Math.ceil(cab.offsetHeight*z)+'px';}}
 function renderTabs(){const ck=checks(),nc=ck.filter(c=>c.sev==='crit').length,nw=ck.filter(c=>c.sev==='warn').length;
   const T=[['aparat','Aparat'],['kontrola','Kontrola'],['bilans','Bilans'],['struktura','Struktura'],['kable','Kable'],['bom','Zestawienie']];
   $('#tabs').innerHTML=T.map(([k,l])=>`<button class="tab" role="tab" data-tab="${k}" aria-selected="${S.tab===k}">${l}${k==='kontrola'&&(nc||nw)?`<span class="badge ${nc?'crit':'warn'}">${nc||nw}</span>`:''}</button>`).join('');}
@@ -190,12 +205,12 @@ function panelBom(){const r=bomRows();
 /* Buduje #print (widoczny tylko w @media print): front, okablowanie, struktura i kontrola, zestawienie i kable.
    Obudowa jest renderowana dwa razy w #board (front i okablowanie), kopiowana z wymiarami i skalowana do strony A4 poziomo. */
 function printView(){let pv=$('#print');if(!pv){pv=document.createElement('div');pv.id='print';document.body.appendChild(pv);}
-  const b=$('#board'),keep={wires:S.wires,sel:S.sel,wf:S.wf,sim:S.sim},PW=1040,PH=570;
+  const b=$('#board'),keep={wires:S.wires,sel:S.sel,wf:S.wf,sim:S.sim,zoom:S.zoom},PW=1040,PH=570;
   const shot=w=>{S.wires=w;renderBoard();const sc=Math.min(1,PW/b.offsetWidth,PH/b.offsetHeight);
     return `<div class="pfit" style="width:${Math.ceil(b.offsetWidth*sc)}px;height:${Math.ceil(b.offsetHeight*sc)}px"><div class="${b.className}" style="${esc(b.getAttribute('style')||'')};width:${b.offsetWidth}px;min-width:0;transform:scale(${sc.toFixed(4)});transform-origin:0 0">${b.innerHTML}</div></div>`;};
-  S.sel=null;S.sim=null;S.wf={L1:1,L2:1,L3:1,N:1,PE:1};wireReset();
+  S.sel=null;S.sim=null;S.zoom=1;S.wf={L1:1,L2:1,L3:1,N:1,PE:1};wireReset();
   let front,wires;
-  try{front=shot(false);wires=shot(true);}finally{S.wires=keep.wires;S.sel=keep.sel;S.wf=keep.wf;S.sim=keep.sim;renderBoard();}
+  try{front=shot(false);wires=shot(true);}finally{S.wires=keep.wires;S.sel=keep.sel;S.wf=keep.wf;S.sim=keep.sim;S.zoom=keep.zoom;renderBoard();}
   const e=enc(),T=totals(),date=new Date().toLocaleDateString('pl-PL'),noId=h=>h.replace(/ id="[^"]*"/g,'');
   const legend=$('.legend').innerHTML.replace(/<span[^>]*id="wireHint"[\s\S]*$/,'');
   const pages=[

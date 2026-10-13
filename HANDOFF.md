@@ -1,6 +1,6 @@
 # Przekazanie projektu: Projektant Rozdzielnic
 
-Stan na 10.10.2026, wersja 0.12.0. Projekt powstał w czacie z Claude jako pojedyncza strona (artefakt claude.ai), został podzielony na pliki i jest rozwijany w Claude Code jako zwykła strona w przeglądarce. Wersja 0.5.0 zamyka zadania P0 (1–5 w całości, 6 przygotowane, czeka na decyzję o hostingu). Szczegóły każdej zmiany: `CHANGELOG.md`.
+Stan na 10.10.2026, wersja 0.13.0. Projekt powstał w czacie z Claude jako pojedyncza strona (artefakt claude.ai), został podzielony na pliki i jest rozwijany w Claude Code jako zwykła strona w przeglądarce. Wersja 0.5.0 zamyka zadania P0 (1–5 w całości, 6 przygotowane, czeka na decyzję o hostingu). Szczegóły każdej zmiany: `CHANGELOG.md`.
 
 ![Widok frontu](docs/front.png)
 
@@ -8,7 +8,7 @@ Stan na 10.10.2026, wersja 0.12.0. Projekt powstał w czacie z Claude jako pojed
 
 Narzędzie dla elektryka lub projektanta do wstępnego zaprojektowania rozdzielnicy mieszkaniowej / małej komercyjnej: dobór obudowy, rozmieszczenie aparatów różnych producentów, kontrola zgodności z podstawowymi wymaganiami PN-HD 60364, okablowanie wnętrza i zestawienie materiałów do zamówienia.
 
-## Co działa (zweryfikowane testami, `npm test`, 165/165: 55 testów × desktop, telefon, safari)
+## Co działa (zweryfikowane testami, `npm test`, 174/174: 58 testów × desktop, telefon, safari)
 
 **Obudowa i aparaty**
 - 5 producentów: Hager, Schneider Electric, ABB, Eaton, Legrand; 9 serii obudów (12–24 mod./rząd, 1–6 rzędów, IP40–IP65).
@@ -68,7 +68,7 @@ Narzędzie dla elektryka lub projektanta do wstępnego zaprojektowania rozdzieln
 ## Znane problemy i ograniczenia
 
 1. **Niepotwierdzona przyczyna „nie ładuje się”** (zgłoszenie z wersji w claude.ai). Testy przechodzą w Chromium i WebKit bez zmian w kodzie aplikacji, więc błędu nie udało się odtworzyć. W Firefoksie aplikacja **nie była testowana** (patrz tabela decyzji); sprawdzi to pierwsze uruchomienie CI.
-2. **Przeciąganie nie działa na ekranach dotykowych** (HTML5 drag and drop). Kliknięcie w bibliotece działa.
+2. **Dotyk sprawdzono tylko w testach z symulowanymi zdarzeniami**, nie na fizycznym telefonie. Przeciąganie z biblioteki palcem nie działa; stuknięcie pozycji dodaje aparat do aktywnego rzędu.
 3. **Okablowanie na wydruku jest małe** (skala ok. 0,5 przy 3 rzędach), bo wysoka obudowa musi się zmieścić na A4 poziomo. Do rozważenia: strona pionowa dla okablowania albo podział na rzędy.
 4. **Historia cofania znika po przeładowaniu strony** i przy zmianie projektu.
 5. **Usunięcia projektu nie da się cofnąć** (jest potwierdzenie i podpowiedź, żeby wcześniej zapisać plik).
@@ -100,7 +100,7 @@ Kolejność według wartości dla użytkownika. Każde zadanie kończy się ziel
 
 - ✅ Pasek szybkiej edycji pod zaznaczonym aparatem (0.11.0). Do zrobienia: edycja mocy i nazwy w miejscu.
 - ✅ Kontrola z przyciskami napraw (0.11.0). Do zrobienia: naprawy dla braku zasilania zacisku i przeciążonej różnicówki.
-- Powiększanie i przesuwanie obudowy, przeciąganie aparatów palcem (HTML5 drag and drop nie działa na dotyku).
+- ✅ Powiększanie obudowy i przenoszenie aparatów palcem (0.13.0). Do zrobienia: powiększanie gestem dwóch palców, sprawdzenie na fizycznym telefonie.
 - ✅ Symulacja zwarcia korzysta z obliczonego prądu (0.12.0). Do zrobienia: czasy zadziałania z charakterystyk.
 - Odłożone: budowanie rozdzielnicy z listy pomieszczeń i odbiorników.
 

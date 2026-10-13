@@ -132,6 +132,7 @@ function normalize(s){
   s.active=Math.max(0,Math.min(num(s.active,0),s.rows.length-1));
   if(!MFR[s.mfr])s.mfr='hager';
   s.sim=null;                                   /* symulacja zawsze startuje wyłączona */
+  s.zoom=Math.max(0.3,Math.min(2,num(s.zoom,1)))||1;  /* powiększenie obudowy (stan widoku) */
   s.tab=oneOf(s.tab,TABS);if(typeof s.q!=='string')s.q='';s.wires=!!s.wires;
   return s;}
 /* Licznik id musi być większy od każdego istniejącego 'dN'. */
