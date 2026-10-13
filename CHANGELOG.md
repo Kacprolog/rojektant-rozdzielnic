@@ -2,6 +2,34 @@
 
 Każdy wpis odpowiada jednemu commitowi. Format: co zrobiono, dlaczego, jak sprawdzono.
 
+## 0.14.0 (13.10.2026) — licznik i stycznik w torze obwodu, sterowanie stycznika w symulacji
+
+Powód: zadanie P1.10 z planu. Licznik i stycznik stały na szynie, ale nie były okablowane, więc „Podlicznik pompy
+ciepła” i „Bojler – taryfa G12” z przykładu nie brały udziału w zasilaniu obwodów.
+
+- **Tor obwodu.** Licznik i stycznik mają pole „W torze obwodu” (`d.circ` = id wyłącznika). Aparat w torze dostaje
+  zaciski faz obwodu (licznik zawsze z N, stycznik z N na wolnym biegunie) i jest wpinany za wyłącznik:
+  wyłącznik → licznik → stycznik → kabel obwodowy. Przewody mają przekrój kabla obwodowego. N pochodzi z wyjścia
+  poprzedniego aparatu albo z listwy N obwodu (głównej lub za różnicówką).
+- **Przykład:** podlicznik jest w torze pompy ciepła, stycznik w torze bojlera; połączeń jest 48 zamiast 42.
+- **Sterowanie cewki stycznika** (`p.ctl`): ręczne, sygnał taryfy G12 albo przekaźnik kontroli faz. Działa w symulacji:
+  przełącznik „Taryfa G12” w pasku rozłącza styczniki taryfowe; przy zaniku fazy przekaźnik kontroli faz rozłącza swoje
+  styczniki, więc pompa ciepła jest odłączona zamiast pracować na dwóch fazach. Obwód z załączonym wyłącznikiem
+  i rozłączonym stycznikiem ma własny stan (`s-ctl`) i nie liczy się jako zasilony.
+- **Kontrola:** aparat poza torem (informacja), prąd stycznika mniejszy niż zabezpieczenie obwodu (błąd), stycznik 2NO
+  albo licznik jednofazowy w obwodzie trójfazowym (błąd z naprawą), sterowanie przekaźnikiem bez przekaźnika (uwaga).
+  W okablowaniu ręcznym: zasilenie aparatu w torze z pominięciem wyłącznika obwodu jest błędem.
+- **Poprawka dla Safari:** chwytanie zacisku przy przeciąganiu przewodu blokuje domyślne zaznaczanie. Bez tego WebKit
+  czasem przerywał gest (`pointercancel`) i przewód nie powstawał; test przeciągania zawodził raz na kilka prób.
+  Po poprawce 48 na 48 powtórzeń.
+- Zgodność: starsze projekty i pliki nie mają `circ`, więc ich liczniki i styczniki zostają poza torem (jak dotąd),
+  a kontrola podpowiada, jak je wpiąć.
+- **Czego nie ma:** przewodów sterowniczych (cewka A1/A2, styk przekaźnika) na rysunku i w zestawieniu; przekaźnika
+  czasowego, zasilacza i gniazda w torze; obciążalności styków licznika.
+- Testy `tests/tor.spec.js` (5) i zaktualizowane liczby w pozostałych testach.
+- Sprawdzenie: `npm test` → 189/189; wzrokowo na zrzucie okablowania (przewody do licznika i stycznika, odejścia
+  z końca toru).
+
 ## 0.13.0 (13.10.2026) — powiększanie obudowy i przenoszenie aparatów palcem
 
 Powód: kolejny krok planu interaktywności; bez tego aplikacja była niewygodna na telefonie i tablecie.

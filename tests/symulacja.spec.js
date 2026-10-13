@@ -19,8 +19,8 @@ test('symulacja jest domyślnie wyłączona; po włączeniu wszystkie obwody są
   await page.click('#bSim');
   await expect(page.locator('#bSim')).toHaveAttribute('aria-pressed', 'true');
   await expect(count(page)).toHaveText('Zasilone obwody: 13/13');
-  await expect(page.locator('#board .slot.s-on')).toHaveCount(19); // 21 aparatów minus licznik i stycznik (bez zacisków mocy)
-  await expect(page.locator('#board .slot.s-none')).toHaveCount(2);
+  await expect(page.locator('#board .slot.s-on')).toHaveCount(21); // także licznik i stycznik, bo stoją w torach obwodów
+  await expect(page.locator('#board .slot.s-none')).toHaveCount(0);
   // W widoku okablowania po przewodach z prądem przesuwają się kreski.
   await page.click('[data-view="wires"]');
   expect(await page.locator('svg.wires path.flow').count()).toBeGreaterThan(15);

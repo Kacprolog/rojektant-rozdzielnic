@@ -65,8 +65,8 @@ PR = { cur, list }   // to samo w pamięci; S jest zawsze projektem PR.cur
 | `sw` | Rozłącznik izolacyjny | `In, poles` | `poles` |
 | `spd` | Ogranicznik przepięć | `cls:'T1+T2'|'T2', sys:'1P+N'|'3P+N'` | 2 lub 4 |
 | `lamp` | Kontrolki faz | – | 1 |
-| `meter` | Licznik energii | `ph:1|3, mid:bool` | 1 lub 4 |
-| `contactor` | Stycznik | `In, poles:2|4` (NO) | 1–3 |
+| `meter` | Licznik energii | `ph:1|3, mid:bool`; poza `p`: `circ` id obwodu albo `null` | 1 lub 4 |
+| `contactor` | Stycznik | `In, poles:2|4` (NO), `ctl:'man'|'g12'|'relay'`; poza `p`: `circ` | 1–3 |
 | `relay` | Kontrola faz | – | 1 |
 | `timer` | Przekaźnik czasowy | – | 1 |
 | `psu` | Zasilacz 24 V | `W:30|60` | 2 lub 4 |
@@ -103,11 +103,12 @@ Endpoint =
 | { k:'comb', rcd, ph }                    // szyna grzebieniowa za różnicówką
 ```
 
-Reguły:
+Reguły (6 dotyczy toru obwodu):
 1. WLZ → rozłącznik główny (fazy); PE WLZ → listwa PE. W TN-C-S przewód PEN trafia na listwę PE, a z niej mostek (`kind:'mostek'`) do N rozłącznika lub listwy N.
 2. Wyjście rozłącznika (każda faza) → wejścia: SPD, kontrolek, przekaźnika kontroli faz, różnicówek, RCBO i MCB bez przypisanej różnicówki. N tych aparatów z listwy N. SPD: wyjście PE → listwa PE.
 3. Różnicówka: MCB przypisane do niej i stojące **bezpośrednio za nią w tym samym rzędzie** tworzą szynę grzebieniową zasilaną zworkami (`jumper`) z wyjść RCD. Pozostałe przypisane MCB dostają osobne przewody. Wyjście N RCD → osobna listwa `N:<id>`.
 4. Przekroje: WLZ według zabezpieczenia przedlicznikowego (`wlzMm`), zasilanie aparatów według prądu (`inMm`), SPD T1+T2 10 mm² (PE 16 mm²), SPD T2 6 mm², kontrolki 1,5 mm².
+6. Tor obwodu: wyjście wyłącznika → wejście licznika → wejście stycznika (`chainOf()`), przekrój kabla obwodowego; N aparatu z wyjścia poprzedniego albo z listwy N obwodu. Zaciski aparatu w torze: fazy obwodu, licznik + N, stycznik + N na wolnym biegunie.
 5. Długość przewodu w rozdzielnicy (`connLen`): |Δmodułów|·18 mm + |Δrzędów|·150 mm + 250 mm zapasu, zaokrąglone w górę do 5 cm.
 
 ## Routing przewodów (`drawWires()`)

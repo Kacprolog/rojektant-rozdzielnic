@@ -60,7 +60,10 @@ function specs(d){const p=d.p,r=[];
 /* ---------- state ---------- */
 function newDev(t,m,p,c,name){const d={id:'d'+(uid++),t,m,p:{...p},name:name||TNAME[t]};
   if(t==='mcb'||t==='rcbo'){d.c={kind:'gniazda',P:1,cable:2.5,ph:'L1',len:15,...(c||{})};}
-  if(t==='mcb')d.rcd=null;return d;}
+  if(t==='mcb')d.rcd=null;
+  if(t==='meter'||t==='contactor')d.circ=null;          /* id obwodu (MCB / RCBO), w którego torze stoi aparat */
+  if(t==='contactor'&&!d.p.ctl)d.p.ctl='man';            /* sterowanie cewki: man ręczne, g12 sygnał taryfy, relay przekaźnik kontroli faz */
+  return d;}
 function enc(){return ENC[S.enc.mfr].find(e=>e.id===S.enc.series)||ENC[S.enc.mfr][0];}
 function sample(){
   uid=1;S={name:'Dom jednorodzinny – rozdzielnica RG',enc:{mfr:'hager',series:'volta',rows:3},
@@ -70,9 +73,9 @@ function sample(){
   add(0,newDev('sw',m,{In:63,poles:3},null,'Rozłącznik główny'));
   add(0,newDev('spd',m,{cls:'T1+T2',sys:'3P+N'},null,'Ochrona przepięciowa'));
   add(0,newDev('lamp',m,{},null,'Kontrolki faz'));
-  add(0,newDev('meter',m,{ph:3,mid:true},null,'Podlicznik pompy ciepła'));
+  const mt=add(0,newDev('meter',m,{ph:3,mid:true},null,'Podlicznik pompy ciepła'));
   add(0,newDev('relay',m,{},null,'Kontrola faz PC'));
-  add(0,newDev('contactor',m,{In:25,poles:2},null,'Bojler – taryfa G12'));
+  const kb=add(0,newDev('contactor',m,{In:25,poles:2,ctl:'g12'},null,'Bojler – taryfa G12'));
   const r1=add(1,newDev('rcd',m,{In:40,poles:4,idn:30,kind:'A',sel:false},null,'RCD obwody ogólne'));
   const c1=[['B',10,'oswietlenie',0.4,1.5,'L1','Oświetlenie parter'],['B',10,'oswietlenie',0.4,1.5,'L2','Oświetlenie piętro'],
     ['B',16,'gniazda',2,2.5,'L3','Gniazda salon'],['B',16,'kuchnia',2,2.5,'L1','Gniazda kuchnia'],['B',16,'lazienka',2,2.5,'L2','Łazienka'],
@@ -83,8 +86,8 @@ function sample(){
   let d=newDev('mcb',m,{In:20,curve:'C',poles:3,icn:6},{kind:'ev',P:11,cable:6,len:24},'Ładowarka EV 11 kW');d.rcd=r2.id;add(2,d);
   d=newDev('mcb',m,{In:16,curve:'B',poles:3,icn:6},{kind:'plyta',P:7.2,cable:2.5,len:10},'Płyta indukcyjna');d.rcd=r1.id;add(2,d);
   add(2,newDev('rcbo',m,{In:16,curve:'B',poles:2,idn:30,kind:'A'},{kind:'zewn',P:1.5,cable:2.5,ph:'L2',len:30},'Gniazda garaż / ogród'));
-  add(2,newDev('mcb',m,{In:16,curve:'B',poles:1,icn:6},{kind:'bojler',P:2,cable:2.5,ph:'L3'},'Podgrzewacz wody'));
-  add(2,newDev('mcb',m,{In:16,curve:'C',poles:3,icn:6},{kind:'pc',P:5,cable:2.5,len:18},'Pompa ciepła'));
+  kb.circ=add(2,newDev('mcb',m,{In:16,curve:'B',poles:1,icn:6},{kind:'bojler',P:2,cable:2.5,ph:'L3'},'Podgrzewacz wody')).id;
+  mt.circ=add(2,newDev('mcb',m,{In:16,curve:'C',poles:3,icn:6},{kind:'pc',P:5,cable:2.5,len:18},'Pompa ciepła')).id;
 }
 /* Dane projektu (trafiają do pliku i historii cofania) w odróżnieniu od stanu widoku (sel, active, mfr, tab, q, wires, wf). */
 const DATA_KEYS=['name','enc','set','rows','dev','wmode','conn'];
@@ -107,6 +110,7 @@ function cleanDev(d){const p=d.p;d.name=String(d.name==null?TNAME[d.t]:d.name);i
   if(d.t==='rcd'||d.t==='rcbo')p.kind=oneOf(p.kind,['A','AC','F','B']);
   if(d.t==='rcd')p.sel=!!p.sel;
   if(d.t==='meter')p.mid=!!p.mid;
+  if(d.t==='contactor')p.ctl=oneOf(p.ctl,['man','g12','relay']);
   if(d.t==='spd'){p.cls=oneOf(p.cls,['T1+T2','T2']);p.sys=oneOf(p.sys,['3P+N','1P+N']);}
   if(isCirc(d)){const c=d.c;c.kind=KINDS[c.kind]?c.kind:'inne';c.P=Math.max(0,num(c.P,0));c.cable=num(c.cable,2.5);c.ph=oneOf(c.ph,['L1','L2','L3']);if(c.len!=null)c.len=Math.max(0,num(c.len,15));}}
 /* Uzupełnia brakujące pola wartościami domyślnymi (zgodność wstecz) i porządkuje odwołania. Wymaga valid(s). */
@@ -126,7 +130,7 @@ function normalize(s){
   s.set={moc:num(set.moc,22)||22,przedl:num(set.przedl,32)||32,ks:num(set.ks,0.5)||0.5,cos:num(set.cos,0.95)||0.95,siec:oneOf(set.siec,['TN-C-S','TN-S','TT'])};Object.assign(s.set,extra);
   const list=ENC[s.enc.mfr];s.enc={mfr:s.enc.mfr,series:list.some(e=>e.id===s.enc.series)?s.enc.series:list[0].id,rows:s.rows.length};
   const used={};s.rows.forEach(r=>r.forEach(id=>used[id]=1));Object.keys(s.dev).forEach(id=>{if(!used[id])delete s.dev[id];});
-  Object.values(s.dev).forEach(d=>{cleanDev(d);if(d.t==='mcb'&&!(d.rcd&&s.dev[d.rcd]&&s.dev[d.rcd].t==='rcd'))d.rcd=null;});
+  Object.values(s.dev).forEach(d=>{cleanDev(d);if(d.t==='meter'||d.t==='contactor')d.circ=(typeof d.circ==='string'&&own(s.dev,d.circ)&&isCirc(s.dev[d.circ]))?d.circ:null;if(d.t==='mcb'&&!(d.rcd&&s.dev[d.rcd]&&s.dev[d.rcd].t==='rcd'))d.rcd=null;});
   s.wmode=oneOf(s.wmode,['auto','manual']);s.conn=cleanConn(s);
   if(!s.sel||!s.dev[s.sel])s.sel=null;
   s.active=Math.max(0,Math.min(num(s.active,0),s.rows.length-1));
@@ -262,6 +266,14 @@ function checks(){const out=[],D=designations(),e=enc(),T=totals(),devs=Object.v
   /* prąd szczytowy każdej fazy osobno: średnia z trzech faz (T.Ibm) nie pokazuje przeciążenia jednej z nich */
   ['L1','L2','L3'].forEach(ph=>{const ip=L[ph]*S.set.ks;if(ip>S.set.przedl)add('warn',`Prąd szczytowy fazy ${ph} (${fmt(ip)} A) przekracza zabezpieczenie przedlicznikowe ${S.set.przedl} A.`,'Przenieś obwody jednofazowe na mniej obciążone fazy albo zmniejsz moc.',undefined,{l:'Rozłóż fazy',f:()=>{balance();}});});
   if(T.cap&&(T.cap-T.used)/T.cap<0.2)add('info',`Rezerwa miejsca ${fmt(Math.max(0,T.cap-T.used))} mod. to mniej niż 20%.`,'Zostaw miejsce na rozbudowę instalacji.');
+  /* licznik i stycznik w torze obwodu */
+  devs.filter(d=>d.t==='meter'||d.t==='contactor').forEach(x=>{const cd=S.dev[x.circ],nx='<b>'+D[x.id]+' '+esc(x.name)+'</b>';
+    if(!cd||!isCirc(cd)){add('info',nx+' nie jest w torze żadnego obwodu.','W panelu aparatu wybierz obwód w polu „W torze obwodu”; wtedy aparat zostanie okablowany.',x.id);return;}
+    if(x.t==='contactor'){
+      if(x.p.In<cd.p.In)add('crit',nx+': prąd znamionowy '+x.p.In+' A jest mniejszy niż zabezpieczenie obwodu '+D[cd.id]+' ('+cd.p.In+' A).','Stycznik musi wytrzymać prąd, który przepuści zabezpieczenie przed nim.',x.id);
+      if(is3(cd)&&x.p.poles<3)add('crit',nx+' ('+x.p.poles+'NO) nie rozłączy wszystkich faz obwodu trójfazowego '+D[cd.id]+'.','Zastosuj stycznik 4NO.',x.id,{l:'Zmień na stycznik 4NO',f:()=>{x.p.poles=4;}});
+      if(x.p.ctl==='relay'&&!devs.some(d=>d.t==='relay'))add('warn',nx+' ma być sterowany przekaźnikiem kontroli faz, ale w rozdzielnicy go nie ma.','Dodaj przekaźnik kontroli faz albo zmień sterowanie cewki.',x.id);}
+    if(x.t==='meter'&&is3(cd)&&x.p.ph!=3)add('crit',nx+' jest jednofazowy, a obwód '+D[cd.id]+' jest trójfazowy.','Zastosuj licznik trójfazowy.',x.id,{l:'Zmień na licznik 3-fazowy',f:()=>{x.p.ph=3;}});});
   wireCheck().out.forEach(x=>out.push(x));
   termIssues().forEach(x=>out.push(x));
   return out;}

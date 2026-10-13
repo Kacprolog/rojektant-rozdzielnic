@@ -55,8 +55,8 @@ test('„Przejmij automatyczne” daje to samo okablowanie bez żadnych uwag', a
   const auto = await page.evaluate(() => ({ n: buildConns().C.length, mat: JSON.stringify(wireMat()), sev: checks().map(c => c.sev).sort().join() }));
   await manualAdopted(page);
   const man = await page.evaluate(() => ({ n: buildConns().C.length, mat: JSON.stringify(wireMat()), sev: checks().map(c => c.sev).sort().join(), user: S.conn.length }));
-  expect(man.n).toBe(42);
-  expect(man.user).toBe(36); // 42 połączenia minus 6 zworek szyn grzebieniowych
+  expect(man.n).toBe(48);
+  expect(man.user).toBe(42); // 48 połączeń minus 6 zworek szyn grzebieniowych
   expect(man.n).toBe(auto.n);
   expect(man.mat).toBe(auto.mat);
   expect(man.sev).toBe(auto.sev);
@@ -121,7 +121,8 @@ test('brak zasilania: usunięty przewód, niepodłączona listwa PE i listwa N z
   const drop = (a, b) => page.evaluate(([x, y]) => { const k = JSON.stringify; S.conn = S.conn.filter(w => !((k(w.a) === k(x) && k(w.b) === k(y)) || (k(w.a) === k(y) && k(w.b) === k(x)))); render(); }, [a, b]);
 
   await drop(dev(d['Rozłącznik główny'], 'bot', 2), dev(d['Podgrzewacz wody'], 'top', 0));
-  expect(await issues(page)).toEqual(['crit: -F15 Podgrzewacz wody: brak połączenia z zasilaniem na zaciskach wej. L3.']);
+  // Bez napięcia zostaje wyłącznik i stycznik stojący w jego torze.
+  expect(await issues(page)).toEqual(['crit: -K2 Bojler – taryfa G12: brak połączenia z zasilaniem na zaciskach wej. L3.', 'crit: -F15 Podgrzewacz wody: brak połączenia z zasilaniem na zaciskach wej. L3.']);
 
   await drop(wlz('PE'), bar('PE'));
   const out = await issues(page);
@@ -184,16 +185,16 @@ test('przewody są danymi projektu: cofanie, plik, usunięcie aparatu, przełado
 test('„Usuń przewody” i zastąpienie wymagają potwierdzenia; powrót do trybu automatycznego niczego nie kasuje', async ({ page }) => {
   await manualAdopted(page);
   await page.click('[data-wact="adopt"]');
-  await expect(page.locator('#confirm')).toContainText('Zastąpić ręczne okablowanie (36 przewodów)');
+  await expect(page.locator('#confirm')).toContainText('Zastąpić ręczne okablowanie (42 przewodów)');
   await page.click('#cNo');
   await page.click('[data-wact="clear"]');
   await page.click('#cYes');
   expect(await page.evaluate(() => S.conn.length)).toBe(0);
   await page.click('#bUndo');
-  expect(await page.evaluate(() => S.conn.length)).toBe(36);
+  expect(await page.evaluate(() => S.conn.length)).toBe(42);
   await page.click('[data-wmode="auto"]');
   await expect(page.locator('svg.wires .tp')).toHaveCount(0);
-  expect(await page.evaluate(() => [S.conn.length, buildConns().C.length])).toEqual([36, 42]);
+  expect(await page.evaluate(() => [S.conn.length, buildConns().C.length])).toEqual([42, 48]);
 });
 
 test('edycja przewodu: przekrój, kolor izolacji wg PN-EN 60445, przepinanie końców', async ({ page }) => {

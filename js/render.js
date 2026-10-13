@@ -33,7 +33,7 @@ function face(d){const w=width(d),lo=simOn()&&S.sim.off[d.id]?' off':'';switch(d
   case 'spd':return `<div class="spdwin">${'<i></i>'.repeat(d.p.sys==='1P+N'?2:4)}</div>`;
   case 'meter':return d.p.ph==3?`<div class="lcd">01284,7</div>`:`<div class="lcd" style="font-size:7px">0412</div>`;
   case 'lamp':return `<div class="leds">${['L1','L2','L3'].map(ph=>`<i class="${SIMC&&!SIMC.live(d.id+'/top/'+ph)?'dim':''}"></i>`).join('')}</div>`;
-  case 'contactor':return `<div class="lever" style="width:12px;height:18px"></div>`;
+  case 'contactor':return `<div class="lever${SIMC&&SIMC.dev[d.id]&&SIMC.dev[d.id].st==='off'?' off':''}" style="width:12px;height:18px"></div>`;
   case 'socket':return `<div class="sock"></div>`;
   case 'timer':case 'relay':return `<div class="dial"></div>`;
   case 'psu':return `<div class="lcd" style="background:#cfd2cc;color:#333">DC OK</div>`;}return '';}
@@ -119,6 +119,10 @@ function panelDev(){const d=S.dev[S.sel];
   if(d.t==='contactor'){pf.push(fsel('pIn','Prąd AC-7a [A]','p.In',[20,25,40,63],p.In),fsel('pPoles','Styki','p.poles',[[2,'2NO'],[4,'4NO']],p.poles));}
   if(d.t==='psu'){pf.push(fsel('pW','Moc','p.W',[[30,'30 W'],[60,'60 W']],p.W));}
   if(pf.length)f+=`<h3>Parametry aparatu</h3><div class="fld2">${pf.join('')}</div>`;
+  if(d.t==='meter'||d.t==='contactor'){const cs=S.rows.flat().map(id=>S.dev[id]).filter(isCirc);
+    f+=`<h3>Tor obwodu</h3><div class="fld2">${fsel('iCirc','W torze obwodu','circ',[['','— poza torem —']].concat(cs.map(c=>[c.id,esc(D[c.id]+' '+c.name)])),d.circ||'')}
+      ${d.t==='contactor'?fsel('pCtl','Sterowanie cewki','p.ctl',[['man','ręczne (łącznik)'],['g12','sygnał taryfy G12'],['relay','przekaźnik kontroli faz']],p.ctl||'man'):''}</div>
+      <p class="note">Aparat w torze obwodu jest wpinany za wyłącznik tego obwodu (wyłącznik → licznik → stycznik → kabel obwodowy) i dostaje zaciski jego faz. ${d.t==='contactor'?'Sterowanie cewki działa w symulacji; przewodów sterowniczych aplikacja jeszcze nie rysuje.':''}</p>`;}
   let calc='';
   if(isCirc(d)){const i=ib(d),z=iz(d),c=d.c;
     f+=`<h3>Obwód</h3><div class="fld2">${fsel('cKind','Rodzaj obwodu','c.kind',Object.entries(KINDS),c.kind)}

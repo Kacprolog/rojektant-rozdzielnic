@@ -1,6 +1,6 @@
 # Przekazanie projektu: Projektant Rozdzielnic
 
-Stan na 10.10.2026, wersja 0.13.0. Projekt powstał w czacie z Claude jako pojedyncza strona (artefakt claude.ai), został podzielony na pliki i jest rozwijany w Claude Code jako zwykła strona w przeglądarce. Wersja 0.5.0 zamyka zadania P0 (1–5 w całości, 6 przygotowane, czeka na decyzję o hostingu). Szczegóły każdej zmiany: `CHANGELOG.md`.
+Stan na 10.10.2026, wersja 0.14.0. Projekt powstał w czacie z Claude jako pojedyncza strona (artefakt claude.ai), został podzielony na pliki i jest rozwijany w Claude Code jako zwykła strona w przeglądarce. Wersja 0.5.0 zamyka zadania P0 (1–5 w całości, 6 przygotowane, czeka na decyzję o hostingu). Szczegóły każdej zmiany: `CHANGELOG.md`.
 
 ![Widok frontu](docs/front.png)
 
@@ -8,7 +8,7 @@ Stan na 10.10.2026, wersja 0.13.0. Projekt powstał w czacie z Claude jako pojed
 
 Narzędzie dla elektryka lub projektanta do wstępnego zaprojektowania rozdzielnicy mieszkaniowej / małej komercyjnej: dobór obudowy, rozmieszczenie aparatów różnych producentów, kontrola zgodności z podstawowymi wymaganiami PN-HD 60364, okablowanie wnętrza i zestawienie materiałów do zamówienia.
 
-## Co działa (zweryfikowane testami, `npm test`, 174/174: 58 testów × desktop, telefon, safari)
+## Co działa (zweryfikowane testami, `npm test`, 189/189: 63 testów × desktop, telefon, safari)
 
 **Obudowa i aparaty**
 - 5 producentów: Hager, Schneider Electric, ABB, Eaton, Legrand; 9 serii obudów (12–24 mod./rząd, 1–6 rzędów, IP40–IP65).
@@ -72,7 +72,7 @@ Narzędzie dla elektryka lub projektanta do wstępnego zaprojektowania rozdzieln
 3. **Okablowanie na wydruku jest małe** (skala ok. 0,5 przy 3 rzędach), bo wysoka obudowa musi się zmieścić na A4 poziomo. Do rozważenia: strona pionowa dla okablowania albo podział na rzędy.
 4. **Historia cofania znika po przeładowaniu strony** i przy zmianie projektu.
 5. **Usunięcia projektu nie da się cofnąć** (jest potwierdzenie i podpowiedź, żeby wcześniej zapisać plik).
-6. **Licznik, stycznik, przekaźnik czasowy, zasilacz, gniazdo nie są okablowane**, więc np. „Podlicznik pompy ciepła” i „Bojler – taryfa G12” w przykładzie nie są w torze zasilania obwodów.
+6. **Przekaźnik czasowy, zasilacz i gniazdo nie są okablowane.** Licznik i stycznik są (od 0.14.0), ale tylko w torze mocy: przewodów sterowniczych (cewka, styk przekaźnika kontroli faz, sygnał taryfy) aplikacja nie rysuje ani nie liczy w zestawieniu.
 7. **Szyna grzebieniowa tylko dla ciągłego bloku MCB bezpośrednio za RCD.** Nie sprawdzamy zgodności szyn między producentami ani rozstawu biegunów.
 8. **Obliczenia są uproszczone** (od 0.12.0 liczone są spadek napięcia, pętla zwarcia i Ik względem Icn): sama rezystancja przewodów Cu, bez reaktancji, PE o przekroju fazowego, bez współczynników poprawkowych Iz i bez selektywności wg charakterystyk. Dane sieci mają wartości domyślne przykładowe.
 9. **Szerokości aparatów uproszczone** (np. RCBO 1P+N zawsze 2 mod., choć są wersje 1-modułowe).
@@ -109,7 +109,7 @@ Kolejność według wartości dla użytkownika. Każde zadanie kończy się ziel
 7. **Schemat jednokreskowy** generowany z modelu (SVG): WLZ, rozłącznik, SPD, RCD, obwody z oznaczeniami, przekrojami, długościami i mocami. Dodać jako stronę wydruku.
 8. **Katalog w JSON** (`data/catalog/*.json`): numery katalogowe, ceny, szerokości i warianty per producent; import cennika CSV od użytkownika; wartość zestawienia.
 9. ✅ (0.12.0, w wersji uproszczonej) **Rozszerzone obliczenia**. Zostało: reaktancja i przekrój PE inny niż fazowy, współczynniki poprawkowe Iz (temperatura, grupowanie), selektywność wg charakterystyk, układ TT z rezystancją uziemienia RA. Pierwotny opis: spadek napięcia (ΔU ≤ 3% obwody odbiorcze, ≤ 0,5% WLZ – parametry do ustawienia), impedancja pętli i warunek samoczynnego wyłączenia, Ik w miejscu instalacji vs Icn, współczynniki poprawkowe Iz. Każde jako reguła w `checks()` z odwołaniem do normy.
-10. **Obwody sterowania i pomiaru**: licznik w torze obwodu (np. pompa ciepła), stycznik dla bojlera z sygnałem taryfy G12, przekaźnik kontroli faz z cewką stycznika. Zaciski sterownicze w `terms()`, przewody 1,5 mm².
+10. ✅ (0.14.0, tor mocy i sterowanie w symulacji) **Obwody sterowania i pomiaru**. Zostało: przewody sterownicze 1,5 mm² na rysunku i w zestawieniu, przekaźnik czasowy i zasilacz. Pierwotny opis: licznik w torze obwodu (np. pompa ciepła), stycznik dla bojlera z sygnałem taryfy G12, przekaźnik kontroli faz z cewką stycznika. Zaciski sterownicze w `terms()`, przewody 1,5 mm².
 11. **Obsługa dotyku**: przeciąganie na Pointer Events, powiększanie i przesuwanie obudowy, większe cele dotyku.
 
 ### P2 — technika

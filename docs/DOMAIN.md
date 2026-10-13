@@ -61,6 +61,9 @@ Dane wejściowe w `S.set` (czytane przez `sv()`): `zs0` 0,3 Ω, `ik0` 6 kA, `wlz
 | uwaga | Asymetria faz > 25% | – |
 | info | Rezerwa miejsca < 20% | dobra praktyka |
 | uwaga | Prąd szczytowy jednej fazy (z ks) > zabezpieczenie przedlicznikowe | – |
+| info | Licznik albo stycznik poza torem obwodu | – |
+| błąd | In stycznika < In zabezpieczenia obwodu; stycznik 2NO albo licznik 1F w obwodzie 3F | – |
+| uwaga | Stycznik sterowany przekaźnikiem kontroli faz, którego nie ma | – |
 | uwaga | Spadek napięcia w obwodzie > `duObw`; w WLZ > `duWlz` | PN-HD 60364-5-52 zał. G |
 | błąd / uwaga | Zs · Ia > U0 (uwaga, gdy obwód ma RCD) | PN-HD 60364-4-41 p. 411.4 |
 | błąd | Układ TT: obwód bez RCD | PN-HD 60364-4-41 p. 411.5 |
@@ -119,7 +122,9 @@ Liczy wyłącznie ciągłość torów: przewody + szyny grzebieniowe + tory wewn
 | Zwarcie w obwodzie | Wyłącza wyłącznik tego obwodu; ostrzeżenie, gdy zabezpieczenie przedlicznikowe < 1,6 × In obwodu |
 | Przeciążenie | Wyłącza wyłącznik tego obwodu; błąd, gdy In > Iz przewodu |
 | Upływ do PE | Wyłącza RCD chroniący obwód (albo RCBO); bez RCD nic nie zadziała; uwaga dla IΔn > 30 mA |
-| Zanik fazy | Obwody 1F tej fazy bez napięcia, obwody 3F oznaczone jako zasilane niepełnie |
+| Zanik fazy | Obwody 1F tej fazy bez napięcia, obwody 3F oznaczone jako zasilane niepełnie; przekaźnik kontroli faz rozłącza styczniki ze sterowaniem „przekaźnik” |
+| Taryfa G12 | Przełącznik w pasku: styczniki ze sterowaniem „taryfa G12” zamknięte (noc) albo rozłączone (dzień) |
+| Stycznik ręczny | Dźwignia stycznika zamyka i rozłącza tor |
 
 Obwód jednofazowy jest „zasilony”, gdy ma fazę **i** N (z wyjścia RCBO, z listwy N swojej różnicówki albo z głównej listwy N).
 

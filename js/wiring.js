@@ -10,7 +10,11 @@ function terms(d){const p=d.p,L3=['L1','L2','L3'];switch(d.t){
   case 'sw':{const t=[['L1'],['L1','N'],L3,[...L3,'N']][p.poles-1];return {top:t,bot:t};}
   case 'spd':return {top:p.sys==='3P+N'?[...L3,'N']:['L1','N'],bot:['PE']};
   case 'lamp':return {top:[...L3,'N'],bot:[]};
-  case 'relay':return {top:L3,bot:[]};}
+  case 'relay':return {top:L3,bot:[]};
+  /* licznik i stycznik mają zaciski mocy dopiero w torze obwodu: fazy obwodu, licznik zawsze z N, stycznik z N na wolnym biegunie */
+  case 'meter':case 'contactor':{const cd=S.dev[d.circ];if(!cd||!isCirc(cd))break;const ph=phases(cd);
+    if(d.t==='meter'){const t=(p.ph==3?ph:ph.slice(0,1)).concat('N');return {top:t,bot:t};}
+    const t=ph.slice(0,p.poles);if(p.poles>t.length)t.push('N');return {top:t,bot:t};}}
   return {top:[],bot:[]};}
 function wlzMm(){const t=[[20,4],[25,6],[40,10],[63,16],[80,25],[100,35]];return (t.find(x=>S.set.przedl<=x[0])||[0,50])[1];}
 function wlzType(){const m=fmt(wlzMm());return S.set.siec==='TN-C-S'?`YKY 4×${m} mm² (PEN)`:`YKY 5×${m} mm²`;}
@@ -44,7 +48,10 @@ function epLive(e){
   return (e.ph==='N'&&S.set.siec==='TN-C-S')?null:{k:'wlz',ph:e.ph};}
 function epStore(e){return e.k==='dev'?{k:'dev',id:e.id,side:e.side,i:terms(S.dev[e.id])[e.side].indexOf(e.ph)}:e.k==='bar'?{k:'bar',bar:e.bar}:{k:'wlz',ph:e.ph};}
 /* Przekrój przewodu dodanego ręcznie: te same zasady co w autoConns (docs/DOMAIN.md). */
+/* Aparaty w torze obwodu d w kolejności połączeń: wyjście wyłącznika → licznik(i) → stycznik(i) → kabel obwodowy. */
+function chainOf(d){return S.rows.flat().map(id=>S.dev[id]).filter(x=>x.circ===d.id&&(x.t==='meter'||x.t==='contactor')&&terms(x).top.length).sort((a,b)=>(a.t==='meter'?0:1)-(b.t==='meter'?0:1));}
 function userMm(a,b){const P=S.set.przedl,E=[a,b],ds=E.filter(e=>e.k==='dev').map(e=>S.dev[e.id]);
+  const inTor=ds.find(d=>d.circ&&S.dev[d.circ]);if(inTor)return +S.dev[inTor.circ].c.cable;    /* za wyłącznikiem obwodu: przekrój kabla obwodowego */
   if(E.some(e=>e.k==='wlz')||(a.k==='bar'&&b.k==='bar'))return wlzMm();
   if(ds.some(d=>d.t==='lamp'||d.t==='relay'))return 1.5;
   const spd=ds.find(d=>d.t==='spd');if(spd)return spd.p.cls==='T1+T2'?(E.some(e=>e.k==='dev'&&e.ph==='PE')?16:10):6;
@@ -70,6 +77,7 @@ function wireCheck(){const out=[],bad={},why={};if(S.wmode!=='manual')return {ou
     if(e.k==='wlz')return swHas?'pre':'main';
     if(e.k==='bar')return e.bar==='N'?'main':e.bar.slice(2);
     const d=S.dev[e.id];
+    if(d.circ&&(d.t==='meter'||d.t==='contactor')){if(p!=='N'||e.side==='bot')return null;const cd=S.dev[d.circ];return (cd&&cd.rcd&&S.dev[cd.rcd])?cd.rcd:'main';}   /* N aparatu w torze: strefa jego obwodu */
     if(d===sw)return e.side==='top'?'pre':'main';
     if(d.t==='rcd')return e.side==='top'?'main':d.id;
     if(isCirc(d)&&e.side==='bot')return null;
@@ -94,6 +102,13 @@ function wireCheck(){const out=[],bad={},why={};if(S.wmode!=='manual')return {ou
       return;}
     if(pa!==pb){const m=isL(pa)&&isL(pb)?'łączy dwie różne fazy ('+pa+' i '+pb+'): zwarcie międzyfazowe 400 V.':(pa==='PE'||pb==='PE')?(isL(pa)||isL(pb)?'łączy fazę z PE: zwarcie doziemne.':'łączy N z PE poza punktem podziału PEN.'):'łączy fazę z przewodem neutralnym: zwarcie.';
       add('crit',nm+' '+m,'Przewód musi łączyć zaciski tej samej żyły (oznaczenia wg PN-EN 60445). Usuń go i poprowadź do właściwego zacisku.',id,c);return;}
+    /* wyjście wyłącznika obwodu wolno połączyć tylko z wejściem licznika lub stycznika stojącego w torze tego obwodu */
+    const cb=[c.a,c.b].find(e=>e.k==='dev'&&e.side==='bot'&&isCirc(S.dev[e.id]));
+    if(cb){const o=cb===c.a?c.b:c.a;if(o.k==='dev'&&o.side==='top'&&S.dev[o.id].circ===cb.id)return;}
+    const ct=[c.a,c.b].find(e=>e.k==='dev'&&e.side==='top'&&S.dev[e.id].circ&&isL(epPh(e)));
+    if(ct&&!cb){const o=ct===c.a?c.b:c.a,cid=S.dev[ct.id].circ;
+      if(!(o.k==='dev'&&o.side==='bot'&&S.dev[o.id].circ===cid))add('crit',nm+' zasila aparat w torze obwodu '+D[cid]+' z pominięciem jego zabezpieczenia.','Licznik i stycznik obwodu podłącz do wyjścia wyłącznika tego obwodu.',id,c);
+      return;}
     if([c.a,c.b].some(e=>e.k==='dev'&&e.side==='bot'&&isCirc(S.dev[e.id]))){add('warn',nm+' jest wpięty w zacisk odejścia obwodu.','Dolne zaciski wyłączników obwodowych są przeznaczone na kabel obwodowy.',id,c);return;}
     const za=zone(c.a),zb=zone(c.b);if(!za||!zb||za===zb)return;
     if(za==='pre'||zb==='pre')add('crit',nm+' omija rozłącznik główny.','Aparaty zasilaj z wyjścia rozłącznika, inaczej nie da się odłączyć całej instalacji (PN-HD 60364-5-53).',id,c);
@@ -102,7 +117,7 @@ function wireCheck(){const out=[],bad={},why={};if(S.wmode!=='manual')return {ou
   /* Ciągłość: każdy zacisk wejściowy musi mieć połączenie z WLZ (przewody + tory wewnątrz aparatów + szyny grzebieniowe). */
   const par={},find=k=>{while(par[k]&&par[k]!==k)k=par[k];return k;},uni=(a,b)=>{a=find(a);b=find(b);if(a!==b)par[a]=b;};
   C.forEach(c=>uni(epKey(c.a),epKey(c.b)));
-  devs.forEach(d=>{if(['sw','rcd','mcb','rcbo'].indexOf(d.t)<0)return;const t=terms(d);t.top.forEach(p=>{if(t.bot.indexOf(p)>=0)uni(d.id+'/top/'+p,d.id+'/bot/'+p);});});
+  devs.forEach(d=>{if(['sw','rcd','mcb','rcbo','meter','contactor'].indexOf(d.t)<0)return;const t=terms(d);t.top.forEach(p=>{if(t.bot.indexOf(p)>=0)uni(d.id+'/top/'+p,d.id+'/bot/'+p);});});
   combs.forEach(cb=>cb.ids.forEach(id=>terms(S.dev[id]).top.forEach(p=>{if(cb.phs.indexOf(p)>=0)uni('comb/'+cb.rcd+'/'+p,id+'/top/'+p);})));
   const src={};['L1','L2','L3','N','PE'].forEach(p=>src[find('wlz/'+p)]=1);
   const live=k=>!!src[find(k)];
@@ -169,6 +184,10 @@ function autoConns(){const C=[],combs=[],devs=S.rows.flat().map(id=>S.dev[id]),P
       run.forEach(id=>{if(terms(S.dev[id]).top.includes('N'))add(E(r.id,'bot','N'),E(id,'top','N'),'N',mm,'wire');});}
     devs.filter(m=>m.t==='mcb'&&m.rcd===r.id&&!run.includes(m.id)).forEach(m=>terms(m).top.forEach(ph=>add(E(r.id,'bot',rt.includes(ph)?ph:rt[0]),E(m.id,'top',ph),ph,mm,'wire')));
     add(E(r.id,'bot','N'),B('N:'+r.id),'N',mm,'wire');});
+  /* tor obwodu: wyjście wyłącznika → licznik → stycznik; N z wyjścia poprzedniego aparatu albo z listwy N obwodu */
+  devs.filter(isCirc).forEach(d=>{let prev=d;const nsrc=d.t==='rcbo'?E(d.id,'bot','N'):(d.rcd&&S.dev[d.rcd])?B('N:'+d.rcd):B('N'),mm=+d.c.cable;
+    chainOf(d).forEach(x=>{const pb=terms(prev).bot;
+      terms(x).top.forEach(ph=>{if(pb.indexOf(ph)>=0)add(E(prev.id,'bot',ph),E(x.id,'top',ph),ph,mm,'wire');else if(ph==='N')add(nsrc,E(x.id,'top','N'),'N',mm,'wire');});prev=x;});});
   return {C,combs};}
 function epName(e,D){if(e.k==='dev')return `${D[e.id]} ${e.side==='top'?'wej.':'wyj.'} ${e.ph}`;
   if(e.k==='bar')return e.bar==='PE'?'Listwa PE':e.bar==='N'?'Listwa N':'Listwa N '+D[e.bar.slice(2)];
@@ -278,9 +297,10 @@ function drawWires(){const cab=$('#board');
     out+=`<g opacity="${dim?.25:1}"><rect class="w" x="${l}" y="${y}" width="${r-l}" height="7" rx="1.5" fill="var(--cu)" stroke="var(--cu-edge)"><title>Szyna grzebieniowa ${cb.type==='3F'?'3-fazowa':'1-fazowa'}, ${fmt(cb.mod)} mod., zasilana z ${D[cb.rcd]}</title></rect>`;
     cb.ids.forEach(id=>{const d=S.dev[id],e=devEl[id],t=terms(d).top;t.forEach((ph,k)=>{if(ph==='N')return;out+=`<circle cx="${e.l+e.w*(k+.5)/t.length}" cy="${y+3.5}" r="2.4" fill="var(--${ph.toLowerCase()})" stroke="var(--cu-edge)" stroke-width=".8"/>`;});});out+='</g>';});
   // odejścia do obwodów
-  S.rows.forEach((row,ri)=>row.forEach(id=>{const d=S.dev[id];if(!isCirc(d))return;const e=devEl[id],t=terms(d).bot,yb=rails[ri].b+10;
+  /* odejście do kabla obwodowego: z wyłącznika albo z ostatniego aparatu w torze obwodu (licznik, stycznik) */
+  S.rows.forEach(row=>row.forEach(id=>{const d=S.dev[id];if(!isCirc(d))return;const ch=chainOf(d),tg=ch.length?ch[ch.length-1]:d,e=devEl[tg.id],t=terms(tg).bot,yb=rails[rowOf(tg.id)].b+10;
     const dim=SIMC?SIMC.dev[id].st!=='on':(S.sel&&S.sel!==id&&S.sel!==d.rcd);let g='';
-    t.forEach((ph,k)=>{if(ph==='N'&&d.t!=='rcbo')return;if(!wf[ph])return;const x=e.l+e.w*(k+.5)/t.length,col=`var(--${ph.toLowerCase()})`;
+    t.forEach((ph,k)=>{if(ph==='N'&&tg===d&&d.t!=='rcbo')return;if(!wf[ph])return;const x=e.l+e.w*(k+.5)/t.length,col=`var(--${ph.toLowerCase()})`;
       g+=`<path d="M${x} ${e.b-7}V${yb}" stroke="${col}" stroke-width="2" fill="none"/><path d="M${x-3} ${yb-3}L${x} ${yb+1}L${x+3} ${yb-3}" stroke="${col}" stroke-width="1.6" fill="none"/>`;});
     const ct=cableType(d).split(' ')[1];g+=`<text x="${e.l+e.w/2}" y="${yb+11}" font-size="8.5" text-anchor="middle" fill="var(--ink)" font-family="JetBrains Mono, monospace">${ct}<title>${esc(D[id]+' '+d.name+': '+cableType(d)+', '+(clen(d))+' m')}</title></text>`;
     out+=`<g opacity="${dim?.25:1}">${g}</g>`;}));

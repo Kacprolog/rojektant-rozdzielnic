@@ -6,7 +6,7 @@ function autoRcd(d,row,idx){if(d.t!=='mcb')return;const r=S.rows[row];for(let i=
 function addPreset(i,row,idx){const p=PRESETS[i];const d=newDev(p.t,S.mfr,p.p,p.c,p.name);S.dev[d.id]=d;
   if(idx==null)idx=S.rows[row].length;S.rows[row].splice(idx,0,d.id);autoRcd(d,row,idx);S.sel=d.id;S.active=row;S.tab='aparat';render();toast(`Dodano ${desc(d)} do rzędu ${row+1}`);}
 function moveDev(id,row,idx){const fr=rowOf(id),fi=S.rows[fr].indexOf(id);S.rows[fr].splice(fi,1);if(fr===row&&fi<idx)idx--;S.rows[row].splice(Math.max(0,Math.min(idx,S.rows[row].length)),0,id);render();}
-function delDev(id){const r=rowOf(id);if(r<0)return;S.rows[r].splice(S.rows[r].indexOf(id),1);delete S.dev[id];Object.values(S.dev).forEach(d=>{if(d.rcd===id)d.rcd=null;});
+function delDev(id){const r=rowOf(id);if(r<0)return;S.rows[r].splice(S.rows[r].indexOf(id),1);delete S.dev[id];Object.values(S.dev).forEach(d=>{if(d.rcd===id)d.rcd=null;if(d.circ===id)d.circ=null;});
   S.conn=(S.conn||[]).filter(w=>[w.a,w.b].every(e=>!(e.k==='dev'&&e.id===id)&&!(e.k==='bar'&&e.bar==='N:'+id)));if(S.sel===id)S.sel=null;render();}
 function balance(){const L={L1:0,L2:0,L3:0};const devs=Object.values(S.dev).filter(isCirc);
   devs.filter(is3).forEach(d=>{const i=ib(d);L.L1+=i;L.L2+=i;L.L3+=i;});
@@ -164,7 +164,7 @@ const touchEnd=()=>{if(!tDrag)return;clearTimeout(tDrag.timer);const d=tDrag;tDr
   if(!d.on)return;dragInfo=null;
   if(d.rail){dropDev(d.id,d.rail,d.cx);toast('Przeniesiono aparat');}else render(true);};
 board.addEventListener('touchend',touchEnd);board.addEventListener('touchcancel',touchEnd);
-$('#simBar').addEventListener('click',e=>{const b=e.target.closest('[data-sim]');if(!b)return;if(b.dataset.sim==='reset')simReset();else simFault(b.dataset.sim);});
+$('#simBar').addEventListener('click',e=>{const b=e.target.closest('[data-sim]');if(!b)return;if(b.dataset.sim==='reset')simReset();else if(b.dataset.sim==='g12')simG12();else simFault(b.dataset.sim);});
 $('#simBar').addEventListener('change',e=>{if(e.target.hasAttribute('data-simph'))simPhase(e.target.value);});
 /* Przeciąganie przewodu między zaciskami (mysz i dotyk). Krótkie naciśnięcie bez ruchu zostaje zwykłym kliknięciem. */
 let wDrag=null;
@@ -175,6 +175,7 @@ function wireDragStart(){const svg=$('svg.wires');if(!svg)return;const a=JSON.pa
   const l=document.createElementNS('http://www.w3.org/2000/svg','line');l.setAttribute('class','rb');
   ['x1','x2'].forEach(k=>l.setAttribute(k,wDrag.x));['y1','y2'].forEach(k=>l.setAttribute(k,wDrag.y));svg.appendChild(l);wDrag.line=l;}
 board.addEventListener('pointerdown',e=>{const tp=e.target.closest&&e.target.closest('[data-ep]');if(!tp||S.wmode!=='manual'||wireMove||wirePick)return;
+  e.preventDefault();   /* bez tego Safari zaczyna zaznaczanie i przerywa gest (pointercancel); zdarzenie click i tak przyjdzie */
   const r=tp.ownerSVGElement.getBoundingClientRect(),b=tp.getBoundingClientRect();
   wDrag={ep:tp.getAttribute('data-ep'),x:(b.left+b.width/2-r.left)/zf(),y:(b.top+b.height/2-r.top)/zf(),sx:e.clientX,sy:e.clientY,moved:false,line:null};});
 document.addEventListener('pointermove',e=>{if(!wDrag)return;

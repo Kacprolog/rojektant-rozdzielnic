@@ -10,18 +10,29 @@ function simToggle(){S.sim=simOn()?null:{on:true,off:{},dead:{},log:[]};render()
 /* Kto ma napięcie. Graf: przewody + szyny grzebieniowe + tory wewnątrz ZAŁĄCZONYCH aparatów; źródła: żyły WLZ bez zaniku.
    Zwraca { live(kluczZacisku), dev:{id:{st,lv}}, load:{L1,L2,L3}, nOn, nAll, flows(przewód) }.
    st: 'on' zasilony, 'off' wyłączony, 'dead' bez napięcia, 'part' brak fazy lub N, 'none' aparat bez zacisków mocy. */
-function simCalc(){const {C,combs}=buildConns(),devs=S.rows.flat().map(id=>S.dev[id]),off=S.sim.off,par={};
-  const find=k=>{while(par[k]&&par[k]!==k)k=par[k];return k;},uni=(a,b)=>{a=find(a);b=find(b);if(a!==b)par[a]=b;};
-  C.forEach(c=>uni(epKey(c.a),epKey(c.b)));
-  devs.forEach(d=>{if(SIM_SW.indexOf(d.t)<0||off[d.id])return;const t=terms(d);t.top.forEach(p=>{if(t.bot.indexOf(p)>=0)uni(d.id+'/top/'+p,d.id+'/bot/'+p);});});
-  combs.forEach(cb=>cb.ids.forEach(id=>terms(S.dev[id]).top.forEach(p=>{if(cb.phs.indexOf(p)>=0)uni('comb/'+cb.rcd+'/'+p,id+'/top/'+p);})));
-  const src={};['L1','L2','L3','N','PE'].forEach(p=>{if(!S.sim.dead[p])src[find('wlz/'+p)]=1;});
-  const live=k=>!!src[find(k)],dev={},load={L1:0,L2:0,L3:0};let nOn=0,nAll=0;
+function simCalc(){const {C,combs}=buildConns(),devs=S.rows.flat().map(id=>S.dev[id]),off=S.sim.off,relays=devs.filter(d=>d.t==='relay');
+  /* Jeden przebieg grafu przy zadanym stanie styczników sterowanych przekaźnikiem kontroli faz. */
+  const pass=relayOk=>{const par={},find=k=>{while(par[k]&&par[k]!==k)k=par[k];return k;},uni=(x,y)=>{x=find(x);y=find(y);if(x!==y)par[x]=y;};
+    /* czy tor przez aparat jest zamknięty: łączniki wg dźwigni, licznik zawsze, stycznik wg sterowania cewki */
+    const closed=d=>SIM_SW.indexOf(d.t)>=0?!off[d.id]:d.t==='meter'?true:d.t==='contactor'?(d.p.ctl==='g12'?S.sim.g12!==false:d.p.ctl==='relay'?relayOk:!off[d.id]):false;
+    C.forEach(c=>uni(epKey(c.a),epKey(c.b)));
+    devs.forEach(d=>{if(!closed(d))return;const t=terms(d);t.top.forEach(p=>{if(t.bot.indexOf(p)>=0)uni(d.id+'/top/'+p,d.id+'/bot/'+p);});});
+    combs.forEach(cb=>cb.ids.forEach(id=>terms(S.dev[id]).top.forEach(p=>{if(cb.phs.indexOf(p)>=0)uni('comb/'+cb.rcd+'/'+p,id+'/top/'+p);})));
+    const src={};['L1','L2','L3','N','PE'].forEach(p=>{if(!S.sim.dead[p])src[find('wlz/'+p)]=1;});
+    return {live:k=>!!src[find(k)],closed};};
+  /* przekaźnik kontroli faz trzyma styczniki tylko wtedy, gdy sam widzi wszystkie trzy fazy */
+  let g=pass(false);
+  const relayOk=!relays.length||relays.every(k=>['L1','L2','L3'].every(p=>g.live(k.id+'/top/'+p)));
+  if(relayOk)g=pass(true);
+  const live=g.live,closed=g.closed,dev={},load={L1:0,L2:0,L3:0};let nOn=0,nAll=0;
   devs.forEach(d=>{const t=terms(d),phs=t.top.filter(p=>p!=='N'&&p!=='PE'),lv=phs.filter(p=>live(d.id+'/top/'+p));
-    let st=!t.top.length?'none':off[d.id]?'off':!lv.length?'dead':lv.length<phs.length?'part':'on';
+    let st=!t.top.length?'none':(SIM_SW.indexOf(d.t)>=0&&off[d.id])?'off':!lv.length?'dead':lv.length<phs.length?'part':'on';
+    if(d.t==='contactor'&&t.top.length&&lv.length&&!closed(d))st='off';
     if(isCirc(d)){nAll++;
       /* obwód jednofazowy potrzebuje też N: z wyjścia RCBO, z listwy N swojej różnicówki albo z głównej listwy N */
       if(st==='on'&&!is3(d)&&!live(d.t==='rcbo'?d.id+'/top/N':(d.rcd&&S.dev[d.rcd])?'bar/N:'+d.rcd:'bar/N'))st='part';
+      /* tor obwodu: gdy stycznik na końcu jest rozłączony, odbiornik nie ma napięcia mimo załączonego wyłącznika */
+      if((st==='on'||st==='part')&&chainOf(d).some(x=>x.t==='contactor'&&!closed(x)))st='ctl';
       if(st==='on'){nOn++;const i=ib(d);phases(d).forEach(p=>load[p]+=i);}}
     dev[d.id]={st,lv};});
   const circOn=id=>!!dev[id]&&dev[id].st==='on'&&isCirc(S.dev[id])&&+S.dev[id].c.P>0;
@@ -33,10 +44,14 @@ function simCalc(){const {C,combs}=buildConns(),devs=S.rows.flat().map(id=>S.dev
     if(d.t==='sw')return !off[d.id]&&load[c.ph]>0;
     if(d.t==='rcd')return devs.some(m=>m.t==='mcb'&&m.rcd===d.id&&circOn(m.id)&&phases(m).indexOf(c.ph)>=0);
     if(isCirc(d))return circOn(d.id);
+    if(d.t==='meter'||d.t==='contactor')return circOn(d.circ);
     return d.t==='lamp'||d.t==='relay';};
-  return {live,dev,load,nOn,nAll,flows};}
+  return {live,dev,load,nOn,nAll,flows,relayOk};}
 /* Kliknięcie dźwigni: załącz / wyłącz aparat. */
-function simLever(id){const d=S.dev[id];if(!d||SIM_SW.indexOf(d.t)<0)return;const D=designations();
+function simLever(id){const d=S.dev[id];if(!d)return;const D=designations();
+  if(d.t==='contactor'){if(!d.circ)return;
+    if(d.p.ctl!=='man'){toast(d.p.ctl==='g12'?'Ten stycznik załącza sygnał taryfy G12 (przełącznik w pasku symulacji)':'Ten stycznik załącza przekaźnik kontroli faz');return;}}
+  else if(SIM_SW.indexOf(d.t)<0)return;
   if(S.sim.off[id]){delete S.sim.off[id];simLog('info',D[id]+' '+d.name+': załączony.');}
   else{S.sim.off[id]=1;simLog('info',D[id]+' '+d.name+': wyłączony ręcznie.');}
   render(true);}
@@ -69,10 +84,14 @@ function simPhase(ph){const a=simCalc();S.sim.dead={};if(ph)S.sim.dead[ph]=1;con
   if(ph){const part=Object.keys(b.dev).filter(id=>b.dev[id].st==='part'&&isCirc(S.dev[id])).map(id=>D[id]);
     simLog('crit','Zanik fazy '+ph+' w zasilaniu: zasilonych obwodów '+b.nOn+' z '+a.nOn+'.'+(part.length?' Niepełne zasilanie odbiorników trójfazowych: '+part.join(', ')+' (ryzyko uszkodzenia silników).':''));
     const k=S.rows.flat().map(id=>S.dev[id]).find(d=>d.t==='relay');
-    if(k)simLog('info',D[k.id]+' '+k.name+' wykrywa zanik fazy. Aplikacja nie ma jeszcze obwodów sterowania, więc niczego nie wyłącza.');}
+    if(k){const ks=S.rows.flat().map(id=>S.dev[id]).filter(d=>d.t==='contactor'&&d.p.ctl==='relay'&&d.circ&&S.dev[d.circ]);
+      if(ks.length)simLog('warn',D[k.id]+' '+k.name+' wykrywa zanik fazy i rozłącza: '+ks.map(c=>D[c.id]+' ('+S.dev[c.circ].name+')').join(', ')+'.');
+      else simLog('info',D[k.id]+' '+k.name+' wykrywa zanik fazy. Żaden stycznik nie jest nim sterowany, więc niczego nie wyłącza.');}}
   else simLog('info','Zasilanie przywrócone na wszystkich fazach.');
   render(true);}
-function simReset(){S.sim.off={};S.sim.dead={};S.sim.log=[];render(true);toast('Załączono wszystkie aparaty');}
+/* Sygnał taryfy G12 dla styczników ze sterowaniem „g12” (domyślnie taryfa nocna, czyli styczniki załączone). */
+function simG12(){S.sim.g12=S.sim.g12===false;simLog('info',S.sim.g12?'Taryfa nocna G12: styczniki taryfowe załączone.':'Taryfa dzienna G12: styczniki taryfowe rozłączone.');render(true);}
+function simReset(){S.sim.off={};S.sim.dead={};S.sim.log=[];S.sim.g12=true;render(true);toast('Załączono wszystkie aparaty');}
 /* Pasek symulacji nad obudową. */
 function renderSim(){const bar=$('#simBar');$('#bSim').setAttribute('aria-pressed',String(simOn()));bar.hidden=!simOn();if(!simOn())return;
   const st=SIMC||simCalc(),P=S.set.przedl,dead=Object.keys(S.sim.dead)[0]||'',over=['L1','L2','L3'].some(p=>st.load[p]>P);
@@ -81,6 +100,7 @@ function renderSim(){const bar=$('#simBar');$('#bSim').setAttribute('aria-presse
     ${over?`<p class="simwarn">Przy wszystkich odbiornikach naraz prąd przekracza zabezpieczenie przedlicznikowe ${P} A. W praktyce ogranicza to współczynnik jednoczesności (zakładka Bilans).</p>`:''}
     <div class="simrow"><span class="encsub">Awaria w zaznaczonym obwodzie:</span><button class="chip" data-sim="short">Zwarcie</button><button class="chip" data-sim="over">Przeciążenie</button><button class="chip" data-sim="leak">Upływ do PE</button>
       <label class="encsub">Zanik fazy <select data-simph aria-label="Zanik fazy">${opt('',dead,'brak')}${['L1','L2','L3'].map(p=>opt(p,dead)).join('')}</select></label>
+      ${S.rows.flat().some(id=>{const d=S.dev[id];return d.t==='contactor'&&d.p.ctl==='g12'&&d.circ;})?`<button class="chip" data-sim="g12" aria-pressed="${S.sim.g12!==false}">Taryfa G12: ${S.sim.g12!==false?'nocna (załączone)':'dzienna (rozłączone)'}</button>`:''}
       <button class="chip" data-sim="reset">Załącz wszystko</button></div>
     ${S.sim.log.length?`<ol class="simlog">${S.sim.log.slice(-5).map(l=>`<li class="${l.sev}">${esc(l.msg)}</li>`).join('')}</ol>`
       :'<p class="encsub">Kliknij dźwignię aparatu, aby go wyłączyć lub załączyć. Przycisk T testuje różnicówkę. Zaznacz obwód i wywołaj awarię.</p>'}

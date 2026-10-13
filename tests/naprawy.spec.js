@@ -61,12 +61,12 @@ test('naprawy przewodów ręcznych: usunięcie złego przewodu, kolor i przekró
   await page.click('[data-wmode="manual"]');
   await page.click('[data-tab="kontrola"]');
   await fix(page, 'Przejmij automatyczne').click();
-  expect(await page.evaluate(() => S.conn.length)).toBe(36);
+  expect(await page.evaluate(() => S.conn.length)).toBe(42);
   const d = await ids(page);
   await page.evaluate(([q, r]) => { wireClick({ k: 'dev', id: q, side: 'bot', i: 0 }); wireClick({ k: 'dev', id: r, side: 'top', i: 1 }); }, [d['Rozłącznik główny'], d['RCD obwody ogólne']]);
   await page.click('[data-tab="kontrola"]');
   await fix(page, 'Usuń ten przewód').click();
-  expect(await page.evaluate(() => [S.conn.length, wireCheck().out.length])).toEqual([36, 0]);
+  expect(await page.evaluate(() => [S.conn.length, wireCheck().out.length])).toEqual([42, 0]);
 
   await page.evaluate(() => { const w = S.conn.find(x => x.a.k === 'dev' && x.b.k === 'dev'); w.col = 'PE'; w.mm = 35; render(); });
   await fix(page, 'Przywróć kolor wg normy').click();
