@@ -94,7 +94,8 @@ function renderBoard(){const e=enc(),D=designations(),M=34;$('#board').className
 function renderTabs(){const ck=checks(),nc=ck.filter(c=>c.sev==='crit').length,nw=ck.filter(c=>c.sev==='warn').length;
   const T=[['aparat','Aparat'],['kontrola','Kontrola'],['bilans','Bilans'],['struktura','Struktura'],['kable','Kable'],['bom','Zestawienie']];
   $('#tabs').innerHTML=T.map(([k,l])=>`<button class="tab" role="tab" data-tab="${k}" aria-selected="${S.tab===k}">${l}${k==='kontrola'&&(nc||nw)?`<span class="badge ${nc?'crit':'warn'}">${nc||nw}</span>`:''}</button>`).join('');}
-function opt(v,cur,l){return `<option value="${v}" ${String(v)===String(cur)?'selected':''}>${l==null?v:l}</option>`;}
+/* Wartość i etykieta opcji są zawsze escapowane tutaj: etykiety bywają nazwami aparatów, czyli danymi użytkownika albo z pliku. */
+function opt(v,cur,l){return `<option value="${esc(v)}" ${String(v)===String(cur)?'selected':''}>${esc(l==null?v:l)}</option>`;}
 function fsel(id,label,k,opts,cur){return `<div class="fld"><label for="${id}">${label}</label><select id="${id}" data-k="${k}">${opts.map(o=>Array.isArray(o)?opt(o[0],cur,o[1]):opt(o,cur)).join('')}</select></div>`;}
 function renderPanel(){const P=$('#panel');
   if(S.tab==='aparat')P.innerHTML=panelDev();
@@ -120,7 +121,7 @@ function panelDev(){const d=S.dev[S.sel];
   if(d.t==='psu'){pf.push(fsel('pW','Moc','p.W',[[30,'30 W'],[60,'60 W']],p.W));}
   if(pf.length)f+=`<h3>Parametry aparatu</h3><div class="fld2">${pf.join('')}</div>`;
   if(d.t==='meter'||d.t==='contactor'){const cs=S.rows.flat().map(id=>S.dev[id]).filter(isCirc);
-    f+=`<h3>Tor obwodu</h3><div class="fld2">${fsel('iCirc','W torze obwodu','circ',[['','— poza torem —']].concat(cs.map(c=>[c.id,esc(D[c.id]+' '+c.name)])),d.circ||'')}
+    f+=`<h3>Tor obwodu</h3><div class="fld2">${fsel('iCirc','W torze obwodu','circ',[['','— poza torem —']].concat(cs.map(c=>[c.id,D[c.id]+' '+c.name])),d.circ||'')}
       ${d.t==='contactor'?fsel('pCtl','Sterowanie cewki','p.ctl',[['man','ręczne (łącznik)'],['g12','sygnał taryfy G12'],['relay','przekaźnik kontroli faz']],p.ctl||'man'):''}</div>
       <p class="note">Aparat w torze obwodu jest wpinany za wyłącznik tego obwodu (wyłącznik → licznik → stycznik → kabel obwodowy) i dostaje zaciski jego faz. ${d.t==='contactor'?'Sterowanie cewki działa w symulacji; przewodów sterowniczych aplikacja jeszcze nie rysuje.':''}</p>`;}
   let calc='';

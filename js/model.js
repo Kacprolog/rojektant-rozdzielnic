@@ -106,6 +106,14 @@ function valid(s){try{
 /* Sprowadza pola aparatu do dozwolonych wartości (plik projektu może pochodzić z zewnątrz). */
 function cleanDev(d){const p=d.p;d.name=String(d.name==null?TNAME[d.t]:d.name);if(!MFR[d.m])d.m='hager';
   ['In','poles','idn','icn','W','ph'].forEach(k=>{if(k in p)p[k]=num(p[k],k==='poles'?1:k==='In'?16:0);});
+  /* liczba biegunów i faz tylko z typoszeregu danego aparatu: terms() i width() zakładają te wartości */
+  const POLES={mcb:[1,2,3,4],sw:[3,1,2,4],rcd:[4,2],rcbo:[2,4],contactor:[2,4]};
+  if(POLES[d.t])p.poles=oneOf(p.poles,POLES[d.t]);
+  if(d.t==='meter')p.ph=oneOf(p.ph,[3,1]);
+  if(d.t==='psu')p.W=oneOf(p.W,[30,60]);
+  if(['mcb','rcbo','rcd','sw','contactor'].indexOf(d.t)>=0&&!(p.In>0))p.In=16;
+  if(d.t==='mcb')p.icn=oneOf(p.icn,[6,10]);
+  if(d.t==='rcd'||d.t==='rcbo')p.idn=p.idn>0?p.idn:30;
   if(isCirc(d))p.curve=oneOf(p.curve,['B','C','D']);
   if(d.t==='rcd'||d.t==='rcbo')p.kind=oneOf(p.kind,['A','AC','F','B']);
   if(d.t==='rcd')p.sel=!!p.sel;
@@ -123,11 +131,14 @@ function cleanConn(s){const out=[],seen={};(Array.isArray(s.conn)?s.conn:[]).for
     if([1.5,2.5,4,6,10,16,25,35].indexOf(w.mm)>=0)c.mm=w.mm;                 /* przekrój ustawiony ręcznie */
     if(['L1','L2','L3','N','PE'].indexOf(w.col)>=0)c.col=w.col;              /* kolor izolacji ustawiony ręcznie */
     out.push(c);}});return out;}
+/* Zakresy ustawień, których przekroczenie psuje wszystkie obliczenia (np. ks > 1 albo cos φ > 1). */
+const SET_RANGE={ks:[0.05,1],cos:[0.5,1]};
+function clampSet(k,v){const r=SET_RANGE[k];return r?Math.max(r[0],Math.min(r[1],v)):v;}
 function normalize(s){
   s.name=typeof s.name==='string'?s.name:'Projekt';
   const set=Object.assign({moc:22,przedl:32,ks:0.5,cos:0.95,siec:'TN-C-S'},s.set||{});
   const extra={};['zs0','ik0','wlzLen','duObw','duWlz'].forEach(k=>{const v=num(set[k],0);if(v>0)extra[k]=v;});
-  s.set={moc:num(set.moc,22)||22,przedl:num(set.przedl,32)||32,ks:num(set.ks,0.5)||0.5,cos:num(set.cos,0.95)||0.95,siec:oneOf(set.siec,['TN-C-S','TN-S','TT'])};Object.assign(s.set,extra);
+  s.set={moc:num(set.moc,22)||22,przedl:num(set.przedl,32)||32,ks:clampSet('ks',num(set.ks,0.5)||0.5),cos:clampSet('cos',num(set.cos,0.95)||0.95),siec:oneOf(set.siec,['TN-C-S','TN-S','TT'])};Object.assign(s.set,extra);
   const list=ENC[s.enc.mfr];s.enc={mfr:s.enc.mfr,series:list.some(e=>e.id===s.enc.series)?s.enc.series:list[0].id,rows:s.rows.length};
   const used={};s.rows.forEach(r=>r.forEach(id=>used[id]=1));Object.keys(s.dev).forEach(id=>{if(!used[id])delete s.dev[id];});
   Object.values(s.dev).forEach(d=>{cleanDev(d);if(d.t==='meter'||d.t==='contactor')d.circ=(typeof d.circ==='string'&&own(s.dev,d.circ)&&isCirc(s.dev[d.circ]))?d.circ:null;if(d.t==='mcb'&&!(d.rcd&&s.dev[d.rcd]&&s.dev[d.rcd].t==='rcd'))d.rcd=null;});
@@ -143,7 +154,7 @@ function normalize(s){
 function fixUid(s,u){let m=num(u,1);Object.keys(s.dev).concat((s.conn||[]).map(w=>w.id)).forEach(id=>{const n=+id.slice(1);if(n>=m)m=n+1;});return m;}
 /* Lista projektów: localStorage['rozdz-v2'] = { version:2, cur:<id>, list:[{ id, S, uid, mod }] }. S to zawsze projekt PR.cur. */
 const KEY='rozdz-v2',KEY1='rozdz-v1';
-const PR={cur:null,list:[]};
+const PR={cur:null,list:[],bad:[]};   /* bad: wpisy, których nie udało się wczytać; są zapisywane z powrotem bez zmian */
 function pid(){return 'p'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
 function blankS(){return {name:'Nowy projekt',enc:{mfr:'hager',series:'volta',rows:3},set:{moc:22,przedl:32,ks:0.5,cos:0.95,siec:'TN-C-S'},rows:[[],[],[]],dev:{},wmode:'auto',conn:[]};}
 /* Cofnij / Ponów: stos migawek danych projektu (DATA_KEYS + uid), limit 50. Zmiany widoku nie tworzą migawek.
@@ -162,10 +173,13 @@ function histApply(s){const o=JSON.parse(s);uid=o.uid;DATA_KEYS.forEach(k=>S[k]=
   wireReset();HIST.cur=s;HIST.tag=null;render();}
 function undo(){if(!HIST.u.length)return;HIST.r.push(HIST.cur);histApply(HIST.u.pop());toast('Cofnięto zmianę');}
 function redo(){if(!HIST.r.length)return;HIST.u.push(HIST.cur);histApply(HIST.r.pop());toast('Ponowiono zmianę');}
+let saveFailed=false;                 /* komunikat o nieudanym zapisie pokazujemy raz, nie przy każdym renderze */
 function save(){histTrack();try{const cur=PR.list.find(x=>x.id===PR.cur);if(cur){cur.S=S;cur.uid=uid;cur.mod=Date.now();}
-  localStorage.setItem(KEY,JSON.stringify({version:2,cur:PR.cur,list:PR.list}));}catch(e){}}
-function load(){PR.list=[];PR.cur=null;
-  try{const j=JSON.parse(localStorage.getItem(KEY));if(j&&Array.isArray(j.list)){PR.list=j.list.filter(x=>x&&typeof x.id==='string'&&valid(x.S));PR.cur=j.cur;}}catch(e){}
+  localStorage.setItem(KEY,JSON.stringify({version:2,cur:PR.cur,list:PR.list,bad:PR.bad}));saveFailed=false;}
+  catch(e){if(!saveFailed){saveFailed=true;if(typeof toast==='function')toast('Nie udało się zapisać projektu w pamięci przeglądarki. Pobierz kopię przyciskiem „Zapisz projekt”.',8000,true);}}}
+function load(){PR.list=[];PR.cur=null;PR.bad=[];
+  try{const j=JSON.parse(localStorage.getItem(KEY));if(j&&Array.isArray(j.list)){const ok=x=>x&&typeof x.id==='string'&&valid(x.S);
+    PR.list=j.list.filter(ok);PR.bad=(Array.isArray(j.bad)?j.bad:[]).concat(j.list.filter(x=>!ok(x)));PR.cur=j.cur;}}catch(e){}
   if(!PR.list.length){/* migracja z wersji jednoprojektowej (klucz rozdz-v1) */
     try{const j=JSON.parse(localStorage.getItem(KEY1));if(j&&valid(j.S)){PR.list=[{id:pid(),S:j.S,uid:j.uid}];localStorage.removeItem(KEY1);}}catch(e){}}
   if(!PR.list.length)return false;

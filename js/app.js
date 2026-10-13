@@ -29,7 +29,10 @@ function importData(text){let j;try{j=JSON.parse(text);}catch(e){return 'Plik ni
   if(j.version>FILE_VERSION)return 'Plik pochodzi z nowszej wersji aplikacji (wersja pliku '+j.version+').';
   if(!valid(j.S))return 'Plik projektu jest uszkodzony lub niepełny.';
   /* migracje starszych wersji pliku: tutaj, gdy FILE_VERSION wzrośnie */
-  projAdd(j.S,j.uid);return '';}
+  const prev=PR.cur;
+  try{projAdd(j.S,j.uid);}
+  catch(e){console.error(e);PR.list=PR.list.filter(x=>x.id!==PR.cur);const back=PR.list.find(x=>x.id===prev)||PR.list[0];if(back)projUse(back);return 'Pliku projektu nie da się wyświetlić (nieobsługiwane parametry aparatów).';}
+  return '';}
 
 /* ---------- lista projektów ---------- */
 function projUse(p){wireReset();PR.cur=p.id;S=normalize(p.S);uid=fixUid(S,p.uid);histReset();$('#confirm').hidden=true;render();}
@@ -126,12 +129,11 @@ panel.addEventListener('input',e=>{const t=e.target;const d=S.dev[S.sel];
 /* Odświeża same wyniki obliczeń w panelu aparatu, bez przerysowania pól (żeby nie zgubić kursora podczas pisania). */
 function updCalc(){const box=panel.querySelector('#calcBox');if(!box||!S.dev[S.sel])return;const tmp=document.createElement('div');tmp.innerHTML=panelDev();const nb=tmp.querySelector('#calcBox');if(nb)box.innerHTML=nb.innerHTML;}
 panel.addEventListener('change',e=>{const t=e.target,d=S.dev[S.sel];
-  if(t.dataset.s){const v=t.dataset.s==='siec'?t.value:+t.value;if(t.dataset.s==='siec'||v>0)S.set[t.dataset.s]=v;render();return;}
+  if(t.dataset.s){const k=t.dataset.s,v=k==='siec'?t.value:+t.value;if(k==='siec'||v>0)S.set[k]=k==='siec'?oneOf(v,['TN-C-S','TN-S','TT']):clampSet(k,v);render();return;}
   const k=t.dataset.k;if(!k||!d||k==='name'||k==='c.P'||k==='c.len'){if(k==='c.P')render();return;}
   if(k==='row'){const r=+t.value;moveDev(d.id,r,S.rows[r].length);S.active=r;render();return;}
   if(k==='rcd'){d.rcd=t.value||null;render();return;}
   setPath(d,k,parseV(t.value));
-  if(d.t==='rcbo'||d.t==='mcb'){/* keep values sane */}
   render();});
 document.addEventListener('keydown',e=>{const inField=/INPUT|TEXTAREA/.test(document.activeElement.tagName);
   if((e.ctrlKey||e.metaKey)&&!e.altKey&&!inField){const k=e.key.toLowerCase();if(k==='z'||k==='y'){e.preventDefault();if(k==='y'||e.shiftKey)redo();else undo();return;}}
@@ -194,15 +196,20 @@ $('#wireFilter').addEventListener('click',e=>{const wm=e.target.closest('[data-w
   if(e.target.closest('[data-wsel]')){S.sel=null;render();}});
 $('#wireFilter').addEventListener('change',e=>{const p=e.target.closest('[data-wprop]');if(p)wireSet(p.dataset.wprop,p.value);});
 $('#viewSeg').addEventListener('click',e=>{const b=e.target.closest('[data-view]');if(!b)return;S.wires=b.dataset.view==='wires';render(true);});
-$('#bClear').addEventListener('click',()=>ask('Usunąć wszystkie aparaty z obudowy?','Usuń wszystko',()=>{S.rows=S.rows.map(()=>[]);S.dev={};S.sel=null;render();toast('Obudowa wyczyszczona');}));
+$('#bClear').addEventListener('click',()=>ask('Usunąć wszystkie aparaty z obudowy?','Usuń wszystko',()=>{S.rows=S.rows.map(()=>[]);S.dev={};S.conn=[];S.sel=null;wireReset();render();toast('Obudowa wyczyszczona');}));
 $('#cNo').addEventListener('click',()=>{askFn=null;$('#confirm').hidden=true;});
 $('#cYes').addEventListener('click',()=>{const fn=askFn;askFn=null;$('#confirm').hidden=true;if(fn)fn();});
 
 function boot(){
   if(!load()){sample();PR.list=[{id:pid(),S:S,uid:uid}];PR.cur=PR.list[0].id;}
+
   histReset();
   try{render();}
-  catch(err){console.error(err);sample();histReset();render();toast('Zapisany projekt był niezgodny z nową wersją. Wczytano przykład.');}
+  catch(err){console.error(err);
+    /* nie nadpisujemy danych użytkownika: zepsuty wpis zostaje w pamięci (PR.bad), a pracujemy na nowym przykładzie */
+    const broken=PR.list.find(x=>x.id===PR.cur);PR.list=PR.list.filter(x=>x!==broken);if(broken){try{PR.bad.push(JSON.parse(JSON.stringify(broken)));}catch(e){}}
+    sample();PR.list.push({id:pid(),S:S,uid:uid});PR.cur=PR.list[PR.list.length-1].id;histReset();render();
+    toast('Jednego projektu nie udało się wyświetlić. Jego dane zostały zachowane; wczytano przykład.',8000,true);}
 }
-try{boot();}catch(err){document.querySelector('.app').insertAdjacentHTML('afterbegin','<div class="confirm" role="alert">Nie udało się uruchomić projektanta: '+String(err&&err.message||err).replace(/</g,'&lt;')+'</div>');}
+try{boot();if(PR.bad.length)console.warn('Projekty, których nie udało się wczytać (zachowane w localStorage["rozdz-v2"].bad):',PR.bad.length);}catch(err){document.querySelector('.app').insertAdjacentHTML('afterbegin','<div class="confirm" role="alert">Nie udało się uruchomić projektanta: '+String(err&&err.message||err).replace(/</g,'&lt;')+'</div>');}
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{try{if(S&&S.wires)renderBoard();}catch(e){}});

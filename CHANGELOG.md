@@ -2,6 +2,34 @@
 
 Każdy wpis odpowiada jednemu commitowi. Format: co zrobiono, dlaczego, jak sprawdzono.
 
+## 0.14.1 (13.10.2026) — poprawki z przeglądu całego kodu
+
+Przegląd objął `js/`, `css/`, `index.html`, `scripts/`, `tests/` i workflow. Każde znalezisko poniżej zostało najpierw
+odtworzone skryptem, potem naprawione i pokryte testem w `tests/odpornosc.spec.js`.
+
+- **Wstrzyknięcie HTML przez nazwę aparatu (naprawione).** Lista „Ochrona RCD” wstawiała nazwę różnicówki bez
+  escapowania, więc nazwa z kodem HTML wykonywała skrypt, także po wczytaniu cudzego pliku projektu. `opt()`
+  escapuje teraz wartość i etykietę każdej opcji w jednym miejscu.
+- **Utrata projektu przy starcie (naprawione).** Wpis listy projektów, który nie przechodził walidacji, był pomijany,
+  a następny zapis usuwał go z pamięci przeglądarki. Takie wpisy trafiają teraz do `PR.bad` i są zapisywane z powrotem
+  bez zmian (`localStorage['rozdz-v2'].bad`).
+- **Nadpisanie projektu przykładem (naprawione).** Gdy projektu nie dało się narysować, był zastępowany przykładem
+  i zapisywany. Teraz zepsuty wpis zostaje w `PR.bad`, a przykład jest nowym projektem.
+- **Parametry spoza typoszeregu (naprawione).** Plik z np. 7 biegunami rozłącznika przechodził walidację i wywracał
+  rysowanie. `cleanDev()` sprowadza bieguny, fazy licznika, moc zasilacza, Icn i In do dozwolonych wartości;
+  `importData()` wycofuje projekt, którego nie da się wyświetlić.
+- **ks i cos φ poza zakresem (naprawione).** Dało się wpisać ks = 5 albo cos φ = 3; teraz ks ∈ 0,05–1, cos φ ∈ 0,5–1.
+- **Nieudany zapis** w pamięci przeglądarki (np. brak miejsca) pokazuje komunikat zamiast przechodzić po cichu.
+- **„Wyczyść”** usuwa też ręczne przewody.
+- **Serwer deweloperski:** błędny adres (`%E0%A4%A`) kończył proces; teraz odpowiada 400. Słucha tylko na 127.0.0.1,
+  a kontrola ścieżki uwzględnia separator katalogu.
+- **Testy** uruchamiają własny serwer na porcie 4174 (`reuseExistingServer: false`), żeby nie trafić w serwer działający
+  z innej kopii projektu.
+- Pomiar wydajności (nie wymagał zmian): render przykładu 1,4 ms (front) i 7 ms (okablowanie), 106 aparatów 22 ms.
+- Nienaprawione, opisane w `HANDOFF.md`: „Rozłóż fazy” w okablowaniu ręcznym tworzy błędy faz; zaciski listew mogą się
+  nakładać przy bardzo wielu przewodach; okablowanie tylko myszą lub dotykiem (brak klawiatury); czcionki z Google Fonts.
+- Sprawdzenie: `npm test` → 207/207.
+
 ## 0.14.0 (13.10.2026) — licznik i stycznik w torze obwodu, sterowanie stycznika w symulacji
 
 Powód: zadanie P1.10 z planu. Licznik i stycznik stały na szynie, ale nie były okablowane, więc „Podlicznik pompy

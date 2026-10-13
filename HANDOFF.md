@@ -1,6 +1,6 @@
 # Przekazanie projektu: Projektant Rozdzielnic
 
-Stan na 10.10.2026, wersja 0.14.0. Projekt powstał w czacie z Claude jako pojedyncza strona (artefakt claude.ai), został podzielony na pliki i jest rozwijany w Claude Code jako zwykła strona w przeglądarce. Wersja 0.5.0 zamyka zadania P0 (1–5 w całości, 6 przygotowane, czeka na decyzję o hostingu). Szczegóły każdej zmiany: `CHANGELOG.md`.
+Stan na 10.10.2026, wersja 0.14.1. Projekt powstał w czacie z Claude jako pojedyncza strona (artefakt claude.ai), został podzielony na pliki i jest rozwijany w Claude Code jako zwykła strona w przeglądarce. Wersja 0.5.0 zamyka zadania P0 (1–5 w całości, 6 przygotowane, czeka na decyzję o hostingu). Szczegóły każdej zmiany: `CHANGELOG.md`.
 
 ![Widok frontu](docs/front.png)
 
@@ -8,7 +8,7 @@ Stan na 10.10.2026, wersja 0.14.0. Projekt powstał w czacie z Claude jako pojed
 
 Narzędzie dla elektryka lub projektanta do wstępnego zaprojektowania rozdzielnicy mieszkaniowej / małej komercyjnej: dobór obudowy, rozmieszczenie aparatów różnych producentów, kontrola zgodności z podstawowymi wymaganiami PN-HD 60364, okablowanie wnętrza i zestawienie materiałów do zamówienia.
 
-## Co działa (zweryfikowane testami, `npm test`, 189/189: 63 testów × desktop, telefon, safari)
+## Co działa (zweryfikowane testami, `npm test`, 207/207: 69 testów × desktop, telefon, safari)
 
 **Obudowa i aparaty**
 - 5 producentów: Hager, Schneider Electric, ABB, Eaton, Legrand; 9 serii obudów (12–24 mod./rząd, 1–6 rzędów, IP40–IP65).
@@ -80,6 +80,16 @@ Narzędzie dla elektryka lub projektanta do wstępnego zaprojektowania rozdzieln
 11. W `css/styles.css` reguły `.cabinet.wiring { padding … }` i `.cabinet.wiring .rowwrap { margin-top … }` są nadpisywane przez style inline z `drawWires()`; do uporządkowania.
 12. Faza RCD 2P jest wyznaczana z pierwszego przypisanego obwodu 1F (`rcdPh`), a nie ustawiana jawnie.
 13. Zakresy przekrojów zacisków aparatów (`termRange()`) są orientacyjne, wpisane bez kart katalogowych producentów.
+
+Z przeglądu kodu 0.14.1 (nienaprawione):
+
+- **„Rozłóż fazy” w okablowaniu ręcznym** zmienia fazy obwodów, ale nie przepina przewodów, więc tworzy błędy „dwie różne fazy”. Przycisk naprawy przy asymetrii nie powinien być wtedy oferowany albo powinien przepinać przewody.
+- **Zaciski listew:** gdy przewodów jest więcej niż miejsc na listwie (`barX()` w `drawWires()`), kolejne trafiają w ten sam punkt bez ostrzeżenia.
+- **Dostępność:** przewody można dodawać tylko myszą lub dotykiem; zakładki nie mają `aria-controls` ani obsługi strzałek.
+- **Prywatność i praca offline:** czcionki są ładowane z Google Fonts.
+- **Backspace** usuwa zaznaczony aparat (cofalne, ale łatwo o pomyłkę).
+- **Wpisy w `PR.bad`** nie mają interfejsu: nie da się ich pobrać ani usunąć z poziomu aplikacji.
+- **Styl kodu:** linie po 300–400 znaków i wspólna przestrzeń globalna utrudniają przegląd (plan P2: Vite + TypeScript).
 
 Naprawione w 0.5.0: pasek potwierdzenia „Wyczyść” widoczny od startu i podpowiedź o przewodach widoczna w widoku frontu (atrybut `hidden` nadpisywany przez `display`).
 

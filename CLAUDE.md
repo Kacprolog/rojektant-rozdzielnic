@@ -9,10 +9,10 @@ Szczegóły przekazania, znane problemy i plan prac: `HANDOFF.md`. Dziennik zmia
 ## Uruchamianie
 
 ```bash
-npm start            # serwer statyczny bez zależności: http://localhost:4173
+npm start            # serwer statyczny bez zależności: http://localhost:4173 (testy używają własnego na 4174)
 npm install          # tylko dla testów (@playwright/test)
 npx playwright install chromium webkit   # raz, jeśli nie ma przeglądarek
-npm test             # 63 testów × 3 projekty: desktop 1600 px i telefon 390 px (Chromium), safari (WebKit)
+npm test             # 69 testów × 3 projekty: desktop 1600 px i telefon 390 px (Chromium), safari (WebKit)
 node scripts/podglad-druku.js            # PDF i zrzuty stron wydruku w test-results/druk/
 ```
 
@@ -40,6 +40,7 @@ tests/okablowanie.spec.js   okablowanie ręczne i alerty złego podłączenia
 tests/obliczenia.spec.js    spadki napięcia, pętla zwarcia, Icn, prąd szczytowy faz (z rachunkiem ręcznym)
 tests/dotyk.spec.js         powiększanie obudowy, przenoszenie aparatów dotykiem
 tests/tor.spec.js           licznik i stycznik w torze obwodu, sterowanie stycznika
+tests/odpornosc.spec.js     złe dane: HTML w nazwach, parametry spoza zakresu, uszkodzone wpisy
 tests/naprawy.spec.js       naprawy z kontroli, pasek szybkiej edycji
 tests/symulacja.spec.js     symulacja, awarie, przeciąganie przewodów
 tests/p0.spec.js    plik projektu, lista projektów, cofanie, druk
@@ -68,7 +69,7 @@ Skrypty są **klasyczne** i ładowane po kolei. Wszystkie `const`/`function` z n
 ## Zasady przy zmianach
 
 1. **Zgodność wstecz zapisanego stanu.** Użytkownicy mają projekty w `localStorage` i w plikach. Nowe pola dodawaj z wartością domyślną przy odczycie (`normalize()`, wzór: `clen(d)` dla `d.c.len`). Gdy zmiana schematu jest niezgodna, dodaj migrację w `load()` (wzór: `rozdz-v1` → `rozdz-v2`) i podnieś wersję w kluczu tylko z migracją; dla plików podnieś `FILE_VERSION` i dopisz migrację w `importData()`.
-2. **Dane z zewnątrz.** Wszystko, co przychodzi z pliku lub `localStorage`, przechodzi przez `valid()` i `normalize()`. Pole wstawiane do HTML bez `esc()` musi być tam sprowadzone do słownika albo liczby (`cleanDev()`).
+2. **Dane z zewnątrz.** Wszystko, co przychodzi z pliku lub `localStorage`, przechodzi przez `valid()` i `normalize()`. Pole wstawiane do HTML bez `esc()` musi być tam sprowadzone do słownika albo liczby (`cleanDev()`). Nazwy (aparatu, projektu) są tekstem dowolnym: **zawsze** przez `esc()`; opcje list tylko przez `opt()`, które escapuje samo. Parametr, od którego zależy `terms()` albo `width()` (bieguny, fazy), musi mieć w `cleanDev()` zamkniętą listę wartości. Projektu, którego nie da się wczytać, nie wolno usuwać ani nadpisywać: trafia do `PR.bad`.
 3. **Bez `?.` i `??`** oraz innych świeżych API bez sprawdzenia wsparcia. Testy przechodzą w WebKit, ale przyczyna dawnego zgłoszenia „nie ładuje się” nie została potwierdzona (patrz `HANDOFF.md`).
 4. **Kolory tylko przez tokeny CSS** z `:root` (+ oba bloki ciemnego motywu). Kolory żył: `--l1` brązowy, `--l2` czarny, `--l3` szary, `--n` niebieski, `--pe`/`--pe2` zielono-żółty, `--cu` szyna grzebieniowa.
 5. **Teksty dla użytkownika po polsku**, rzeczowo, z jednostkami (A, mA, kW, mm², m) i odwołaniem do normy przy regułach kontroli.
