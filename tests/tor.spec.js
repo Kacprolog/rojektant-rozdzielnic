@@ -41,7 +41,9 @@ test('przykład: licznik w torze pompy ciepła i stycznik w torze bojlera mają 
   ]);
   expect(await tor(page, d['Podgrzewacz wody'])).toEqual([
     '-F15 wyj. L3 → -K2 wej. L3 2.5',
-    'Listwa N → -K2 wej. N 2.5'
+    'Listwa N → -K2 wej. N 2.5',
+    'Sygnał taryfy G12 (licznik OSD) → -K2 cewka A1 1.5',
+    'Listwa N → -K2 cewka A2 1.5'
   ]);
   expect((await found(page)).filter(x => !x.startsWith('info'))).toEqual([]);
   // Odejście do kabla obwodowego jest rysowane z ostatniego aparatu toru.
@@ -82,7 +84,9 @@ test('wybór toru w panelu aparatu, aparat poza torem, usunięcie obwodu', async
   await page.selectOption('#iCirc', d['Gniazda salon']);
   expect(await tor(page, d['Gniazda salon'])).toEqual([
     '-F5 wyj. L3 → -K2 wej. L3 2.5',
-    'Listwa N -F2 → -K2 wej. N 2.5'
+    'Listwa N -F2 → -K2 wej. N 2.5',
+    'Sygnał taryfy G12 (licznik OSD) → -K2 cewka A1 1.5',
+    'Listwa N → -K2 cewka A2 1.5'
   ]);
   // Usunięcie obwodu zwalnia aparaty z jego toru.
   await page.evaluate(i => delDev(i), d['Gniazda salon']);

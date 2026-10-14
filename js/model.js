@@ -422,6 +422,10 @@ function cleanDev(d) {
 /* Uzupełnia brakujące pola wartościami domyślnymi (zgodność wstecz) i porządkuje odwołania. Wymaga valid(s). */
 function cleanEp(s, e) {
   if (!e || typeof e !== 'object') return null;
+  if (e.k === 'dev' && typeof e.c === 'string')
+    return own(s.dev, e.id) && (e.side === 'top' || e.side === 'bot') && CTL_T.indexOf(e.c) >= 0
+      ? { k: 'dev', id: e.id, side: e.side, c: e.c }
+      : null; /* zacisk sterowniczy: zapisany nazwą (A1, 14…) */
   if (e.k === 'dev')
     return own(s.dev, e.id) && (e.side === 'top' || e.side === 'bot') && typeof e.i === 'number' && e.i >= 0 && e.i < 8
       ? { k: 'dev', id: e.id, side: e.side, i: Math.floor(e.i) }
@@ -430,7 +434,7 @@ function cleanEp(s, e) {
     const b = String(e.bar);
     return b === 'PE' || b === 'N' || (b.slice(0, 2) === 'N:' && own(s.dev, b.slice(2))) ? { k: 'bar', bar: b } : null;
   }
-  if (e.k === 'wlz') return ['L1', 'L2', 'L3', 'N', 'PE'].indexOf(e.ph) >= 0 ? { k: 'wlz', ph: e.ph } : null;
+  if (e.k === 'wlz') return ['L1', 'L2', 'L3', 'N', 'PE', 'G12'].indexOf(e.ph) >= 0 ? { k: 'wlz', ph: e.ph } : null;
   return null;
 }
 function cleanConn(s) {
@@ -444,7 +448,7 @@ function cleanConn(s) {
       seen[w.id] = 1;
       const c = { id: w.id, a: a, b: b };
       if ([1.5, 2.5, 4, 6, 10, 16, 25, 35].indexOf(w.mm) >= 0) c.mm = w.mm; /* przekrój ustawiony ręcznie */
-      if (['L1', 'L2', 'L3', 'N', 'PE'].indexOf(w.col) >= 0) c.col = w.col; /* kolor izolacji ustawiony ręcznie */
+      if (['L1', 'L2', 'L3', 'N', 'PE', 'S'].indexOf(w.col) >= 0) c.col = w.col; /* kolor izolacji ustawiony ręcznie */
       out.push(c);
     }
   });

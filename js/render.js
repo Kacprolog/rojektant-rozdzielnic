@@ -128,7 +128,8 @@ function face(d) {
 function screwsFor(d, side) {
   const w = width(d),
     t = terms(d);
-  let n = t[side].length || (side === 'bot' && t.top.length ? 0 : Math.ceil(w));
+  /* śruby także dla zacisków sterowniczych (cewka, styki), żeby punkty przewodów trafiały w śruby */
+  let n = allTerms(d, side).length || (side === 'bot' && t.top.length ? 0 : Math.ceil(w));
   if (!n) return '';
   return screws(Math.min(n, Math.max(1, Math.floor((w * 34) / 10))));
 }
@@ -141,7 +142,8 @@ function wireEditor(w, D) {
       ['L2', 'czarny'],
       ['L3', 'szary'],
       ['N', 'niebieski'],
-      ['PE', 'zielono-żółty']
+      ['PE', 'zielono-żółty'],
+      ['S', 'czerwony (sterowniczy)']
     ];
   return `<span class="wedit"><label>Przekrój <select data-wprop="mm">${opt('', st.mm || '', 'auto (' + fmt(w.mmAuto) + ' mm²)')}${WIRE_MM.map(v => opt(v, st.mm || '', fmt(v) + ' mm²')).join('')}</select></label>
     <label>Kolor <select data-wprop="col">${cols.map(c => opt(c[0], st.col || '', c[1])).join('')}</select></label>
@@ -152,13 +154,15 @@ function renderWireFilter() {
   const f = $('#wireFilter');
   f.hidden = !S.wires;
   if (!S.wires) return;
-  const wf = S.wf || (S.wf = { L1: 1, L2: 1, L3: 1, N: 1, PE: 1 });
+  const wf = S.wf || (S.wf = { L1: 1, L2: 1, L3: 1, N: 1, PE: 1, S: 1 });
+  if (!('S' in wf)) wf.S = 1;
   const bg = {
     L1: 'var(--l1)',
     L2: 'var(--l2)',
     L3: 'var(--l3)',
     N: 'var(--n)',
-    PE: 'linear-gradient(90deg,var(--pe) 50%,var(--pe2) 50%)'
+    PE: 'linear-gradient(90deg,var(--pe) 50%,var(--pe2) 50%)',
+    S: 'var(--s)'
   };
   const man = S.wmode === 'manual',
     wsel = man && wireSel ? buildConns().C.find(c => c.id === wireSel) : null,
@@ -185,7 +189,7 @@ function renderWireFilter() {
     Object.keys(bg)
       .map(
         k =>
-          `<button class="chip" data-wf="${k}" aria-pressed="${!!wf[k]}"><span class="dot" style="background:${bg[k]}"></span>${k}</button>`
+          `<button class="chip" data-wf="${k}" aria-pressed="${!!wf[k]}"${k === 'S' ? ' title="Przewody sterownicze (cewki, styki)"' : ''}><span class="dot" style="background:${bg[k]}"></span>${k}</button>`
       )
       .join('') +
     (S.sel && S.dev[S.sel]
@@ -519,7 +523,7 @@ function panelDev() {
             )
           : ''
       }</div>
-      <p class="note">Aparat w torze obwodu jest wpinany za wyłącznik tego obwodu (wyłącznik → licznik → stycznik → kabel obwodowy) i dostaje zaciski jego faz. ${d.t === 'contactor' ? 'Sterowanie cewki działa w symulacji; przewodów sterowniczych aplikacja jeszcze nie rysuje.' : ''}</p>`;
+      <p class="note">Aparat w torze obwodu jest wpinany za wyłącznik tego obwodu (wyłącznik → licznik → stycznik → kabel obwodowy) i dostaje zaciski jego faz. ${d.t === 'contactor' ? 'Cewka A1/A2 dostaje przewody sterownicze (czerwone, 1,5 mm²): ręczne – A1 z wyjścia wyłącznika obwodu; G12 – A1 z sygnału taryfy z licznika OSD; przekaźnik – A1 ze styku 14 przekaźnika kontroli faz. A2 do N tej samej strefy. Symulacja załącza stycznik, gdy cewka ma napięcie.' : ''}</p>`;
   }
   let calc = '';
   if (isCirc(d)) {
@@ -721,7 +725,7 @@ function printView() {
   const keepSchem = S.schem;
   S.schem = false;
   S.zoom = 1;
-  S.wf = { L1: 1, L2: 1, L3: 1, N: 1, PE: 1 };
+  S.wf = { L1: 1, L2: 1, L3: 1, N: 1, PE: 1, S: 1 };
   wireReset();
   let front, wires;
   try {

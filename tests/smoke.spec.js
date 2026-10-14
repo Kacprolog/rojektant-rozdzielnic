@@ -37,7 +37,7 @@ test('model połączeń dla przykładu jest stabilny', async ({ page }) => {
     const b = buildConns();
     return { n: b.C.length, combs: b.combs.map(c => c.type + c.mod) };
   });
-  expect(r.n).toBe(48); // 42 połączenia mocy + 6 w torach obwodów (licznik pompy ciepła, stycznik bojlera)
+  expect(r.n).toBe(50); // 42 połączenia mocy + 6 w torach obwodów (licznik pompy ciepła, stycznik bojlera) + 2 przewody cewki stycznika
   expect(r.combs).toEqual(['3F8', '3F3']);
 });
 

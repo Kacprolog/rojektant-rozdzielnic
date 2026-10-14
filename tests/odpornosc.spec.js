@@ -196,5 +196,5 @@ test('„Wyczyść” usuwa także ręczne przewody', async ({ page }) => {
   await page.click('#cYes');
   expect(await page.evaluate(() => [Object.keys(S.dev).length, S.conn.length])).toEqual([0, 0]);
   await page.click('#bUndo');
-  expect(await page.evaluate(() => [Object.keys(S.dev).length, S.conn.length])).toEqual([21, 42]);
+  expect(await page.evaluate(() => [Object.keys(S.dev).length, S.conn.length])).toEqual([21, 44]);
 });

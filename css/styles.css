@@ -32,6 +32,7 @@
   --n: #2a62c9;
   --pe: #2f9a3c;
   --pe2: #e2c21c;
+  --s: #d0312d; /* przewód sterowniczy (PN-EN 60204-1) */
   --cu: #b87333;
   --cu-edge: #7a4a1e;
   --f-display: 'Barlow Condensed', 'Arial Narrow', Arial, sans-serif;
@@ -76,6 +77,7 @@
     --n: #2a62c9;
     --pe: #2f9a3c;
     --pe2: #e2c21c;
+    --s: #d0312d; /* przewód sterowniczy (PN-EN 60204-1) */
     --cu: #b87333;
     --cu-edge: #7a4a1e;
     color-scheme: dark;
@@ -114,6 +116,7 @@
   --n: #2a62c9;
   --pe: #2f9a3c;
   --pe2: #e2c21c;
+  --s: #d0312d; /* przewód sterowniczy (PN-EN 60204-1) */
   --cu: #b87333;
   --cu-edge: #7a4a1e;
   color-scheme: dark;

@@ -87,8 +87,8 @@ test('„Przejmij automatyczne” daje to samo okablowanie bez żadnych uwag', a
       .join(),
     user: S.conn.length
   }));
-  expect(man.n).toBe(48);
-  expect(man.user).toBe(42); // 48 połączeń minus 6 zworek szyn grzebieniowych
+  expect(man.n).toBe(50);
+  expect(man.user).toBe(44); // 50 połączeń minus 6 zworek szyn grzebieniowych
   expect(man.n).toBe(auto.n);
   expect(man.mat).toBe(auto.mat);
   expect(man.sev).toBe(auto.sev);
@@ -251,16 +251,16 @@ test('„Usuń przewody” i zastąpienie wymagają potwierdzenia; powrót do tr
 }) => {
   await manualAdopted(page);
   await page.click('[data-wact="adopt"]');
-  await expect(page.locator('#confirm')).toContainText('Zastąpić ręczne okablowanie (42 przewodów)');
+  await expect(page.locator('#confirm')).toContainText('Zastąpić ręczne okablowanie (44 przewodów)');
   await page.click('#cNo');
   await page.click('[data-wact="clear"]');
   await page.click('#cYes');
   expect(await page.evaluate(() => S.conn.length)).toBe(0);
   await page.click('#bUndo');
-  expect(await page.evaluate(() => S.conn.length)).toBe(42);
+  expect(await page.evaluate(() => S.conn.length)).toBe(44);
   await page.click('[data-wmode="auto"]');
   await expect(page.locator('svg.wires .tp')).toHaveCount(0);
-  expect(await page.evaluate(() => [S.conn.length, buildConns().C.length])).toEqual([42, 48]);
+  expect(await page.evaluate(() => [S.conn.length, buildConns().C.length])).toEqual([44, 50]);
 });
 
 test('edycja przewodu: przekrój, kolor izolacji wg PN-EN 60445, przepinanie końców', async ({ page }) => {

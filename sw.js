@@ -2,7 +2,7 @@
    Strategia „najpierw sieć”: z siecią użytkownik zawsze dostaje najnowszą wersję (kopia w pamięci jest przy okazji
    odświeżana), bez sieci strona działa z kopii. Projekty i tak są w localStorage, więc offline nic nie ginie.
    Nowy plik potrzebny stronie dopisz do ASSETS (test „lista plików service workera jest kompletna” to sprawdza). */
-const CACHE = 'rozdz-0.17.0';
+const CACHE = 'rozdz-0.18.0';
 const ASSETS = [
   './',
   'index.html',

@@ -2,6 +2,28 @@
 
 Każdy wpis odpowiada jednemu commitowi. Format: co zrobiono, dlaczego, jak sprawdzono.
 
+## 0.18.0 (14.10.2026) — przewody sterownicze
+
+- Zaciski sterownicze osobno od zacisków mocy (`ctlTerms()`, `allTerms()` w `js/wiring.js`): stycznik w torze obwodu ma
+  cewkę A1/A2, przekaźnik kontroli faz styk 11–14, przekaźnik czasowy A1/A2 i 15–18. Osobno, żeby nie zmieniać obliczeń
+  prądów, torów mocy ani dotychczasowych kontroli. Front aparatu ma śruby także dla tych zacisków.
+- Okablowanie automatyczne rysuje obwody cewek: przewód 1,5 mm², żyła „S”, kolor czerwony (token `--s`). Źródło A1 zależy od
+  sterowania (wyjście wyłącznika obwodu, sygnał G12 z licznika OSD, styk 14 przekaźnika kontroli faz), A2 idzie do N tej
+  samej strefy. Tabela w `docs/DOMAIN.md` → „Obwody sterowania”.
+- Okablowanie ręczne: zaciski sterownicze i koniec „Sygnał taryfy G12” są klikalne; koniec zapisany nazwą (`c: 'A1'`),
+  `cleanEp()` przyjmuje tylko nazwy z `CTL_T`. Kolor „czerwony (sterowniczy)” w edytorze przewodu, filtr żyły „S”.
+- Kontrola: PE na zacisku sterowniczym, obwód sterowania bez wyłącznika nadprądowego, N cewki z innej strefy (błędy);
+  N na A1, faza na A2 lub na wyjściu styku, nietypowe połączenie styków (uwagi); kolor inny niż czerwony (informacja);
+  cewka bez A1 lub A2 – uwaga z naprawą „Dodaj przewody cewki”.
+- Symulacja: stycznik zamyka tor, gdy jego cewka ma napięcie; przekaźnik kontroli faz zamyka styk 11–14, gdy widzi trzy
+  fazy; sygnał G12 jest źródłem zależnym od przełącznika w pasku. Obliczenie powtarzane do ustalenia stanu. Przy okablowaniu
+  automatycznym wynik jest taki sam jak wcześniej (dotychczasowe testy symulacji bez zmian).
+- Poprawka w trakcie: w trybie ręcznym przewód od sygnału G12 był traktowany jak WLZ i wypadał z zestawienia materiałów
+  (wykrył to test „Przejmij automatyczne daje to samo okablowanie”).
+- Przykład: 50 połączeń (było 48), 44 przewody po przejęciu (było 42); testy zaktualizowane. Nowe testy
+  `tests/sterowanie.spec.js` (4). Zrzut okablowania sprawdzony wzrokowo.
+- Nie zrobione: zaciski zasilacza 24 V, funkcja czasowa przekaźnika czasowego w symulacji.
+
 ## 0.17.0 (14.10.2026) — praca bez internetu i instalacja (PWA)
 
 - `manifest.webmanifest` (nazwa, język, tryb osobnego okna, ikony) i `sw.js` (service worker). Strategia „najpierw

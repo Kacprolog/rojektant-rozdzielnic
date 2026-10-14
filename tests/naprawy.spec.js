@@ -93,7 +93,7 @@ test('naprawy przewodów ręcznych: usunięcie złego przewodu, kolor i przekró
   await page.click('[data-wmode="manual"]');
   await page.click('[data-tab="kontrola"]');
   await fix(page, 'Przejmij automatyczne').click();
-  expect(await page.evaluate(() => S.conn.length)).toBe(42);
+  expect(await page.evaluate(() => S.conn.length)).toBe(44);
   const d = await ids(page);
   await page.evaluate(
     ([q, r]) => {
@@ -104,7 +104,7 @@ test('naprawy przewodów ręcznych: usunięcie złego przewodu, kolor i przekró
   );
   await page.click('[data-tab="kontrola"]');
   await fix(page, 'Usuń ten przewód').click();
-  expect(await page.evaluate(() => [S.conn.length, wireCheck().out.length])).toEqual([42, 0]);
+  expect(await page.evaluate(() => [S.conn.length, wireCheck().out.length])).toEqual([44, 0]);
 
   await page.evaluate(() => {
     const w = S.conn.find(x => x.a.k === 'dev' && x.b.k === 'dev');

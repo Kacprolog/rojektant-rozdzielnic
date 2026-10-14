@@ -337,3 +337,8 @@ const PRESETS = [
   { g: 'Sterowanie i pomiar', t: 'psu', p: { W: 30 }, name: 'Zasilacz 24 V', l: 'Zasilacz DIN 24 V DC 30 W' },
   { g: 'Sterowanie i pomiar', t: 'socket', p: {}, name: 'Gniazdo serwisowe', l: 'Gniazdo modułowe 16 A' }
 ];
+
+/* Zaciski obwodów sterowania (osobno od zacisków mocy): cewka A1/A2, styk zwierny przekaźnika kontroli faz 11–14,
+   przekaźnik czasowy A1/A2 i 15–18. Przewód sterowniczy to żyła 'S' (czerwona, PN-EN 60204-1 rozdz. 13.2), 1,5 mm².
+   'G12' to wejście sygnału taryfy z licznika dwutaryfowego OSD (koniec WLZ). */
+const CTL_T = ['A1', 'A2', '11', '14', '15', '18'];

@@ -1,6 +1,13 @@
 /* Okablowanie: zaciski, lista połączeń, routing przewodów (SVG), materiały — Projektant Rozdzielnic. Skrypt klasyczny (bez modułów ES), ładowany w kolejności z index.html. */
 /* ---------- okablowanie ---------- */
-const PHN = { L1: 'L1 brązowy', L2: 'L2 czarny', L3: 'L3 szary', N: 'N niebieski', PE: 'PE zielono-żółty' };
+const PHN = {
+  L1: 'L1 brązowy',
+  L2: 'L2 czarny',
+  L3: 'L3 szary',
+  N: 'N niebieski',
+  PE: 'PE zielono-żółty',
+  S: 'sterowniczy czerwony'
+};
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 function rcdPh(r) {
   const m = S.rows
@@ -53,6 +60,16 @@ function terms(d) {
   }
   return { top: [], bot: [] };
 }
+/* Zaciski sterownicze aparatu (cewka, styki). Trzymane osobno od terms(), żeby nie zmieniać torów mocy, obliczeń
+   i symulacji przepływu prądu; na rysunku stoją za zaciskami mocy tej samej strony. */
+function ctlTerms(d) {
+  if (d.t === 'contactor' && terms(d).top.length) return { top: ['A1'], bot: ['A2'] };
+  if (d.t === 'relay') return { top: [], bot: ['11', '14'] };
+  if (d.t === 'timer') return { top: ['A1', 'A2'], bot: ['15', '18'] };
+  return { top: [], bot: [] };
+}
+const isCtl = p => CTL_T.indexOf(p) >= 0 || p === 'G12';
+const allTerms = (d, side) => terms(d)[side].concat(ctlTerms(d)[side]);
 function wlzMm() {
   const t = [
     [20, 4],
@@ -161,7 +178,7 @@ function termIssues() {
     });
   return out;
 }
-const epPh = e => (e.k === 'bar' ? (e.bar === 'PE' ? 'PE' : 'N') : e.ph);
+const epPh = e => (e.k === 'bar' ? (e.bar === 'PE' ? 'PE' : 'N') : isCtl(e.ph) ? 'S' : e.ph);
 const epKey = e =>
   e.k === 'dev'
     ? e.id + '/' + e.side + '/' + e.ph
@@ -175,6 +192,7 @@ function epLive(e) {
   if (e.k === 'dev') {
     const d = S.dev[e.id];
     if (!d) return null;
+    if (e.c) return ctlTerms(d)[e.side].indexOf(e.c) >= 0 ? { k: 'dev', id: e.id, side: e.side, ph: e.c } : null;
     const ph = terms(d)[e.side][e.i];
     return ph ? { k: 'dev', id: e.id, side: e.side, ph } : null;
   }
@@ -186,7 +204,9 @@ function epLive(e) {
 }
 function epStore(e) {
   return e.k === 'dev'
-    ? { k: 'dev', id: e.id, side: e.side, i: terms(S.dev[e.id])[e.side].indexOf(e.ph) }
+    ? isCtl(e.ph)
+      ? { k: 'dev', id: e.id, side: e.side, c: e.ph }
+      : { k: 'dev', id: e.id, side: e.side, i: terms(S.dev[e.id])[e.side].indexOf(e.ph) }
     : e.k === 'bar'
       ? { k: 'bar', bar: e.bar }
       : { k: 'wlz', ph: e.ph };
@@ -204,6 +224,7 @@ function userMm(a, b) {
   const P = S.set.przedl,
     E = [a, b],
     ds = E.filter(e => e.k === 'dev').map(e => S.dev[e.id]);
+  if (E.some(e => epPh(e) === 'S')) return 1.5; /* przewód sterowniczy */
   const inTor = ds.find(d => d.circ && S.dev[d.circ]);
   if (inTor) return +S.dev[inTor.circ].c.cable; /* za wyłącznikiem obwodu: przekrój kabla obwodowego */
   if (E.some(e => e.k === 'wlz') || (a.k === 'bar' && b.k === 'bar')) return wlzMm();
@@ -227,18 +248,19 @@ function userConns() {
       b = t;
       flip = true;
     }
-    const pen = a.k === 'bar' && a.bar === 'PE' && epPh(b) === 'N';
+    const pen = a.k === 'bar' && a.bar === 'PE' && epPh(b) === 'N',
+      ctl = epPh(a) === 'S' || epPh(b) === 'S';
     out.push({
       id: w.id,
       user: 1,
       a,
       b,
-      ph: pen ? 'N' : a.k === 'bar' ? epPh(b) : epPh(a),
+      ph: ctl ? 'S' : pen ? 'N' : a.k === 'bar' ? epPh(b) : epPh(a),
       mm: w.mm || userMm(a, b),
       mmAuto: userMm(a, b),
       col: w.col || '',
       flip,
-      kind: pen ? 'mostek' : a.k === 'wlz' ? 'wlz' : 'wire'
+      kind: pen ? 'mostek' : a.k === 'wlz' && !ctl ? 'wlz' : 'wire' /* sygnał G12 to przewód w rozdzielnicy, nie WLZ */
     });
   });
   return out;
@@ -323,10 +345,101 @@ function wireCheck() {
     if (d.t === 'mcb') return d.rcd && S.dev[d.rcd] ? d.rcd : 'main';
     return 'main';
   };
-  const COL = { L1: 'brązową', L2: 'czarną', L3: 'szarą', N: 'niebieską', PE: 'zielono-żółtą' };
+  const COL = { L1: 'brązową', L2: 'czarną', L3: 'szarą', N: 'niebieską', PE: 'zielono-żółtą', S: 'czerwoną' };
   const unset = (c, k) => () => {
     const w = S.conn.find(x => x.id === c.id);
     if (w) delete w[k];
+  };
+  /* Przewód obwodu sterowania (co najmniej jeden koniec na zacisku sterowniczym albo sygnale G12). */
+  const ctlCheck = (c, nm, id) => {
+    const ends = [c.a, c.b],
+      ce = ends.filter(e => epPh(e) === 'S'),
+      oe = ends.filter(e => epPh(e) !== 'S'),
+      tn = e => e.ph;
+    if (!oe.length) {
+      /* oba końce sterownicze: źródło (14, 18, G12) → cewka A1 albo wspólny zacisk kolejnego styku (11, 15) */
+      const src = ['14', '18', 'G12'],
+        dst = ['A1', '11', '15'],
+        [x, y] = ce.map(tn);
+      if (!((src.indexOf(x) >= 0 && dst.indexOf(y) >= 0) || (src.indexOf(y) >= 0 && dst.indexOf(x) >= 0)))
+        add(
+          'warn',
+          nm + ' łączy zaciski sterownicze w nietypowy sposób.',
+          'Cewkę (A1) zasila się z wyjścia styku (14, 18) albo z sygnału taryfy G12; zacisk A2 łączy się z N.',
+          id,
+          c
+        );
+      return;
+    }
+    const o = oe[0],
+      p = epPh(o),
+      t = tn(ce[0]);
+    if (p === 'PE') {
+      add(
+        'crit',
+        nm + ' łączy zacisk sterowniczy z PE: zwarcie doziemne albo napięcie na przewodzie ochronnym.',
+        'Przewód ochronny nie może przewodzić prądu roboczego (PN-HD 60364-5-54). A2 łącz z N.',
+        id,
+        c
+      );
+      return;
+    }
+    if (p === 'N') {
+      if (t !== 'A2')
+        add(
+          'warn',
+          nm + ' łączy N z zaciskiem ' + t + '.',
+          'N podłącza się do zacisku A2 cewki; A1 i wspólny zacisk styku zasila się z fazy za zabezpieczeniem. Łącznik w przewodzie N nie odłącza cewki od fazy.',
+          id,
+          c
+        );
+      else {
+        /* N cewki z innej strefy niż jej faza: prąd cewki płynie przez dwie różne różnicówki albo ją omija */
+        const x = S.dev[ce[0].id],
+          cd = x && x.circ && S.dev[x.circ],
+          want =
+            !cd || x.p.ctl === 'relay'
+              ? null
+              : x.p.ctl === 'g12'
+                ? 'main'
+                : cd.t === 'rcbo'
+                  ? null
+                  : cd.rcd && S.dev[cd.rcd]
+                    ? cd.rcd
+                    : 'main',
+          got = zone(o);
+        if (want && got && want !== got)
+          add(
+            'crit',
+            nm + ' prowadzi N cewki ze strefy ' + zn(got) + ', a jej zasilanie jest ' + zn(want) + '.',
+            'Prąd cewki musi wracać przez tę samą różnicówkę, przez którą płynie do niej faza; inaczej RCD wyzwala przy każdym załączeniu (PN-HD 60364-4-41).',
+            id,
+            c
+          );
+      }
+      return;
+    }
+    /* koniec fazowy */
+    if (t === 'A2' || t === '14' || t === '18' || t === 'G12')
+      add(
+        'warn',
+        nm + ' podaje fazę na zacisk ' + t + '.',
+        t === 'A2'
+          ? 'Fazę podłącza się do A1, a A2 do N (oznaczenia wg PN-EN 60445 i karty aparatu).'
+          : 'Zacisk ' +
+              t +
+              ' jest wyjściem styku albo sygnału; zasilanie podaje się na zacisk wspólny (11, 15) albo na A1.',
+        id,
+        c
+      );
+    else if (!(o.k === 'dev' && o.side === 'bot' && ['mcb', 'rcbo'].indexOf(S.dev[o.id].t) >= 0))
+      add(
+        'crit',
+        nm + ' zasila obwód sterowania bez zabezpieczenia nadprądowego.',
+        'Przewód sterowniczy 1,5 mm² musi być chroniony wyłącznikiem nadprądowym (PN-HD 60364-4-43). Zasil go z wyjścia wyłącznika obwodu.',
+        id,
+        c
+      );
   };
   U.forEach(c => {
     const fixCol = { l: 'Przywróć kolor wg normy', f: unset(c, 'col') },
@@ -336,7 +449,7 @@ function wireCheck() {
       nm = 'Przewód <b>' + esc(epName(c.a, D)) + ' → ' + esc(epName(c.b, D)) + '</b>',
       id = devId(c);
     /* kolor izolacji zmieniony ręcznie: zgodność z PN-EN 60445 (żyła przewodu = c.ph, dla mostka PEN i PE: ochronna) */
-    if (c.col && (pa === pb || c.kind === 'mostek')) {
+    if (c.col && (pa === pb || c.kind === 'mostek' || c.ph === 'S')) {
       const fn = c.kind === 'mostek' ? 'PE' : c.ph,
         ref =
           'Kolory wg PN-EN 60445 (PN-HD 308 S2): L1 brązowy, L2 czarny, L3 szary, N niebieski, PE i PEN zielono-żółty.';
@@ -355,6 +468,15 @@ function wireCheck() {
             'crit',
             nm + ' jest przewodem ochronnym, a ma izolację ' + COL[c.col] + '.',
             'Przewód PE i PEN musi być zielono-żółty na całej długości. ' + ref,
+            id,
+            c,
+            fixCol
+          );
+        else if (fn === 'S')
+          add(
+            'info',
+            nm + ' (sterowniczy) ma izolację ' + COL[c.col] + '.',
+            'Dla obwodów sterowania AC zalecany jest kolor czerwony (PN-EN 60204-1); przy innym kolorze oznacz końce przewodu.',
             id,
             c,
             fixCol
@@ -399,6 +521,10 @@ function wireCheck() {
       );
     const tf = termFit(c, D);
     if (tf) add('crit', tf[0], tf[1], tf[2], c, c.mm !== c.mmAuto ? fixMm : undefined);
+    if (pa === 'S' || pb === 'S') {
+      ctlCheck(c, nm, id);
+      return;
+    }
     if (c.kind === 'mostek') {
       if (!tncs)
         add(
@@ -523,9 +649,54 @@ function wireCheck() {
       })
     )
   );
+  /* styki przekaźników traktujemy jak zamknięte: sprawdzamy, czy tor sterowania w ogóle istnieje */
+  devs.forEach(d => {
+    if (d.t === 'relay') uni(d.id + '/bot/11', d.id + '/bot/14');
+    if (d.t === 'timer') uni(d.id + '/bot/15', d.id + '/bot/18');
+  });
   const src = {};
-  ['L1', 'L2', 'L3', 'N', 'PE'].forEach(p => (src[find('wlz/' + p)] = 1));
+  ['L1', 'L2', 'L3', 'N', 'PE', 'G12'].forEach(p => (src[find('wlz/' + p)] = 1));
   const live = k => !!src[find(k)];
+  /* cewka stycznika w torze obwodu bez zasilania: stycznik nigdy nie załączy obwodu */
+  devs
+    .filter(x => x.t === 'contactor' && ctlTerms(x).top.length)
+    .forEach(x => {
+      const miss = ['top/A1', 'bot/A2'].filter(k => !live(x.id + '/' + k)).map(k => k.slice(-2));
+      if (!miss.length) return;
+      add(
+        'warn',
+        '<b>' +
+          D[x.id] +
+          ' ' +
+          esc(x.name) +
+          '</b>: cewka nie jest podłączona (' +
+          miss.join(', ') +
+          '). Stycznik nie załączy obwodu.',
+        'Poprowadź przewody sterownicze: A1 z wyjścia wyłącznika, ze styku przekaźnika albo z sygnału G12, A2 do N tej samej strefy.',
+        x.id,
+        undefined,
+        {
+          l: 'Dodaj przewody cewki',
+          f: () => {
+            const has = (a, b) =>
+              S.conn.some(
+                w =>
+                  (JSON.stringify(w.a) === a && JSON.stringify(w.b) === b) ||
+                  (JSON.stringify(w.a) === b && JSON.stringify(w.b) === a)
+              );
+            autoConns()
+              .C.filter(
+                c => c.ph === 'S' && [c.a, c.b].some(e => e.k === 'dev' && (e.id === x.id || S.dev[e.id].t === 'relay'))
+              )
+              .forEach(c => {
+                const a = epStore(c.a),
+                  b = epStore(c.b);
+                if (!has(JSON.stringify(a), JSON.stringify(b))) S.conn.push({ id: 'w' + uid++, a, b });
+              });
+          }
+        }
+      );
+    });
   devs.forEach(d => {
     const miss = terms(d)
       .top.filter(p => !live(d.id + '/top/' + p))
@@ -782,10 +953,37 @@ function autoConns() {
       prev = x;
     });
   });
+  /* obwody sterowania cewek styczników w torze (1,5 mm², żyła S): A1 z fazy za zabezpieczeniem, z sygnału taryfy G12
+     albo ze styku 14 przekaźnika kontroli faz; A2 do N tej samej strefy co źródło A1 (inaczej różnicówka zadziała) */
+  const nOf = cd => (cd.t === 'rcbo' ? E(cd.id, 'bot', 'N') : cd.rcd && S.dev[cd.rcd] ? B('N:' + cd.rcd) : B('N')),
+    relay = devs.find(d => d.t === 'relay');
+  let relayFeed = null;
+  devs
+    .filter(x => x.t === 'contactor' && x.circ && S.dev[x.circ] && terms(x).top.length)
+    .forEach(x => {
+      const cd = S.dev[x.circ],
+        out = E(cd.id, 'bot', phases(cd)[0]);
+      if (x.p.ctl === 'g12') {
+        add(W('G12'), E(x.id, 'top', 'A1'), 'S', 1.5, 'wire');
+        add(B('N'), E(x.id, 'bot', 'A2'), 'S', 1.5, 'wire');
+      } else if (x.p.ctl === 'relay' && relay) {
+        if (!relayFeed) {
+          relayFeed = cd;
+          add(out, E(relay.id, 'bot', '11'), 'S', 1.5, 'wire');
+        }
+        add(E(relay.id, 'bot', '14'), E(x.id, 'top', 'A1'), 'S', 1.5, 'wire');
+        add(nOf(relayFeed), E(x.id, 'bot', 'A2'), 'S', 1.5, 'wire');
+      } else {
+        add(out, E(x.id, 'top', 'A1'), 'S', 1.5, 'wire');
+        add(nOf(cd), E(x.id, 'bot', 'A2'), 'S', 1.5, 'wire');
+      }
+    });
   return { C, combs };
 }
 function epName(e, D) {
+  if (e.k === 'dev' && isCtl(e.ph)) return `${D[e.id]} ${e.ph.charAt(0) === 'A' ? 'cewka' : 'styk'} ${e.ph}`;
   if (e.k === 'dev') return `${D[e.id]} ${e.side === 'top' ? 'wej.' : 'wyj.'} ${e.ph}`;
+  if (e.k === 'wlz' && e.ph === 'G12') return 'Sygnał taryfy G12 (licznik OSD)';
   if (e.k === 'bar') return e.bar === 'PE' ? 'Listwa PE' : e.bar === 'N' ? 'Listwa N' : 'Listwa N ' + D[e.bar.slice(2)];
   if (e.k === 'comb') return 'Szyna grzeb. za ' + D[e.rcd];
   return 'WLZ';
@@ -888,11 +1086,12 @@ function drawWires() {
     SP = 6;
   const man = S.wmode === 'manual',
     wc = man ? wireCheck() : { bad: {}, why: {} };
-  const wf = S.wf || { L1: 1, L2: 1, L3: 1, N: 1, PE: 1 };
+  const wf = S.wf || { L1: 1, L2: 1, L3: 1, N: 1, PE: 1, S: 1 };
+  if (!('S' in wf)) wf.S = 1; /* filtr ustawiony przed dodaniem przewodów sterowniczych */
   // 1. logiczny przydział torów: każdy przewód dostaje własny tor w korytku i własny pion
   const chOf = e => (e.k === 'dev' ? (e.side === 'top' ? rowOf(e.id) : rowOf(e.id) + 1) : e.k === 'bar' ? n : 0);
   const routed = C.filter(c => c.kind !== 'jumper' && !(c.a.k === 'bar' && c.b.k === 'bar'));
-  const ord = { L1: 0, L2: 1, L3: 2, N: 3, PE: 4 };
+  const ord = { L1: 0, L2: 1, L3: 2, N: 3, PE: 4, S: 5 };
   routed.sort((a, b) => ord[a.ph] - ord[b.ph]);
   const cnt = new Array(n + 1).fill(0);
   let nr = 0,
@@ -993,7 +1192,7 @@ function drawWires() {
     if (e.k === 'dev') {
       const d = S.dev[e.id],
         r = devEl[e.id],
-        t = terms(d)[e.side];
+        t = allTerms(d, e.side);
       let k = t.indexOf(e.ph);
       if (k < 0) k = 0;
       return { x: r.l + (r.w * (k + 0.5)) / t.length, y: e.side === 'top' ? r.t + 7 : r.b - 7 };
@@ -1003,7 +1202,7 @@ function drawWires() {
       const s = segs.find(z => z.k === e.bar) || segs[0];
       return { x: barX(s.k, o ? o.x : s.x0, s.x0, s.x1), y: nY };
     }
-    return { x: x0 + 8 + ord[e.ph] * SP, y: 0 };
+    return { x: x0 + 8 + ord[epPh(e)] * SP, y: 0 };
   };
   const touches = c =>
     !S.sel || !!SIMC || [c.a, c.b].some(e => e.id === S.sel || e.rcd === S.sel || e.bar === 'N:' + S.sel);
@@ -1169,13 +1368,14 @@ function drawWires() {
         tg = ch.length ? ch[ch.length - 1] : d,
         e = devEl[tg.id],
         t = terms(tg).bot,
+        nT = allTerms(tg, 'bot').length,
         yb = rails[rowOf(tg.id)].b + 10;
       const dim = SIMC ? SIMC.dev[id].st !== 'on' : S.sel && S.sel !== id && S.sel !== d.rcd;
       let g = '';
       t.forEach((ph, k) => {
         if (ph === 'N' && tg === d && d.t !== 'rcbo') return;
         if (!wf[ph]) return;
-        const x = e.l + (e.w * (k + 0.5)) / t.length,
+        const x = e.l + (e.w * (k + 0.5)) / nT,
           col = `var(--${ph.toLowerCase()})`;
         g += `<path d="M${x} ${e.b - 7}V${yb}" stroke="${col}" stroke-width="2" fill="none"/><path d="M${x - 3} ${yb - 3}L${x} ${yb + 1}L${x + 3} ${yb - 3}" stroke="${col}" stroke-width="1.6" fill="none"/>`;
       });
@@ -1192,12 +1392,12 @@ function drawWires() {
       return `<circle class="tp${s === on ? ' on' : ''}" data-ep="${esc(s)}" tabindex="0" role="button" aria-label="${esc(t)}" cx="${x}" cy="${y}" r="${r}"><title>${esc(t)}</title></circle>`;
     };
     S.rows.flat().forEach(id => {
-      const t = terms(S.dev[id]);
+      const d = S.dev[id];
       ['top', 'bot'].forEach(side =>
-        t[side].forEach((ph, i) => {
+        allTerms(d, side).forEach(ph => {
           const e = { k: 'dev', id, side, ph },
             P = pt(e);
-          out += tp({ k: 'dev', id, side, i }, P.x, P.y, 'Zacisk ' + epName(e, D), 6);
+          out += tp(epStore(e), P.x, P.y, 'Zacisk ' + epName(e, D), 6);
         })
       );
     });
@@ -1212,6 +1412,10 @@ function drawWires() {
       const e = { k: 'wlz', ph };
       out += tp(e, pt(e).x, 6 + (ord[ph] % 2) * 11, 'WLZ ' + (ph === 'PE' && S.set.siec === 'TN-C-S' ? 'PEN' : ph), 5);
     });
+    if (S.rows.flat().some(id => S.dev[id].t === 'contactor' && S.dev[id].p.ctl === 'g12')) {
+      const e = { k: 'wlz', ph: 'G12' };
+      out += tp(e, pt(e).x, 17, epName(e, D), 5);
+    }
   }
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   svg.setAttribute('class', 'wires');

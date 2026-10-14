@@ -24,8 +24,8 @@ function simCalc() {
     devs = S.rows.flat().map(id => S.dev[id]),
     off = S.sim.off,
     relays = devs.filter(d => d.t === 'relay');
-  /* Jeden przebieg grafu przy zadanym stanie styczników sterowanych przekaźnikiem kontroli faz. */
-  const pass = relayOk => {
+  /* Jeden przebieg grafu przy zadanym stanie styku przekaźnika kontroli faz (relayOk) i cewek styczników (coil). */
+  const pass = (relayOk, coil) => {
     const par = {},
       find = k => {
         while (par[k] && par[k] !== k) k = par[k];
@@ -36,20 +36,19 @@ function simCalc() {
         y = find(y);
         if (x !== y) par[x] = y;
       };
-    /* czy tor przez aparat jest zamknięty: łączniki wg dźwigni, licznik zawsze, stycznik wg sterowania cewki */
+    /* czy tor przez aparat jest zamknięty: łączniki wg dźwigni, licznik zawsze, stycznik gdy jego cewka ma napięcie
+       (i nie został wyłączony przełącznikiem ręcznym na froncie) */
     const closed = d =>
       SIM_SW.indexOf(d.t) >= 0
         ? !off[d.id]
         : d.t === 'meter'
           ? true
           : d.t === 'contactor'
-            ? d.p.ctl === 'g12'
-              ? S.sim.g12 !== false
-              : d.p.ctl === 'relay'
-                ? relayOk
-                : !off[d.id]
+            ? !!coil[d.id] && !off[d.id]
             : false;
     C.forEach(c => uni(epKey(c.a), epKey(c.b)));
+    /* styk zwierny 11–14 przekaźnika kontroli faz jest zamknięty, gdy przekaźnik widzi wszystkie trzy fazy */
+    if (relayOk) relays.forEach(r => uni(r.id + '/bot/11', r.id + '/bot/14'));
     devs.forEach(d => {
       if (!closed(d)) return;
       const t = terms(d);
@@ -68,12 +67,26 @@ function simCalc() {
     ['L1', 'L2', 'L3', 'N', 'PE'].forEach(p => {
       if (!S.sim.dead[p]) src[find('wlz/' + p)] = 1;
     });
+    if (S.sim.g12 !== false) src[find('wlz/G12')] = 1; /* sygnał taryfy z licznika OSD (przełącznik w pasku) */
     return { live: k => !!src[find(k)], closed };
   };
-  /* przekaźnik kontroli faz trzyma styczniki tylko wtedy, gdy sam widzi wszystkie trzy fazy */
-  let g = pass(false);
-  const relayOk = !relays.length || relays.every(k => ['L1', 'L2', 'L3'].every(p => g.live(k.id + '/top/' + p)));
-  if (relayOk) g = pass(true);
+  /* Stan cewek i przekaźnika zależy od napięć, a napięcia od stanu styczników: powtarzamy, aż nic się nie zmienia.
+     Cewka ma napięcie, gdy A1 i A2 są połączone ze źródłem (A1 przez wyłącznik, styk przekaźnika albo sygnał G12). */
+  let relayOk = false,
+    coil = {},
+    g = pass(relayOk, coil);
+  for (let k = 0; k < 6; k++) {
+    const ok = relays.length > 0 && relays.every(r => ['L1', 'L2', 'L3'].every(p => g.live(r.id + '/top/' + p))),
+      next = {};
+    devs.forEach(d => {
+      if (d.t === 'contactor' && g.live(d.id + '/top/A1') && g.live(d.id + '/bot/A2')) next[d.id] = 1;
+    });
+    if (ok === relayOk && JSON.stringify(next) === JSON.stringify(coil)) break;
+    relayOk = ok;
+    coil = next;
+    g = pass(relayOk, coil);
+  }
+  if (!relays.length) relayOk = true;
   const live = g.live,
     closed = g.closed,
     dev = {},

@@ -20,7 +20,7 @@ Fronty aparatów pięciu producentów (rysunki własne, uproszczone):
 |---|---|
 | Układanie aparatów | Przeciągnij z biblioteki na szynę albo kliknij (trafi do aktywnego rzędu) |
 | Kontrola projektu | Zakładka „Kontrola”: klik przenosi do aparatu, a przycisk przy uwadze wykonuje naprawę (np. „Ustaw In 25 A i przewód 4 mm²”, „Dodaj różnicówkę”) |
-| Licznik i stycznik | W panelu aparatu wybierz „W torze obwodu”: aparat zostaje wpięty za wyłącznik tego obwodu. Stycznik ma sterowanie cewki (ręczne, taryfa G12, przekaźnik kontroli faz), które działa w symulacji |
+| Licznik i stycznik | W panelu aparatu wybierz „W torze obwodu”: aparat zostaje wpięty za wyłącznik tego obwodu. Stycznik ma sterowanie cewki (ręczne, taryfa G12, przekaźnik kontroli faz): program rysuje czerwone przewody sterownicze do cewki A1/A2, a symulacja załącza stycznik, gdy cewka ma napięcie |
 | Obliczenia | Panel aparatu pokazuje spadek napięcia, pętlę zwarcia i prąd zwarcia obwodu; dane sieci (Zs i Ik w złączu, długość WLZ) ustawiasz w zakładce „Bilans” |
 | Powiększenie | Przyciski − / + nad obudową albo Ctrl + kółko myszy; środkowy przycisk dopasowuje obudowę do szerokości okna |
 | Telefon i tablet | Przytrzymaj aparat palcem i przeciągnij go na nowe miejsce; przewody ciągnie się od zacisku do zacisku |

@@ -122,9 +122,11 @@ Liczy wyłącznie ciągłość torów: przewody + szyny grzebieniowe + tory wewn
 | Zwarcie w obwodzie | Wyłącza wyłącznik tego obwodu; ostrzeżenie, gdy zabezpieczenie przedlicznikowe < 1,6 × In obwodu |
 | Przeciążenie | Wyłącza wyłącznik tego obwodu; błąd, gdy In > Iz przewodu |
 | Upływ do PE | Wyłącza RCD chroniący obwód (albo RCBO); bez RCD nic nie zadziała; uwaga dla IΔn > 30 mA |
-| Zanik fazy | Obwody 1F tej fazy bez napięcia, obwody 3F oznaczone jako zasilane niepełnie; przekaźnik kontroli faz rozłącza styczniki ze sterowaniem „przekaźnik” |
-| Taryfa G12 | Przełącznik w pasku: styczniki ze sterowaniem „taryfa G12” zamknięte (noc) albo rozłączone (dzień) |
-| Stycznik ręczny | Dźwignia stycznika zamyka i rozłącza tor |
+| Zanik fazy | Obwody 1F tej fazy bez napięcia, obwody 3F oznaczone jako zasilane niepełnie; przekaźnik kontroli faz otwiera styk 11–14, więc cewki zasilane przez ten styk tracą napięcie |
+| Taryfa G12 | Przełącznik w pasku: sygnał G12 z licznika OSD jest (noc) albo go nie ma (dzień) |
+| Stycznik | Zamyka tor, gdy jego cewka ma napięcie (A1 i A2 połączone ze źródłem). Ze sterowaniem „ręczne” dźwignia na froncie dodatkowo go rozłącza |
+
+Stan cewek zależy od napięć, a napięcia od stanu styczników, więc `simCalc()` powtarza obliczenie, aż wynik się nie zmienia. W okablowaniu ręcznym stycznik bez przewodów cewki nigdy się nie załączy.
 
 Obwód jednofazowy jest „zasilony”, gdy ma fazę **i** N (z wyjścia RCBO, z listwy N swojej różnicówki albo z głównej listwy N).
 
@@ -137,9 +139,30 @@ Obwód jednofazowy jest „zasilony”, gdy ma fazę **i** N (z wyjścia RCBO, z
 | SPD T1+T2 | 10 mm², PE 16 mm² (PN-HD 60364-5-534) |
 | SPD T2 | 6 mm², PE 6 mm² |
 | Kontrolki, przekaźnik kontroli faz | 1,5 mm² |
+| Przewody sterownicze (cewka, styki, sygnał G12) | 1,5 mm², czerwone |
 | Kabel obwodowy | YDYp 3×/5× do 4 mm², YDY powyżej |
 
-Kolory żył (PN-EN 60445): L1 brązowy, L2 czarny, L3 szary, N niebieski, PE zielono-żółty.
+Kolory żył (PN-EN 60445): L1 brązowy, L2 czarny, L3 szary, N niebieski, PE zielono-żółty. Przewody sterownicze: czerwone
+(żyła „S”). Czerwień dla obwodów sterowania AC zaleca PN-EN 60204-1 (wyposażenie maszyn); w rozdzielnicach budynkowych to
+zwyczaj, nie wymóg, dlatego inny kolor daje tylko informację.
+
+## Obwody sterowania (`ctlTerms()`, `autoConns()`, `wireCheck()`)
+
+Zaciski sterownicze są osobno od zacisków mocy (`terms()`), żeby nie zmieniać obliczeń prądów i torów mocy: stycznik w torze
+obwodu ma cewkę A1 (góra) i A2 (dół), przekaźnik kontroli faz styk zwierny 11–14 (dół), przekaźnik czasowy A1/A2 (góra)
+i styk 15–18 (dół). Sygnał taryfy G12 przychodzi z licznika dwutaryfowego OSD jako osobny koniec przy WLZ.
+
+| Sterowanie stycznika | A1 | A2 |
+|---|---|---|
+| ręczne | z wyjścia wyłącznika obwodu (pierwsza faza) | N strefy obwodu (listwa N jego różnicówki, wyjście N RCBO albo główna listwa N) |
+| taryfa G12 | z sygnału G12 | główna listwa N (sygnał przychodzi sprzed różnicówek) |
+| przekaźnik kontroli faz | ze styku 14; styk 11 zasilany z wyjścia wyłącznika pierwszego takiego obwodu | N strefy tego obwodu |
+
+Kontrola przewodów ręcznych: zacisk sterowniczy z PE – błąd; faza do obwodu sterowania bez wyłącznika nadprądowego (np. prosto
+z WLZ albo z rozłącznika) – błąd (PN-HD 60364-4-43); N cewki z innej strefy niż jej zasilanie – błąd (RCD wyzwala przy
+załączeniu, PN-HD 60364-4-41); N na A1, faza na A2 albo na wyjście styku – uwaga; cewka bez przewodu A1 lub A2 – uwaga
+z naprawą „Dodaj przewody cewki”. Przekaźnik czasowy ma zaciski do okablowania ręcznego; jego funkcji czasowej symulacja nie
+liczy (styk 15–18 pozostaje otwarty). Zasilacz 24 V nie ma jeszcze zacisków.
 
 ## Czego jeszcze nie sprawdzamy
 
