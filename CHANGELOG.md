@@ -2,6 +2,20 @@
 
 Każdy wpis odpowiada jednemu commitowi. Format: co zrobiono, dlaczego, jak sprawdzono.
 
+## 0.20.0 (14.10.2026) — zasilanie jednofazowe
+
+- Nowe ustawienie `S.set.faz` (3 albo 1; projekty bez niego są trójfazowe), pole „Zasilanie” w zakładce Bilans.
+  `is1F()` i `supPh()` w `js/model.js` zastępują stałą listę L1–L3 tam, gdzie chodzi o fazy zasilania.
+- Przełączenie na jednofazowe (`setSupply()`) przenosi obwody jednofazowe na L1, w trybie ręcznym razem z przewodami.
+  Aparatów trójfazowych program nie zmienia sam: `checkSupply1F()` zgłasza je z naprawami (obwód trójfazowy, faza L2/L3,
+  rozłącznik 3P/4P, różnicówka 4P, ogranicznik 3P+N, licznik 3F, przekaźnik kontroli faz, kontrolki L1–L3).
+- Obliczenia przy 230 V: prąd szczytowy, spadek w WLZ, prąd zwarciowy L–N do sprawdzania Icn. WLZ YKY 2× (PEN) albo 3×.
+- Okablowanie i symulacja: brak żył L2/L3 w WLZ (bez połączeń, zacisków i źródeł), w kontroli ciągłości nie dublujemy
+  uwag o brakujących fazach. Wybór fazy obwodu, pasek szybkiej edycji, wykres obciążenia, zanik fazy w symulacji i schemat
+  pokazują tylko L1. „Rozłóż fazy” przy jednofazowym tylko informuje.
+- Testy `tests/jednofazowe.spec.js` (4): przełączenie i wszystkie naprawy, obliczenia z rachunkiem ręcznym, zapis
+  w pliku i wartość spoza listy, powrót do trójfazowego. Zrzuty Bilansu i okablowania sprawdzone wzrokowo.
+
 ## 0.19.0 (14.10.2026) — sprawdzanie typów
 
 - `npm run typecheck`: TypeScript 5.6.3 w trybie `checkJs` sprawdza `js/*.js` (`tsconfig.json`) i `sw.js`

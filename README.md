@@ -27,6 +27,7 @@ Fronty aparatów pięciu producentów (rysunki własne, uproszczone):
 | Szybka edycja | Kliknij aparat w widoku frontu: pod nim pojawia się pasek z fazą, prądem − / +, charakterystyką, przesuwaniem, kopią i usunięciem |
 | Okablowanie | Przełącznik „Front / Okablowanie / Schemat” nad obudową; tryb „Automatyczne” rysuje przewody sam |
 | Bez internetu, jako aplikacja | Po pierwszej wizycie strona działa offline. W Chrome, Edge i Operze przycisk „Zainstaluj” dodaje ją jako osobną aplikację; na iPhonie: Udostępnij → „Do ekranu początkowego” |
+| Zasilanie jednofazowe | Zakładka Bilans → „Zasilanie”: trójfazowe 3 × 400 V albo jednofazowe 230 V. Przy jednofazowym obwody przechodzą na L1, a Kontrola wskazuje aparaty trójfazowe i proponuje zamianę (rozłącznik 2P, różnicówka 2P, ogranicznik 1P+N, licznik 1F, obwód jednofazowy) |
 | Schemat jednokreskowy | Przycisk „Schemat” nad obudową: schemat rysowany z projektu (zasilanie, rozłącznik, różnicówki, obwody z kablami i mocą); kliknij obwód, żeby go edytować. Jest też na wydruku |
 | Własne przewody | W okablowaniu wybierz „Ręczne”: przeciągnij przewód od zacisku do zacisku (zielone zaciski są poprawne, czerwone dadzą błąd) albo kliknij zacisk, potem drugi. Kliknij przewód i Delete, żeby usunąć. „Przejmij automatyczne” daje gotowy punkt wyjścia |
 | Edycja przewodu | Kliknij przewód w trybie ręcznym: przekrój, kolor izolacji, „Przepnij początek / koniec”, „Usuń przewód” |

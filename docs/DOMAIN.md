@@ -146,6 +146,24 @@ Kolory żył (PN-EN 60445): L1 brązowy, L2 czarny, L3 szary, N niebieski, PE zi
 (żyła „S”). Czerwień dla obwodów sterowania AC zaleca PN-EN 60204-1 (wyposażenie maszyn); w rozdzielnicach budynkowych to
 zwyczaj, nie wymóg, dlatego inny kolor daje tylko informację.
 
+## Zasilanie jednofazowe (`S.set.faz`, `is1F()`, `supPh()`, `checkSupply1F()`)
+
+W złączu jest tylko L1, N i PE (230 V). Ustawienie w zakładce Bilans; projekty bez tego pola są trójfazowe.
+
+| Wielkość | Trójfazowe | Jednofazowe |
+|---|---|---|
+| WLZ | YKY 4× (TN-C-S) / 5× | YKY 2× (TN-C-S, PEN) / 3× |
+| Prąd szczytowy rozdzielnicy | Pd / (√3 · 400 · cos φ) | Pd / (230 · cos φ) |
+| Spadek napięcia w WLZ | 100 · P · L / (γ · S · 400²) | 200 · P · L / (γ · S · 230²) |
+| Prąd zwarciowy w rozdzielnicy (do Icn) | 400 / (√3 · (Zźr + R_WLZ)) | 230 / (2 · (Zźr + R_WLZ)), zwarcie L–N |
+| Asymetria faz, prąd każdej fazy | sprawdzane | nie dotyczy |
+
+Po przełączeniu na jednofazowe obwody jednofazowe przechodzą na L1 (w okablowaniu ręcznym z przepięciem przewodów).
+Aparatów program sam nie zmienia; kontrola zgłasza: obwód trójfazowy i obwód na L2/L3 (błąd, naprawa „Zmień na obwód
+jednofazowy” / „Przenieś na L1”), rozłącznik 3P/4P, różnicówkę 4P, ogranicznik 3P+N, licznik 3F (uwaga z naprawą),
+przekaźnik kontroli faz (uwaga, nigdy nie zamknie styku), kontrolki L1–L3 (informacja). Żyły L2 i L3 WLZ nie istnieją:
+okablowanie automatyczne ich nie rysuje, zapisane przewody do nich przestają działać, symulacja ich nie zasila.
+
 ## Obwody sterowania (`ctlTerms()`, `autoConns()`, `wireCheck()`)
 
 Zaciski sterownicze są osobno od zacisków mocy (`terms()`), żeby nie zmieniać obliczeń prądów i torów mocy: stycznik w torze

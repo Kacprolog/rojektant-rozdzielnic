@@ -1,6 +1,6 @@
 # Przekazanie projektu: Projektant Rozdzielnic
 
-Stan na 14.10.2026, wersja 0.19.0. Projekt powstał w czacie z Claude jako pojedyncza strona (artefakt claude.ai), został podzielony na pliki i jest rozwijany w Claude Code jako zwykła strona w przeglądarce. Wersja 0.5.0 zamyka zadania P0 (1–5 w całości, 6 przygotowane, czeka na decyzję o hostingu). Szczegóły każdej zmiany: `CHANGELOG.md`.
+Stan na 14.10.2026, wersja 0.20.0. Projekt powstał w czacie z Claude jako pojedyncza strona (artefakt claude.ai), został podzielony na pliki i jest rozwijany w Claude Code jako zwykła strona w przeglądarce. Wersja 0.5.0 zamyka zadania P0 (1–5 w całości, 6 przygotowane, czeka na decyzję o hostingu). Szczegóły każdej zmiany: `CHANGELOG.md`.
 
 ![Widok frontu](docs/front.png)
 
@@ -8,7 +8,7 @@ Stan na 14.10.2026, wersja 0.19.0. Projekt powstał w czacie z Claude jako pojed
 
 Narzędzie dla elektryka lub projektanta do wstępnego zaprojektowania rozdzielnicy mieszkaniowej / małej komercyjnej: dobór obudowy, rozmieszczenie aparatów różnych producentów, kontrola zgodności z podstawowymi wymaganiami PN-HD 60364, okablowanie wnętrza i zestawienie materiałów do zamówienia.
 
-## Co działa (zweryfikowane testami, `npm test`: 269 przechodzi i 4 pominięte, czyli 91 testów × desktop, telefon, safari)
+## Co działa (zweryfikowane testami, `npm test`: 281 przechodzi i 4 pominięte, czyli 95 testów × desktop, telefon, safari)
 
 **Obudowa i aparaty**
 - 5 producentów: Hager, Schneider Electric, ABB, Eaton, Legrand; 9 serii obudów (12–24 mod./rząd, 1–6 rzędów, IP40–IP65).
@@ -30,6 +30,10 @@ Narzędzie dla elektryka lub projektanta do wstępnego zaprojektowania rozdzieln
 - Struktura: drzewo zasilania WLZ → rozłącznik → RCD → obwody.
 - Kable: WLZ, kable obwodowe, przewody w rozdzielnicy według przekroju i koloru, lista połączeń, kopiowanie CSV.
 - Zestawienie: aparaty + akcesoria + przewody, kopiowanie CSV i opisówki.
+
+**Zasilanie jednofazowe** (0.20.0): pole „Zasilanie” w zakładce Bilans (trójfazowe 3 × 400 V / jednofazowe 230 V). Przy 1F obwody przechodzą na L1, WLZ ma 2 albo 3 żyły, obliczenia przy 230 V, aparaty trójfazowe zgłasza kontrola z naprawami. Opis: `docs/DOMAIN.md` → „Zasilanie jednofazowe”.
+
+**System projektowy** (14.10.2026): https://claude.ai/artifact/Vpoe9YowNQmZ8BExgihHkm (nowa paleta z fioletowym akcentem, moduł 44 px, 10 komponentów). Nie jest jeszcze wdrożony w kodzie; następny krok to projekt widoku głównego i wdrożenie.
 
 **Sprawdzanie typów** (0.19.0): `npm run typecheck` (TypeScript w trybie checkJs, w CI przed testami), typy danych w `types/projekt.d.ts`. Następny krok, jeśli potrzebny: `strictNullChecks` (obecnie ok. 70 zgłoszeń, głównie `S.dev[S.sel]` po wcześniejszym sprawdzeniu).
 

@@ -85,6 +85,7 @@ function wlzMm() {
 }
 function wlzType() {
   const m = fmt(wlzMm());
+  if (is1F()) return S.set.siec === 'TN-C-S' ? `YKY 2×${m} mm² (PEN)` : `YKY 3×${m} mm²`;
   return S.set.siec === 'TN-C-S' ? `YKY 4×${m} mm² (PEN)` : `YKY 5×${m} mm²`;
 }
 function inMm(I) {
@@ -202,6 +203,8 @@ function epLive(e) {
     const r = S.dev[e.bar.slice(2)];
     return e.bar === 'PE' || e.bar === 'N' || (r && r.t === 'rcd') ? { k: 'bar', bar: e.bar } : null;
   }
+  if (e.ph.charAt(0) === 'L' && supPh().indexOf(e.ph) < 0)
+    return null; /* faza, której nie ma w złączu (zasilanie 1F) */
   return e.ph === 'N' && S.set.siec === 'TN-C-S' ? null : { k: 'wlz', ph: e.ph };
 }
 /** @returns {Endpoint} */
@@ -658,7 +661,9 @@ function wireCheck() {
     if (d.t === 'timer') uni(d.id + '/bot/15', d.id + '/bot/18');
   });
   const src = {};
-  ['L1', 'L2', 'L3', 'N', 'PE', 'G12'].forEach(p => (src[find('wlz/' + p)] = 1));
+  supPh()
+    .concat(['N', 'PE', 'G12'])
+    .forEach(p => (src[find('wlz/' + p)] = 1));
   const live = k => !!src[find(k)];
   /* cewka stycznika w torze obwodu bez zasilania: stycznik nigdy nie załączy obwodu */
   devs
@@ -701,8 +706,9 @@ function wireCheck() {
       );
     });
   devs.forEach(d => {
+    /* fazy, których nie ma w złączu (zasilanie 1F), zgłasza checkSupply1F() */
     const miss = terms(d)
-      .top.filter(p => !live(d.id + '/top/' + p))
+      .top.filter(p => (p.charAt(0) !== 'L' || supPh().indexOf(p) >= 0) && !live(d.id + '/top/' + p))
       .map(p => 'wej. ' + p);
     if (d.t === 'spd' && !live(d.id + '/bot/PE')) miss.push('wyj. PE');
     if (miss.length)
@@ -875,7 +881,11 @@ function autoConns() {
   const E = (id, side, ph) => ({ k: 'dev', id, side, ph }),
     B = bar => ({ k: 'bar', bar }),
     W = ph => ({ k: 'wlz', ph });
-  const add = (a, b, ph, mm, kind) => C.push({ a, b, ph, mm, kind });
+  /* żyła WLZ, której nie ma w złączu (L2, L3 przy zasilaniu jednofazowym), nie daje połączenia */
+  const add = (a, b, ph, mm, kind) => {
+    if (a.k === 'wlz' && a.ph.charAt(0) === 'L' && supPh().indexOf(a.ph) < 0) return;
+    C.push({ a, b, ph, mm, kind });
+  };
   const sw = devs.find(d => d.t === 'sw'),
     wl = wlzMm(),
     tncs = S.set.siec === 'TN-C-S';
@@ -1259,7 +1269,7 @@ function drawWires() {
       out += `<circle cx="${x}" cy="${nY}" r="1.6" fill="var(--cabinet)"/>`;
   });
   for (let x = x0 + 6; x <= x1 - 6; x += 12) out += `<circle cx="${x}" cy="${peY}" r="1.6" fill="var(--cabinet)"/>`;
-  out += `<text x="${x0 + 44}" y="14" font-size="11" font-weight="600" fill="var(--ink)">WLZ: ${esc(wlzType())} · zab. przedlicznikowe ${S.set.przedl} A · ${esc(S.set.siec)}</text>`;
+  out += `<text x="${x0 + 44}" y="14" font-size="11" font-weight="600" fill="var(--ink)">WLZ: ${esc(wlzType())} · ${is1F() ? '1 × 230 V' : '3 × 400 V'} · zab. przedlicznikowe ${S.set.przedl} A · ${esc(S.set.siec)}</text>`;
   // przewody
   const srcCount = {},
     key = e => (e.k === 'dev' ? e.id + e.side + e.ph : '');
@@ -1412,6 +1422,7 @@ function drawWires() {
     bt('PE', x0, x1, peY, 'Listwa PE');
     ['L1', 'L2', 'L3', 'N', 'PE'].forEach(ph => {
       if (ph === 'N' && S.set.siec === 'TN-C-S') return;
+      if (ph.charAt(0) === 'L' && supPh().indexOf(ph) < 0) return;
       const e = { k: 'wlz', ph };
       out += tp(e, pt(e).x, 6 + (ord[ph] % 2) * 11, 'WLZ ' + (ph === 'PE' && S.set.siec === 'TN-C-S' ? 'PEN' : ph), 5);
     });

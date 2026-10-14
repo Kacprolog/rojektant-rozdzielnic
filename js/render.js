@@ -209,7 +209,8 @@ function quickBar(d, row) {
   const b = (q, l, t, cls) =>
     `<button class="qb ${cls || ''}" data-q="${q}" title="${t}" aria-label="${t}">${l}</button>`;
   let h = '';
-  if (isCirc(d) && !is3(d))
+  /* przy zasilaniu jednofazowym jest tylko L1: przycisków faz nie pokazujemy */
+  if (isCirc(d) && !is3(d) && !is1F())
     h += ['L1', 'L2', 'L3']
       .map(
         ph =>
@@ -534,7 +535,7 @@ function panelDev() {
     f += `<h3>Obwód</h3><div class="fld2">${fsel('cKind', 'Rodzaj obwodu', 'c.kind', Object.entries(KINDS), c.kind)}
       <div class="fld"><label for="cP">Moc [kW]</label><input id="cP" type="number" min="0" step="0.1" data-k="c.P" value="${c.P}"></div>
       ${fsel('cCable', 'Przewód Cu [mm²]', 'c.cable', [1.5, 2.5, 4, 6, 10, 16], c.cable)}
-      ${is3(d) ? '<div class="fld"><label>Faza</label><select disabled><option>L1+L2+L3</option></select></div>' : fsel('cPh', 'Faza', 'c.ph', ['L1', 'L2', 'L3'], c.ph)}
+      ${is3(d) ? '<div class="fld"><label>Faza</label><select disabled><option>L1+L2+L3</option></select></div>' : fsel('cPh', 'Faza', 'c.ph', supPh().indexOf(c.ph) < 0 ? supPh().concat(c.ph) : supPh(), c.ph)}
       <div class="fld"><label for="cLen">Długość kabla [m]</label><input id="cLen" type="number" min="0" step="1" data-k="c.len" value="${clen(d)}"></div>
       <div class="fld"><label for="cType">Kabel do obwodu</label><input id="cType" disabled value="${esc(cableType(d))}"></div></div>`;
     if (d.t === 'mcb') {
@@ -587,7 +588,7 @@ function panelBal() {
   const L = phaseLoads(),
     T = totals(),
     ks = S.set.ks;
-  const vals = ['L1', 'L2', 'L3'].map(p => [p, L[p] * ks, L[p]]);
+  const vals = supPh().map(p => [p, L[p] * ks, L[p]]);
   const max = Math.max(S.set.przedl, ...vals.map(v => v[1])) * 1.15 || 1;
   const W = 320,
     lx = 34,
@@ -611,13 +612,23 @@ function panelBal() {
     <text x="${sx(S.set.przedl) - 4}" y="148" font-size="10" text-anchor="end" fill="var(--crit)">zab. przedlicznikowe ${S.set.przedl} A</text></svg>`;
   return `<h3 style="margin-top:0">Obciążenie faz [A]</h3>${svg}
     <p class="note">Słupek pełny: prąd szczytowy z ks = ${fmt(ks, 2)}. Słupek jasny: suma prądów wszystkich obwodów.</p>
-    <dl class="specs" style="margin-top:10px"><dt>Moc zainstalowana</dt><dd>${fmt(T.P)} kW</dd><dt>Moc szczytowa</dt><dd>${fmt(T.Pd)} kW</dd><dt>Prąd szczytowy (3F)</dt><dd>${fmt(T.Ibm)} A</dd><dt>Wykorzystanie mocy przył.</dt><dd>${fmt((T.Pd / S.set.moc) * 100, 0)}%</dd></dl>
+    <dl class="specs" style="margin-top:10px"><dt>Moc zainstalowana</dt><dd>${fmt(T.P)} kW</dd><dt>Moc szczytowa</dt><dd>${fmt(T.Pd)} kW</dd><dt>Prąd szczytowy (${is1F() ? '1F, 230 V' : '3F, 400 V'})</dt><dd>${fmt(T.Ibm)} A</dd><dt>Wykorzystanie mocy przył.</dt><dd>${fmt((T.Pd / S.set.moc) * 100, 0)}%</dd></dl>
     <h3>Dane zasilania</h3><div class="fld2">
       <div class="fld"><label for="sMoc">Moc przyłączeniowa [kW]</label><input id="sMoc" type="number" step="0.5" min="1" data-s="moc" value="${S.set.moc}"></div>
       ${fsel('sPrz', 'Zab. przedlicznikowe [A]', '', [16, 20, 25, 32, 40, 50, 63], S.set.przedl).replace('data-k=""', 'data-s="przedl"')}
       <div class="fld"><label for="sKs">Wsp. jednoczesności ks</label><input id="sKs" type="number" step="0.05" min="0.1" max="1" data-s="ks" value="${S.set.ks}"></div>
       <div class="fld"><label for="sCos">cos φ</label><input id="sCos" type="number" step="0.01" min="0.5" max="1" data-s="cos" value="${S.set.cos}"></div>
-      ${fsel('sSiec', 'Układ sieci', '', ['TN-C-S', 'TN-S', 'TT'], S.set.siec).replace('data-k=""', 'data-s="siec"')}</div>
+      ${fsel('sSiec', 'Układ sieci', '', ['TN-C-S', 'TN-S', 'TT'], S.set.siec).replace('data-k=""', 'data-s="siec"')}
+      ${fsel(
+        'sFaz',
+        'Zasilanie',
+        '',
+        [
+          [3, 'trójfazowe 3 × 400 V'],
+          [1, 'jednofazowe 230 V']
+        ],
+        +sv('faz')
+      ).replace('data-k=""', 'data-s="faz"')}</div>
     <h3>Sieć i WLZ (do obliczeń zwarciowych)</h3><div class="fld2">
       <div class="fld"><label for="sZs">Pętla zwarcia w złączu Zs [Ω]</label><input id="sZs" type="number" step="0.01" min="0.01" data-s="zs0" value="${sv('zs0')}"></div>
       <div class="fld"><label for="sIk">Prąd zwarciowy w złączu Ik [kA]</label><input id="sIk" type="number" step="0.5" min="0.5" data-s="ik0" value="${sv('ik0')}"></div>

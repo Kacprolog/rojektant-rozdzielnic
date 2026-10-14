@@ -146,7 +146,7 @@ function schemSvg(fit) {
     T(
       16,
       40,
-      `Zasilanie: ${wlzType()}, ${fmt(+sv('wlzLen'))} m · ${S.set.siec} · moc szczytowa ${fmt(totals().Pd)} kW`,
+      `Zasilanie: ${is1F() ? '1 × 230 V' : '3 × 400 V'}, ${wlzType()}, ${fmt(+sv('wlzLen'))} m · ${S.set.siec} · moc szczytowa ${fmt(totals().Pd)} kW`,
       'sm'
     );
   /* zasilanie: bezpiecznik przedlicznikowy, granica rozdzielnicy, rozłącznik główny, szyna zbiorcza */
@@ -155,7 +155,7 @@ function schemSvg(fit) {
     `<rect class="ln" x="${sx - 5}" y="70" width="10" height="24"/>` +
     L(sx, 70, sx, 94) +
     T(sx + 12, 86, 'zab. przedlicznikowe ' + S.set.przedl + ' A', 'sm') +
-    marks(sx, 98, true) +
+    marks(sx, 98, !is1F(), 'L1') +
     `<rect class="ln dash" x="${sx - 40}" y="118" width="${W - sx + 20}" height="${SCH.out - 126}"/>` +
     T(sx + 12, 132, 'Rozdzielnica', 'sm');
   if (sw)

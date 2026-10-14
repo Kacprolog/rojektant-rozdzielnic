@@ -64,9 +64,11 @@ function simCalc() {
       )
     );
     const src = {};
-    ['L1', 'L2', 'L3', 'N', 'PE'].forEach(p => {
-      if (!S.sim.dead[p]) src[find('wlz/' + p)] = 1;
-    });
+    supPh()
+      .concat(['N', 'PE'])
+      .forEach(p => {
+        if (!S.sim.dead[p]) src[find('wlz/' + p)] = 1;
+      });
     if (S.sim.g12 !== false) src[find('wlz/G12')] = 1; /* sygnał taryfy z licznika OSD (przełącznik w pasku) */
     return { live: k => !!src[find(k)], closed };
   };
@@ -372,12 +374,19 @@ function renderSim() {
   const st = SIMC || simCalc(),
     P = S.set.przedl,
     dead = Object.keys(S.sim.dead)[0] || '',
-    over = ['L1', 'L2', 'L3'].some(p => st.load[p] > P);
+    over = supPh().some(p => st.load[p] > P);
   bar.innerHTML = `<div class="simrow"><b id="simCount">Zasilone obwody: ${st.nOn}/${st.nAll}</b>
-      <span class="simload">Pobór przy wszystkich odbiornikach naraz:${['L1', 'L2', 'L3'].map(p => `<span class="${st.load[p] > P ? 'over' : ''}"><i style="background:var(--${p.toLowerCase()})"></i>${p} ${fmt(st.load[p])} A</span>`).join('')}<span>zab. ${P} A</span></span></div>
+      <span class="simload">Pobór przy wszystkich odbiornikach naraz:${supPh()
+        .map(
+          p =>
+            `<span class="${st.load[p] > P ? 'over' : ''}"><i style="background:var(--${p.toLowerCase()})"></i>${p} ${fmt(st.load[p])} A</span>`
+        )
+        .join('')}<span>zab. ${P} A</span></span></div>
     ${over ? `<p class="simwarn">Przy wszystkich odbiornikach naraz prąd przekracza zabezpieczenie przedlicznikowe ${P} A. W praktyce ogranicza to współczynnik jednoczesności (zakładka Bilans).</p>` : ''}
     <div class="simrow"><span class="encsub">Awaria w zaznaczonym obwodzie:</span><button class="chip" data-sim="short">Zwarcie</button><button class="chip" data-sim="over">Przeciążenie</button><button class="chip" data-sim="leak">Upływ do PE</button>
-      <label class="encsub">Zanik fazy <select data-simph aria-label="Zanik fazy">${opt('', dead, 'brak')}${['L1', 'L2', 'L3'].map(p => opt(p, dead)).join('')}</select></label>
+      <label class="encsub">Zanik fazy <select data-simph aria-label="Zanik fazy">${opt('', dead, 'brak')}${supPh()
+        .map(p => opt(p, dead))
+        .join('')}</select></label>
       ${
         S.rows.flat().some(id => {
           const d = S.dev[id];

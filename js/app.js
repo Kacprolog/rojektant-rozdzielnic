@@ -94,7 +94,36 @@ function rephase(d, ph) {
   return n;
 }
 /* Obwody za różnicówką 2P mają fazę narzuconą przez różnicówkę, a trójfazowe obciążają wszystkie fazy: tych „Rozłóż fazy” nie rusza. */
+/* Zmiana zasilania. Przy jednofazowym obwody jednofazowe przechodzą na L1 (innej fazy w złączu nie ma; w okablowaniu
+   ręcznym przepinane są ich przewody zasilające). Aparatów trójfazowych nie zmieniamy sami: zgłasza je kontrola z naprawą. */
+function setSupply(n) {
+  S.set.faz = n;
+  let moved = 0,
+    rew = 0;
+  if (n === 1)
+    Object.values(S.dev)
+      .filter(d => isCirc(d) && !is3(d) && d.c.ph !== 'L1')
+      .forEach(d => {
+        rew += rephase(d, 'L1');
+        moved++;
+      });
+  render();
+  const bad =
+    n === 1 ? checks().filter(c => /zasilanie jest jednofazowe|zasilaniu jednofazowym/.test(c.msg)).length : 0;
+  toast(
+    n === 1
+      ? 'Zasilanie jednofazowe 230 V' +
+          (moved ? '; obwody przeniesione na L1: ' + moved : '') +
+          (rew ? ', przepięte przewody: ' + rew : '') +
+          (bad ? '. Kontrola: ' + bad + ' aparatów do zmiany' : '')
+      : 'Zasilanie trójfazowe 3 × 400 V. Użyj „Rozłóż fazy”, aby rozdzielić obwody na L1–L3.'
+  );
+}
 function balance() {
+  if (is1F()) {
+    toast('Zasilanie jest jednofazowe: wszystkie obwody są na L1.');
+    return;
+  }
   const L = { L1: 0, L2: 0, L3: 0 };
   const devs = Object.values(S.dev).filter(isCirc);
   let rew = 0;
@@ -720,6 +749,10 @@ panel.addEventListener('change', e => {
   if (t.dataset.s) {
     const k = t.dataset.s,
       v = k === 'siec' ? t.value : +t.value;
+    if (k === 'faz') {
+      setSupply(v === 1 ? 1 : 3);
+      return;
+    }
     if (k === 'siec' || v > 0) S.set[k] = k === 'siec' ? oneOf(v, ['TN-C-S', 'TN-S', 'TT']) : clampSet(k, v);
     render();
     return;

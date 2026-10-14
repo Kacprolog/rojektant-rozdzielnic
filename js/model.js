@@ -482,6 +482,8 @@ function normalize(s) {
     cos: clampSet('cos', num(set.cos, 0.95) || 0.95),
     siec: oneOf(set.siec, ['TN-C-S', 'TN-S', 'TT'])
   };
+  if (set.faz != null)
+    s.set.faz = +set.faz === 1 ? 1 : 3; /* zasilanie: 3 = trójfazowe 3×400 V, 1 = jednofazowe 230 V */
   Object.assign(s.set, extra);
   const list = ENC[s.enc.mfr];
   s.enc = {
@@ -699,12 +701,16 @@ const SET_DEF = {
   ks: 0.5,
   cos: 0.95,
   siec: 'TN-C-S',
+  faz: 3,
   zs0: 0.3,
   ik0: 6,
   wlzLen: 15,
   duObw: 3,
   duWlz: 0.5
 };
+/* Zasilanie jednofazowe (230 V, tylko L1) albo trójfazowe; fazy dostępne w złączu. */
+const is1F = () => +sv('faz') === 1;
+const supPh = () => (is1F() ? ['L1'] : ['L1', 'L2', 'L3']);
 const sv = k =>
   S.set[k] != null && S.set[k] !== ''
     ? S.set[k]
@@ -719,6 +725,14 @@ function netCalc() {
     T = totals();
   const zsB = +sv('zs0') + (KT * 2 * Lw) / (GAMMA * Sw),
     zk = 400 / (Math.sqrt(3) * sv('ik0') * 1000) + Lw / (GAMMA * Sw);
+  /* jednofazowo: zwarcie L–N (impedancja źródła i WLZ w obu żyłach), spadek napięcia w pętli L–N przy 230 V */
+  if (is1F())
+    return {
+      zsB,
+      ik1B: 230 / zsB,
+      ikB: 230 / (2 * zk) / 1000,
+      duWlz: (200 * T.Pd * 1000 * Lw) / (GAMMA * Sw * 52900)
+    };
   return {
     zsB,
     ik1B: 230 / zsB,
@@ -764,7 +778,7 @@ function totals() {
     if (isCirc(d)) P += +d.c.P || 0;
   });
   const Pd = P * S.set.ks;
-  const Ibm = (Pd * 1000) / (Math.sqrt(3) * 400 * S.set.cos);
+  const Ibm = is1F() ? (Pd * 1000) / (230 * S.set.cos) : (Pd * 1000) / (Math.sqrt(3) * 400 * S.set.cos);
   const e = enc(),
     cap = e.mpr * S.enc.rows;
   let used = 0;
@@ -1114,8 +1128,101 @@ function checkRcds(k) {
     });
 }
 /* zasilanie: selektywność, rozłącznik, prąd i moc szczytowa, fazy, rezerwa miejsca */
+/* Zasilanie jednofazowe: w złączu jest tylko L1, N i PE. Aparaty i obwody trójfazowe nie mają zasilania. */
+function checkSupply1F(k) {
+  const { add, D, devs } = k;
+  const ref = 'Zasilanie jednofazowe 230 V: w złączu jest tylko faza L1, N i PE (ustawienie w zakładce Bilans).';
+  devs.filter(isCirc).forEach(d => {
+    const nx = '<b>' + D[d.id] + ' ' + esc(d.name) + '</b>';
+    if (is3(d))
+      add('crit', nx + ' jest obwodem trójfazowym, a zasilanie jest jednofazowe.', ref, d.id, {
+        l: 'Zmień na obwód jednofazowy',
+        f: () => {
+          d.p.poles = d.t === 'rcbo' ? 2 : 1;
+          rephase(d, 'L1');
+        }
+      });
+    else if (d.c.ph !== 'L1')
+      add('crit', nx + ' jest na fazie ' + d.c.ph + ', której nie ma w zasilaniu jednofazowym.', ref, d.id, {
+        l: 'Przenieś na L1',
+        f: () => {
+          rephase(d, 'L1');
+        }
+      });
+  });
+  devs.forEach(d => {
+    const nx = '<b>' + D[d.id] + ' ' + esc(d.name) + '</b>';
+    if (d.t === 'sw' && d.p.poles > 2)
+      add(
+        'warn',
+        nx + ' ma ' + d.p.poles + ' bieguny, a zasilanie jest jednofazowe.',
+        'Wystarczy rozłącznik 2P (L1 + N); nieużywane bieguny zajmują miejsce. ' + ref,
+        d.id,
+        {
+          l: 'Zmień na rozłącznik 2P',
+          f: () => {
+            d.p.poles = 2;
+          }
+        }
+      );
+    if (d.t === 'rcd' && d.p.poles == 4)
+      add(
+        'warn',
+        nx + ' jest czterobiegunowa, a zasilanie jest jednofazowe.',
+        'Wystarczy różnicówka 2P. ' + ref,
+        d.id,
+        {
+          l: 'Zmień na różnicówkę 2P',
+          f: () => {
+            d.p.poles = 2;
+          }
+        }
+      );
+    if (d.t === 'spd' && d.p.sys === '3P+N')
+      add(
+        'warn',
+        nx + ' jest w układzie 3P+N, a zasilanie jest jednofazowe.',
+        'Zastosuj ogranicznik 1P+N. ' + ref,
+        d.id,
+        {
+          l: 'Zmień na układ 1P+N',
+          f: () => {
+            d.p.sys = '1P+N';
+          }
+        }
+      );
+    if (d.t === 'meter' && d.p.ph == 3)
+      add(
+        'warn',
+        nx + ' jest trójfazowy, a zasilanie jest jednofazowe.',
+        'Zastosuj licznik jednofazowy. ' + ref,
+        d.id,
+        {
+          l: 'Zmień na licznik 1F',
+          f: () => {
+            d.p.ph = 1;
+          }
+        }
+      );
+    if (d.t === 'relay')
+      add(
+        'warn',
+        nx + ' kontroluje trzy fazy, a zasilanie jest jednofazowe: nigdy nie zamknie styku.',
+        'Usuń przekaźnik kontroli faz albo zmień zasilanie na trójfazowe.',
+        d.id
+      );
+    if (d.t === 'lamp')
+      add(
+        'info',
+        nx + ': przy zasilaniu jednofazowym świeci tylko kontrolka L1.',
+        'Wystarczy jedna kontrolka napięcia.',
+        d.id
+      );
+  });
+}
 function checkSupply(k) {
   const { add, D, T, devs } = k;
+  if (is1F()) checkSupply1F(k);
   const sws = devs.filter(d => d.t === 'sw');
   const maxIn = Math.max(0, ...devs.filter(isCirc).map(d => d.p.In));
   if (maxIn && maxIn * 1.6 > S.set.przedl)
@@ -1154,7 +1261,7 @@ function checkSupply(k) {
   const L = phaseLoads(),
     mx = Math.max(L.L1, L.L2, L.L3),
     mn = Math.min(L.L1, L.L2, L.L3);
-  if (mx > 5 && (mx - mn) / mx > 0.25)
+  if (!is1F() && mx > 5 && (mx - mn) / mx > 0.25)
     add(
       'warn',
       `Asymetria obciążenia faz ${fmt(((mx - mn) / mx) * 100, 0)}% (L1 ${fmt(L.L1)} A, L2 ${fmt(L.L2)} A, L3 ${fmt(L.L3)} A).`,
@@ -1168,22 +1275,23 @@ function checkSupply(k) {
       }
     );
   /* prąd szczytowy każdej fazy osobno: średnia z trzech faz (T.Ibm) nie pokazuje przeciążenia jednej z nich */
-  ['L1', 'L2', 'L3'].forEach(ph => {
-    const ip = L[ph] * S.set.ks;
-    if (ip > S.set.przedl)
-      add(
-        'warn',
-        `Prąd szczytowy fazy ${ph} (${fmt(ip)} A) przekracza zabezpieczenie przedlicznikowe ${S.set.przedl} A.`,
-        'Przenieś obwody jednofazowe na mniej obciążone fazy albo zmniejsz moc.',
-        undefined,
-        {
-          l: 'Rozłóż fazy',
-          f: () => {
-            balance();
+  if (!is1F())
+    ['L1', 'L2', 'L3'].forEach(ph => {
+      const ip = L[ph] * S.set.ks;
+      if (ip > S.set.przedl)
+        add(
+          'warn',
+          `Prąd szczytowy fazy ${ph} (${fmt(ip)} A) przekracza zabezpieczenie przedlicznikowe ${S.set.przedl} A.`,
+          'Przenieś obwody jednofazowe na mniej obciążone fazy albo zmniejsz moc.',
+          undefined,
+          {
+            l: 'Rozłóż fazy',
+            f: () => {
+              balance();
+            }
           }
-        }
-      );
-  });
+        );
+    });
   if (T.cap && (T.cap - T.used) / T.cap < 0.2)
     add(
       'info',
