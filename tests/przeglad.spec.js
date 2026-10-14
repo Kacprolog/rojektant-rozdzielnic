@@ -262,6 +262,9 @@ test('wyłącznik różnicowonadprądowy ma zdolność zwarciową do ustawienia 
     mimeType: 'application/json',
     buffer: Buffer.from(JSON.stringify(j))
   });
+  // plik jest czytany asynchronicznie (FileReader): czekamy na komunikat, zanim sprawdzimy stan
+  await expect(page.locator('.toast')).toContainText('Wczytano projekt');
+  await expect(page.locator('#projSel option')).toHaveCount(2);
   expect(await page.evaluate(() => Object.values(S.dev).find(x => x.t === 'rcbo').p.icn)).toBe(6);
 });
 
