@@ -58,6 +58,16 @@ Każdy punkt to osobny commit; numeracja jak w przeglądzie (HANDOFF.md → „Z
 - Przenoszenie aparatu palcem i przewijanie krótkim ruchem działały poprawnie także na prawdziwych zdarzeniach.
 - Nadal nie sprawdzono na fizycznym telefonie.
 
+### CI: wyniki szukania przyczyny niestabilnych testów w WebKit (Linux)
+- Dwie rundy eksperymentów na gałęziach `ci-*` (każdy test WebKit 3 razy, bez ponownych prób, ok. 240 prób na wariant):
+  bez zmian / bez fokusu klawiatury / bez własnych czcionek / bez fokusu tylko na rysunku / fokus wędrujący po aparatach.
+- Wynik: zawieszenia akcji Playwright (czekanie na nieruchomy element albo na przewinięcie przed kliknięciem) zdarzają się
+  rzadko i losowo w różnych testach, także w wariancie bez fokusu na aparatach. Hipotezy o fokusie i czcionkach odrzucone;
+  to zachowanie WebKit na maszynie CI, a nie błąd aplikacji (Chromium i Firefox bez powtórek, lokalnie nie występuje).
+- Przy okazji znaleziony i naprawiony prawdziwy błąd testu: sprawdzanie stanu przed zakończeniem odczytu pliku (`FileReader`).
+- Zostaje jedna ponowna próba w CI; testy przechodzące dopiero za drugim razem raport oznacza jako niestabilne.
+  Wariant „fokus wędrujący” nie wszedł do aplikacji, bo nie miał wpływu na problem.
+
 ### CI: gałęzie diagnostyczne
 - Push na gałąź `ci-*` uruchamia tylko testy WebKit (każdy 3 razy, bez ponownych prób) i niczego nie publikuje. Służy do
   szukania przyczyny niestabilnych testów w Safari-WebKit na Linuksie.

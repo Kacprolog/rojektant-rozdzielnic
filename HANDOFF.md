@@ -81,6 +81,8 @@ Narzędzie dla elektryka lub projektanta do wstępnego zaprojektowania rozdzieln
 12. Faza RCD 2P jest wyznaczana z pierwszego przypisanego obwodu 1F (`rcdPh`), a nie ustawiana jawnie.
 13. Zakresy przekrojów zacisków aparatów (`termRange()`) są orientacyjne, wpisane bez kart katalogowych producentów.
 
+**CI, WebKit na Linuksie:** pojedyncze testy czasem zawieszają się na akcji Playwright (rzadko, losowo, niezależnie od zmian w aplikacji; sprawdzone eksperymentami, opis w `CHANGELOG.md`). CI ma jedną ponowną próbę; jeśli test zacznie zawodzić stale, to już nie ten problem.
+
 Z przeglądu kodu 0.14.1 — **wszystkie naprawione w 0.15.0** (szczegóły w `CHANGELOG.md`). Zostaje tylko część punktu o stylu kodu: wspólna przestrzeń globalna (plan P2). Lista dla porządku:
 
 - **„Rozłóż fazy” w okablowaniu ręcznym** zmienia fazy obwodów, ale nie przepina przewodów, więc tworzy błędy „dwie różne fazy”. Przycisk naprawy przy asymetrii nie powinien być wtedy oferowany albo powinien przepinać przewody.
