@@ -25,6 +25,7 @@ function cableType(d){const c=+d.c.cable,cs=fmt(c);return is3(d)?(c<=4?'YDYp 5×
    i ich zworki nadal wynikają z ustawienia aparatów). Zapisany koniec przewodu: {k:'dev',id,side,i} (i = numer zacisku
    od lewej, więc zmiana fazy obwodu nie przepina przewodu), {k:'bar',bar}, {k:'wlz',ph}. */
 let wirePick=null,wireSel=null,wireMove=null;
+let BAR_STATS={};   /* ostatnie rysowanie: na każdej listwie liczba przewodów i zajętych zacisków (powinny być równe) */
 function wireReset(){wirePick=wireSel=wireMove=null;}
 const WIRE_MM=[1.5,2.5,4,6,10,16,25,35];
 /* Grubość linii na rysunku rośnie z przekrojem przewodu [mm² → px]. */
@@ -231,17 +232,24 @@ function drawWires(){const cab=$('#board');
   const z=zf(),cr=cab.getBoundingClientRect(),ox=cr.left+cab.clientLeft*z,oy=cr.top+cab.clientTop*z;
   const rel=el=>{const r=el.getBoundingClientRect();return {l:(r.left-ox)/z,r:(r.right-ox)/z,t:(r.top-oy)/z,b:(r.bottom-oy)/z,w:r.width/z};};
   const rails=[...cab.querySelectorAll('.rail')].map(rel);if(!rails.length)return;
-  const W=cab.clientWidth,H=cab.clientHeight;
+  let W=cab.clientWidth;const H=cab.clientHeight;
   const ch=[];for(let i=0;i<=n;i++){const start=i?rails[i-1].b+4+STUB:30;ch.push({start,c:0});}
   const lane=i=>ch[i].start+(ch[i].c++)*SP;
-  const railR=Math.max(...rails.map(r=>r.r)),x0=30+nr*SP,x1=Math.max(railR,x0+260),nY=ch[n].start+cnt[n]*SP+22,peY=nY+30;
+  const railR=Math.max(...rails.map(r=>r.r)),x0=30+nr*SP,nY=ch[n].start+cnt[n]*SP+22,peY=nY+30;
   const rcds=S.rows.flat().filter(id=>S.dev[id].t==='rcd');
-  const segs=[{k:'N',lab:'N'}].concat(rcds.map(id=>({k:'N:'+id,lab:'N '+D[id]})));const sw=(x1-x0-(segs.length-1)*14)/segs.length;
-  segs.forEach((s,i)=>{s.x0=x0+i*(sw+14);s.x1=s.x0+sw;});
+  const segs=[{k:'N',lab:'N'}].concat(rcds.map(id=>({k:'N:'+id,lab:'N '+D[id]})));
+  /* Każdy przewód dostaje na listwie własny zacisk co 12 px. Listwy są tak długie, żeby zmieściły wszystkie swoje przewody;
+     gdy nie mieszczą się w obudowie, obudowa jest poszerzana z prawej strony. */
+  const onBar={};C.forEach(c=>[c.a,c.b].forEach(e=>{if(e.k==='bar')onBar[e.bar]=(onBar[e.bar]||0)+1;}));
+  const need=s=>((onBar[s.k]||0)+1)*12,needN=segs.reduce((a,s)=>a+need(s),0)+(segs.length-1)*14;
+  const x1=Math.max(railR,x0+260,x0+needN,x0+((onBar.PE||0)+1)*12),spare=(x1-x0-needN)/segs.length;
+  let xs=x0;segs.forEach(s=>{s.x0=xs;s.x1=xs+need(s)+spare;xs=s.x1+14;});
+  if(x1+30>W){cab.style.paddingRight=(parseFloat(cab.style.paddingRight)+x1+30-W)+'px';W=cab.clientWidth;}
   const devEl={};cab.querySelectorAll('.slot').forEach(s=>devEl[s.dataset.id]=rel(s.querySelector('.dev')));
-  const slots={};const barX=(key,want,lo,hi)=>{const u=slots[key]||(slots[key]=new Set());let best=null;
+  const slots={};BAR_STATS={};const barX=(key,want,lo,hi)=>{const u=slots[key]||(slots[key]=new Set());let best=null;
+    const st=BAR_STATS[key]||(BAR_STATS[key]={wires:0,points:0});st.wires++;
     for(let x=lo+6;x<=hi-6;x+=12){if(u.has(x))continue;if(best===null||Math.abs(x-want)<Math.abs(best-want))best=x;}
-    if(best===null)best=lo+6;u.add(best);return best;};
+    if(best===null)best=lo+6;u.add(best);st.points=u.size;return best;};
   const pt=(e,o)=>{
     if(e.k==='dev'){const d=S.dev[e.id],r=devEl[e.id],t=terms(d)[e.side];let k=t.indexOf(e.ph);if(k<0)k=0;
       return {x:r.l+r.w*(k+.5)/t.length,y:e.side==='top'?r.t+7:r.b-7};}

@@ -2,6 +2,21 @@
 
 Każdy wpis odpowiada jednemu commitowi. Format: co zrobiono, dlaczego, jak sprawdzono.
 
+## 0.15.0 (14.10.2026) — sugestie z przeglądu kodu
+
+Każdy punkt to osobny commit; numeracja jak w przeglądzie (HANDOFF.md → „Z przeglądu kodu 0.14.1”).
+
+### 1–2. „Rozłóż fazy” w okablowaniu ręcznym, miejsce na listwach
+- `rephase()`: zmiana fazy obwodu jednofazowego w okablowaniu ręcznym przepina przewód zasilający jego wejście na zacisk
+  nowej fazy tego samego aparatu (np. wyjście rozłącznika L3 → L1). Dotyczy „Rozłóż fazy”, paska szybkiej edycji i pola
+  „Faza” w panelu. Wcześniej „Rozłóż fazy” zostawiało przewody na starej fazie, czyli tworzyło błędy „dwie różne fazy”.
+- „Rozłóż fazy” nie przenosi obwodów za różnicówką 2P (ich fazę narzuca różnicówka); wcześniej tworzyło błąd faz także
+  w trybie automatycznym.
+- Listwy N i PE mają długość wynikającą z liczby przewodów (zacisk co 12 px); gdy nie mieszczą się, obudowa jest
+  poszerzana. Wcześniej przy wielu różnicówkach kolejne przewody trafiały w ten sam punkt listwy. `BAR_STATS` pozwala to
+  sprawdzić w testach.
+- Testy `tests/przeglad.spec.js` (3); zrzut przy 6 różnicówkach i 4 RCBO sprawdzony wzrokowo.
+
 ## 0.14.1 (13.10.2026) — poprawki z przeglądu całego kodu
 
 Przegląd objął `js/`, `css/`, `index.html`, `scripts/`, `tests/` i workflow. Każde znalezisko poniżej zostało najpierw

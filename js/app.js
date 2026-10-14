@@ -8,10 +8,21 @@ function addPreset(i,row,idx){const p=PRESETS[i];const d=newDev(p.t,S.mfr,p.p,p.
 function moveDev(id,row,idx){const fr=rowOf(id),fi=S.rows[fr].indexOf(id);S.rows[fr].splice(fi,1);if(fr===row&&fi<idx)idx--;S.rows[row].splice(Math.max(0,Math.min(idx,S.rows[row].length)),0,id);render();}
 function delDev(id){const r=rowOf(id);if(r<0)return;S.rows[r].splice(S.rows[r].indexOf(id),1);delete S.dev[id];Object.values(S.dev).forEach(d=>{if(d.rcd===id)d.rcd=null;if(d.circ===id)d.circ=null;});
   S.conn=(S.conn||[]).filter(w=>[w.a,w.b].every(e=>!(e.k==='dev'&&e.id===id)&&!(e.k==='bar'&&e.bar==='N:'+id)));if(S.sel===id)S.sel=null;render();}
-function balance(){const L={L1:0,L2:0,L3:0};const devs=Object.values(S.dev).filter(isCirc);
-  devs.filter(is3).forEach(d=>{const i=ib(d);L.L1+=i;L.L2+=i;L.L3+=i;});
-  devs.filter(d=>!is3(d)).sort((a,b)=>ib(b)-ib(a)).forEach(d=>{const p=Object.keys(L).sort((a,b)=>L[a]-L[b])[0];d.c.ph=p;L[p]+=ib(d);});
-  render();toast('Obwody jednofazowe rozłożone na L1–L3');}
+/* Zmiana fazy obwodu jednofazowego. W okablowaniu ręcznym przewód zasilający jego wejście fazowe jest przepinany na zacisk
+   nowej fazy tego samego aparatu źródłowego (np. wyjście rozłącznika L3 → L1), żeby zmiana nie tworzyła błędu „dwie różne fazy”.
+   Zwraca liczbę przepiętych przewodów. */
+function rephase(d,ph){const old=d.c.ph;d.c.ph=ph;if(S.wmode!=='manual'||old===ph||is3(d))return 0;let n=0;const k=terms(d).top.indexOf(ph);
+  S.conn.forEach(w=>['a','b'].forEach(end=>{const e=w[end],o=w[end==='a'?'b':'a'];
+    if(!(e.k==='dev'&&e.id===d.id&&e.side==='top'&&e.i===k))return;
+    if(o.k==='wlz'&&o.ph===old){o.ph=ph;n++;return;}
+    if(o.k==='dev'&&S.dev[o.id]){const t=terms(S.dev[o.id])[o.side];if(t[o.i]===old){const j=t.indexOf(ph);if(j>=0){o.i=j;n++;}}}}));
+  return n;}
+/* Obwody za różnicówką 2P mają fazę narzuconą przez różnicówkę, a trójfazowe obciążają wszystkie fazy: tych „Rozłóż fazy” nie rusza. */
+function balance(){const L={L1:0,L2:0,L3:0};const devs=Object.values(S.dev).filter(isCirc);let rew=0;
+  const fixed=d=>is3(d)||(d.t==='mcb'&&!!d.rcd&&!!S.dev[d.rcd]&&S.dev[d.rcd].p.poles==2);
+  devs.filter(fixed).forEach(d=>{const i=ib(d);phases(d).forEach(p=>L[p]+=i);});
+  devs.filter(d=>!fixed(d)).sort((a,b)=>ib(b)-ib(a)).forEach(d=>{const p=Object.keys(L).sort((a,b)=>L[a]-L[b])[0];rew+=rephase(d,p);L[p]+=ib(d);});
+  render();toast('Obwody jednofazowe rozłożone na L1–L3'+(rew?'; przepięto przewody zasilające: '+rew:''));}
 let tt;function toast(m,ms,alert){let t=$('.toast');if(!t){t=document.createElement('div');t.setAttribute('role','status');document.body.appendChild(t);}t.className='toast'+(alert?' alert':'');t.textContent=m;t.hidden=false;clearTimeout(tt);tt=setTimeout(()=>t.hidden=true,ms||2200);}
 function copy(text,label){const done=()=>toast(label+' skopiowano do schowka');
   const fallback=()=>{$('#copyOut').innerHTML=`<p class="note">Schowek jest niedostępny. Zaznacz tekst i skopiuj ręcznie.</p><textarea class="copyarea" id="copyTa" readonly></textarea>`;const ta=$('#copyTa');ta.value=text;ta.focus();ta.select();};
@@ -111,7 +122,7 @@ panel.addEventListener('click',e=>{const fx=e.target.closest('[data-fix]');
   const n=e.target.closest('[data-id]');if(n&&S.dev[n.dataset.id]){S.sel=n.dataset.id;S.active=rowOf(S.sel);S.tab='aparat';render();}});
 /* Akcje paska szybkiej edycji zaznaczonego aparatu. */
 function quickAct(q){const d=S.dev[S.sel];if(!d)return;const r=rowOf(d.id),ids=S.rows[r],i=ids.indexOf(d.id);
-  if(q.slice(0,3)==='ph:')d.c.ph=q.slice(3);
+  if(q.slice(0,3)==='ph:'){if(rephase(d,q.slice(3)))toast('Przepięto przewód zasilający na '+q.slice(3));}
   else if(q==='in-'||q==='in+'){const L=QIN[d.t];let k=L.indexOf(d.p.In);if(k<0)k=L.findIndex(x=>x>=d.p.In);
     const n=k+(q==='in+'?1:-1);if(n<0||n>=L.length){toast('To skrajna wartość w typoszeregu');return;}d.p.In=L[n];}
   else if(q==='curve'){const L=d.t==='rcbo'?['B','C']:['B','C','D'];d.p.curve=L[(L.indexOf(d.p.curve)+1)%L.length];}
@@ -133,6 +144,7 @@ panel.addEventListener('change',e=>{const t=e.target,d=S.dev[S.sel];
   const k=t.dataset.k;if(!k||!d||k==='name'||k==='c.P'||k==='c.len'){if(k==='c.P')render();return;}
   if(k==='row'){const r=+t.value;moveDev(d.id,r,S.rows[r].length);S.active=r;render();return;}
   if(k==='rcd'){d.rcd=t.value||null;render();return;}
+  if(k==='c.ph'){const n=rephase(d,t.value);render();if(n)toast('Przepięto przewód zasilający na '+t.value);return;}
   setPath(d,k,parseV(t.value));
   render();});
 document.addEventListener('keydown',e=>{const inField=/INPUT|TEXTAREA/.test(document.activeElement.tagName);
