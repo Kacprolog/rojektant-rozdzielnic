@@ -49,7 +49,7 @@ function renderTop() {
     `<div class="stat"><div class="k">Moc szczytowa</div><div class="v">${fmt(T.Pd)}<small>kW</small></div></div>
   <div class="stat"><div class="k">Prąd szczytowy</div><div class="v">${fmt(T.Ibm)}<small>A</small></div></div>
   <div class="stat"><div class="k">Moduły</div><div class="v">${fmt(T.used)}<small>/ ${T.cap}</small></div></div>
-  <button class="ckpill ${ck2}" data-tab="kontrola" title="Pokaż kontrolę projektu">${nc ? 'Kontrola: ' + nc + ' ' + plural(nc, 'błąd', 'błędy', 'błędów') : nw ? 'Kontrola: ' + nw + ' ' + plural(nw, 'uwaga', 'uwagi', 'uwag') : '✓ Kontrola: bez uwag'}</button>`;
+  <button class="ckpill ${ck2}" data-ck="1" title="Pokaż kontrolę projektu">${nc ? 'Kontrola: ' + nc + ' ' + plural(nc, 'błąd', 'błędy', 'błędów') : nw ? 'Kontrola: ' + nw + ' ' + plural(nw, 'uwaga', 'uwagi', 'uwag') : '✓ Kontrola: bez uwag'}</button>`;
   /* biblioteka aparatów jako szuflada: w pustym projekcie otwarta, potem według wyboru użytkownika */
   const lo = libShown();
   $('#lib').hidden = !lo;
