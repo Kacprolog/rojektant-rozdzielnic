@@ -1,31 +1,31 @@
 /* Layout: biblioteka aparatów | obudowa z szynami DIN (skala 1 moduł = 18 mm) | panel parametrów i kontroli */
 :root {
-  --bg: #e7eae7;
-  --panel: #f6f7f5;
-  --panel2: #eef1ee;
-  --ink: #1c2220;
-  --muted: #5a6561;
-  --line: #cfd5d1;
-  --accent: #a95a24;
-  --accent-soft: #f3e3d6;
+  --bg: #f1f1f4;
+  --panel: #ffffff;
+  --panel2: #f6f6f9;
+  --ink: #15141a;
+  --muted: #5d5b68;
+  --line: #e2e1e8;
+  --accent: #6b35c9;
+  --accent-soft: #efe8fc;
   --accent-ink: #ffffff;
-  --cabinet: #d3d8d4;
-  --cabinet-edge: #b9c0bb;
-  --rail1: #c4c9c6;
-  --rail2: #8f9793;
-  --dev: #f7f7f3;
-  --dev-edge: #b6b9b2;
+  --cabinet: #cfd3d0;
+  --cabinet-edge: #b2b9b5;
+  --rail1: #b4bbb7;
+  --rail2: #8e9692;
+  --dev: #fafaf7;
+  --dev-edge: #bfc3bd;
   --dev-ink: #1e211f;
   --dev-muted: #6b706c;
   --screw: #7d8380;
   --blank: #e3e7e3;
   --blank-line: #c7cdc8;
-  --ok: #2d7a4c;
-  --warn: #a97100;
-  --crit: #bf3626;
-  --ok-bg: #e1efe5;
-  --warn-bg: #f6ebd2;
-  --crit-bg: #f6dfdb;
+  --ok: #1d7444;
+  --warn: #8f6200;
+  --crit: #b3301e;
+  --ok-bg: #e2f0e7;
+  --warn-bg: #f7ecd0;
+  --crit-bg: #f8e1dc;
   --l1: #7b4a22;
   --l2: #232323;
   --l3: #8c9195;
@@ -41,20 +41,24 @@
   --wire-edge: var(--cabinet);
   --wire-sh: #000000;
   --wire-hl: #ffffff;
-  --M: 34px;
+  --M: 44px; /* szerokość modułu 18 mm na ekranie (na telefonie 34 px) */
+  --line-strong: #8e8c9b;
+  --accent-hover: #5627ab;
+  --shadow-raised: 0 1px 2px rgba(21, 20, 26, 0.06), 0 2px 8px rgba(21, 20, 26, 0.06);
+  --shadow-overlay: 0 8px 32px rgba(21, 20, 26, 0.18);
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
-    --bg: #121615;
-    --panel: #1a1f1e;
-    --panel2: #212726;
-    --ink: #e3e8e5;
-    --muted: #97a29d;
-    --line: #2e3634;
-    --accent: #dd8a50;
-    --accent-soft: #3a2a1f;
-    --accent-ink: #1a1210;
-    --cabinet: #c6ccc8;
+    --bg: #0e0d12;
+    --panel: #17161d;
+    --panel2: #1f1e27;
+    --ink: #ecebf2;
+    --muted: #a3a1ae;
+    --line: #2c2b36;
+    --accent: #b393ff;
+    --accent-soft: #2a2142;
+    --accent-ink: #150d26;
+    --cabinet: #c4c9c6;
     --cabinet-edge: #a9b1ac;
     --rail1: #b4bab6;
     --rail2: #868e8a;
@@ -68,7 +72,7 @@
     --ok: #5cc184;
     --warn: #e3ad3a;
     --crit: #f0725f;
-    --ok-bg: #1d3326;
+    --ok-bg: #173024;
     --warn-bg: #3a2f15;
     --crit-bg: #3d1f1a;
     --l1: #7b4a22;
@@ -80,20 +84,24 @@
     --s: #d0312d; /* przewód sterowniczy (PN-EN 60204-1) */
     --cu: #b87333;
     --cu-edge: #7a4a1e;
+    --line-strong: #64627a;
+    --accent-hover: #c7b0ff;
+    --shadow-raised: 0 1px 2px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.3);
+    --shadow-overlay: 0 8px 32px rgba(0, 0, 0, 0.55);
     color-scheme: dark;
   }
 }
 :root[data-theme='dark'] {
-  --bg: #121615;
-  --panel: #1a1f1e;
-  --panel2: #212726;
-  --ink: #e3e8e5;
-  --muted: #97a29d;
-  --line: #2e3634;
-  --accent: #dd8a50;
-  --accent-soft: #3a2a1f;
-  --accent-ink: #1a1210;
-  --cabinet: #c6ccc8;
+  --bg: #0e0d12;
+  --panel: #17161d;
+  --panel2: #1f1e27;
+  --ink: #ecebf2;
+  --muted: #a3a1ae;
+  --line: #2c2b36;
+  --accent: #b393ff;
+  --accent-soft: #2a2142;
+  --accent-ink: #150d26;
+  --cabinet: #c4c9c6;
   --cabinet-edge: #a9b1ac;
   --rail1: #b4bab6;
   --rail2: #868e8a;
@@ -107,7 +115,7 @@
   --ok: #5cc184;
   --warn: #e3ad3a;
   --crit: #f0725f;
-  --ok-bg: #1d3326;
+  --ok-bg: #173024;
   --warn-bg: #3a2f15;
   --crit-bg: #3d1f1a;
   --l1: #7b4a22;
@@ -119,28 +127,32 @@
   --s: #d0312d; /* przewód sterowniczy (PN-EN 60204-1) */
   --cu: #b87333;
   --cu-edge: #7a4a1e;
+  --line-strong: #64627a;
+  --accent-hover: #c7b0ff;
+  --shadow-raised: 0 1px 2px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-overlay: 0 8px 32px rgba(0, 0, 0, 0.55);
   color-scheme: dark;
 }
 /* Ciemny motyw: obudowa, aparaty i przewody zostaja w barwach rzeczywistych, zeby kolory zyl byly zgodne z PN-EN 60445
    (L1 brazowy, L2 czarny, L3 szary, N niebieski, PE zielono-zolty). Tekst na jasnej obudowie musi byc wtedy ciemny. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) .cabinet {
-    --ink: #1c2220;
-    --muted: #5a6561;
-    --accent: #a95a24;
+    --ink: #15141a;
+    --muted: #4a4f4d;
+    --accent: #6b35c9;
     --accent-ink: #ffffff;
-    --crit: #bf3626;
-    --warn: #a97100;
+    --crit: #b3301e;
+    --warn: #8f6200;
     color: var(--ink);
   }
 }
 :root[data-theme='dark'] .cabinet {
-  --ink: #1c2220;
-  --muted: #5a6561;
-  --accent: #a95a24;
+  --ink: #15141a;
+  --muted: #4a4f4d;
+  --accent: #6b35c9;
   --accent-ink: #ffffff;
-  --crit: #bf3626;
-  --warn: #a97100;
+  --crit: #b3301e;
+  --warn: #8f6200;
   color: var(--ink);
 }
 * {
@@ -664,7 +676,7 @@ svg.wires .tp.on {
   display: flex;
   align-items: flex-start;
   padding: 0;
-  min-height: 162px;
+  min-height: calc(var(--M) * 4.76);
   border-radius: 4px;
 }
 .rail::before {
@@ -672,8 +684,8 @@ svg.wires .tp.on {
   position: absolute;
   left: -10px;
   right: -10px;
-  top: 52px;
-  height: 20px;
+  top: calc(var(--M) * 1.53);
+  height: calc(var(--M) * 0.59);
   background: linear-gradient(180deg, var(--rail1), var(--rail2) 45%, var(--rail1) 55%, var(--rail2));
   border-radius: 2px;
   z-index: 0;
@@ -723,7 +735,7 @@ svg.wires .tp.on {
 }
 .dev {
   position: relative;
-  height: 124px;
+  height: calc(var(--M) * 3.65);
   margin: 0 0.5px;
   background: var(--dev);
   color: var(--dev-ink);
@@ -1988,4 +2000,159 @@ svg.schem .sg.sel > ellipse,
 svg.schem .sg.sel > circle {
   stroke: var(--accent);
   stroke-width: 2;
+}
+
+/* ---------- Wygląd 0.21: system projektowy (fioletowy akcent, chłodne neutralne, moduł 44 px) ----------
+   Wartości z systemu „Projektant Rozdzielnic” (claude.ai/artifact/Vpoe9YowNQmZ8BExgihHkm). Kolory tylko przez tokeny. */
+@media (max-width: 780px) {
+  :root {
+    --M: 34px; /* telefon: moduł zwarty */
+  }
+}
+body {
+  font-size: 15px;
+  line-height: 1.45;
+}
+.app {
+  max-width: 1760px;
+}
+.card {
+  border-radius: 16px;
+  border-color: var(--line);
+  box-shadow: var(--shadow-raised);
+  padding: 18px;
+}
+h2 {
+  font-size: 18px;
+  letter-spacing: 0.04em;
+}
+.btn {
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 10px;
+  border-color: var(--line-strong);
+  background: var(--panel);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 14px;
+}
+.btn:hover {
+  border-color: var(--line-strong);
+  background: var(--panel2);
+}
+.btn.pri {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+.btn.pri:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+.btn.sm {
+  min-height: 32px;
+  padding: 0 11px;
+  font-size: 13px;
+}
+.btn:disabled,
+.btn:disabled:hover {
+  background: var(--panel);
+  border-color: var(--line-strong);
+}
+.seg {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 3px;
+  gap: 2px;
+  background: var(--panel2);
+  overflow: visible;
+}
+.seg button {
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  min-height: 30px;
+  padding: 0 14px;
+  font-size: 14px;
+}
+.seg button:hover {
+  color: var(--ink);
+}
+.seg button[aria-pressed='true'] {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+.chip {
+  min-height: 30px;
+  padding: 0 12px;
+  border-color: var(--line-strong);
+  background: var(--panel);
+  font-weight: 500;
+}
+.chip[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--ink);
+}
+.fld label,
+.pgroup label {
+  font-family: var(--f-display);
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.fld select,
+.fld input,
+.pgroup select,
+#libSearch {
+  min-height: 36px;
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  background: var(--panel2);
+  padding: 0 10px;
+}
+.fld {
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.cabinet {
+  border-radius: 16px;
+  padding: 26px 30px 30px;
+}
+.rowwrap {
+  margin-top: 28px;
+}
+.rail.active {
+  outline: 1.5px dashed var(--accent);
+  outline-offset: 10px;
+  border-radius: 6px;
+}
+.rowlab .act {
+  border-radius: 6px;
+}
+.libitem {
+  border-radius: 10px;
+  padding: 8px;
+}
+.libitem:hover {
+  border-color: var(--accent);
+  background: var(--panel);
+}
+.toast {
+  border-radius: 10px;
+  box-shadow: var(--shadow-overlay);
+}
+/* nadruki frontu skalowane modułem (przy 34 px jak dotąd) */
+.cabinet .mk {
+  font-size: calc(var(--M) * 0.22);
+}
+.cabinet .rt {
+  font-size: calc(var(--M) * 0.39);
+}
+.cabinet .sub {
+  font-size: calc(var(--M) * 0.25);
 }

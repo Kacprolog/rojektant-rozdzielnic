@@ -38,7 +38,8 @@ test('powiększenie: przyciski, dopasowanie do szerokości, przewody nadal trafi
   await expect(page.locator('#zoomVal')).toHaveText('100%');
   // Przy 100% różnica nie jest zerowa: kontrolki faz mają 3 śruby na 4 zaciski. Powiększenie ma ją tylko przeskalować.
   const base = await terminalError(page);
-  expect(base).toBeLessThan(6);
+  // próg 6 px przy module 34 px; niedokładność rośnie proporcjonalnie z szerokością modułu
+  expect(base).toBeLessThan((6 * (await page.evaluate(() => modPx()))) / 34);
   const size = () =>
     page.evaluate(() => {
       const b = document.querySelector('#board'),

@@ -254,10 +254,15 @@ function setZoom(how) {
   S.zoom = z;
   render(true);
 }
+/* Szerokość modułu na ekranie: zmienna CSS --M (44 px, na telefonie 34 px). */
+function modPx() {
+  const v = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--M'));
+  return v > 0 ? v : 44;
+}
 function renderBoard() {
   const e = enc(),
     D = designations(),
-    M = 34;
+    M = modPx();
   $('#board').className = 'cabinet' + (S.wires ? ' wiring' : '') + (S.schem ? ' schem' : '') + (simOn() ? ' sim' : '');
   SIMC = simOn() ? simCalc() : null;
   renderSim();

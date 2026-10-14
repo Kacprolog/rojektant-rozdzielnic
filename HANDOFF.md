@@ -1,6 +1,6 @@
 # Przekazanie projektu: Projektant Rozdzielnic
 
-Stan na 14.10.2026, wersja 0.20.0. Projekt powstał w czacie z Claude jako pojedyncza strona (artefakt claude.ai), został podzielony na pliki i jest rozwijany w Claude Code jako zwykła strona w przeglądarce. Wersja 0.5.0 zamyka zadania P0 (1–5 w całości, 6 przygotowane, czeka na decyzję o hostingu). Szczegóły każdej zmiany: `CHANGELOG.md`.
+Stan na 14.10.2026, wersja 0.21.0. Projekt powstał w czacie z Claude jako pojedyncza strona (artefakt claude.ai), został podzielony na pliki i jest rozwijany w Claude Code jako zwykła strona w przeglądarce. Wersja 0.5.0 zamyka zadania P0 (1–5 w całości, 6 przygotowane, czeka na decyzję o hostingu). Szczegóły każdej zmiany: `CHANGELOG.md`.
 
 ![Widok frontu](docs/front.png)
 
@@ -33,7 +33,7 @@ Narzędzie dla elektryka lub projektanta do wstępnego zaprojektowania rozdzieln
 
 **Zasilanie jednofazowe** (0.20.0): pole „Zasilanie” w zakładce Bilans (trójfazowe 3 × 400 V / jednofazowe 230 V). Przy 1F obwody przechodzą na L1, WLZ ma 2 albo 3 żyły, obliczenia przy 230 V, aparaty trójfazowe zgłasza kontrola z naprawami. Opis: `docs/DOMAIN.md` → „Zasilanie jednofazowe”.
 
-**System projektowy** (14.10.2026): https://claude.ai/artifact/Vpoe9YowNQmZ8BExgihHkm (nowa paleta z fioletowym akcentem, moduł 44 px, 10 komponentów). Nie jest jeszcze wdrożony w kodzie; następny krok to projekt widoku głównego i wdrożenie.
+**System projektowy** (14.10.2026): https://claude.ai/artifact/Vpoe9YowNQmZ8BExgihHkm, zaakceptowany projekt ekranów: https://claude.ai/artifact/LwhTd3aNMpabQJnzNAhw78. Wdrażany etapami: 0.21.0 paleta, moduł 44 px, kontrolki; dalej układ (biblioteka jako szuflada, nagłówek, zakładki) i rozwijane podpisy aparatów.
 
 **Sprawdzanie typów** (0.19.0): `npm run typecheck` (TypeScript w trybie checkJs, w CI przed testami), typy danych w `types/projekt.d.ts`. Następny krok, jeśli potrzebny: `strictNullChecks` (obecnie ok. 70 zgłoszeń, głównie `S.dev[S.sel]` po wcześniejszym sprawdzeniu).
 

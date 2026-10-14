@@ -2,6 +2,21 @@
 
 Każdy wpis odpowiada jednemu commitowi. Format: co zrobiono, dlaczego, jak sprawdzono.
 
+## 0.21.0 (14.10.2026) — nowy wygląd, etap 1: paleta, moduł 44 px, kontrolki
+
+- Wdrożenie zaakceptowanego systemu projektowego (https://claude.ai/artifact/Vpoe9YowNQmZ8BExgihHkm) i projektu ekranów
+  (https://claude.ai/artifact/LwhTd3aNMpabQJnzNAhw78). Etap 1 z 3.
+- Paleta interfejsu w obu motywach: chłodne neutralne tła, fioletowy akcent (wybór, aktywny widok, zaznaczenie; nie
+  przypomina żadnej żyły), nowe kolory stanów. Nazwy tokenów bez zmian; nowe: `--line-strong` (obramowania kontrolek,
+  min. 3:1), `--accent-hover`, `--shadow-raised`, `--shadow-overlay`. Kolory żył, obudowy i aparatów bez zmian.
+- Moduł 44 px zamiast 34 px (`--M`; na telefonie 34 px): wysokość aparatu, położenie szyny, wysokość rzędu i nadruki
+  frontu liczone od `--M`; `renderBoard()` czyta szerokość przez `modPx()`. Okablowanie, powiększenie i wydruk mierzą
+  DOM, więc działają bez zmian.
+- Kontrolki: przyciski 36 px z promieniem 10 px, przełączniki segmentowe i chipy w kształcie pigułki, pola 36 px
+  z etykietami wielkimi literami, karty z promieniem 16 px i cieniem.
+- Test powiększenia: próg zgodności śrub z zaciskami skalowany szerokością modułu (6 px przy 34 px; niedokładność
+  kontrolek faz, 3 śruby na 4 zaciski, rośnie proporcjonalnie). Zrzuty: jasny, ciemny, telefon, wydruk.
+
 ## 0.20.0 (14.10.2026) — zasilanie jednofazowe
 
 - Nowe ustawienie `S.set.faz` (3 albo 1; projekty bez niego są trójfazowe), pole „Zasilanie” w zakładce Bilans.
