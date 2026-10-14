@@ -2,7 +2,7 @@
 
 Każdy wpis odpowiada jednemu commitowi. Format: co zrobiono, dlaczego, jak sprawdzono.
 
-## 0.15.0 (14.10.2026) — sugestie z przeglądu kodu
+## 0.15.0 (14.10.2026) — wszystkie sugestie z przeglądu kodu
 
 Każdy punkt to osobny commit; numeracja jak w przeglądzie (HANDOFF.md → „Z przeglądu kodu 0.14.1”).
 
@@ -57,6 +57,19 @@ Każdy punkt to osobny commit; numeracja jak w przeglądzie (HANDOFF.md → „Z
   nie przechodzi, z poprawką 10 na 10 prób.
 - Przenoszenie aparatu palcem i przewijanie krótkim ruchem działały poprawnie także na prawdziwych zdarzeniach.
 - Nadal nie sprawdzono na fizycznym telefonie.
+
+### 8. Czytelność kodu
+- **Prettier** (`.prettierrc.json`: 120 znaków w linii, apostrofy) sformatował cały kod JS, CSS, HTML, testy i skrypty.
+  Linii dłuższych niż 200 znaków jest 41 zamiast 123 (zostały długie teksty komunikatów). `npm run format` formatuje,
+  `npm run format:check` sprawdza; CI odrzuca niesformatowany kod przed testami. Commit formatowania nie zmienia działania.
+- **`checks()`** podzielona na nazwane grupy reguł: `checkRows`, `checkMainDevices`, `checkCircuitLoad`, `checkCircuitRcd`,
+  `checkCircuitNet`, `checkWlz`, `checkRcds`, `checkSupply`, `checkTor`, ze wspólnym kontekstem `k`. Kolejność uwag bez zmian.
+- **Błąd w mojej procedurze:** pierwszy commit formatowania przeszedł mimo 3 nieudanych testów, bo łańcuch poleceń nie
+  sprawdzał kodu wyjścia testów. Przyczyną był test, który wstrzykiwał błąd przez podmianę dokładnego tekstu
+  `function renderEnc(){` (po formatowaniu jest spacja); poprawiony w następnym commicie i od tej pory commit wykonuje się
+  tylko przy zerowym kodzie wyjścia testów.
+- Nie zmieniono: wspólnej przestrzeni globalnej i klasycznych skryptów (to zadanie P2: Vite + TypeScript).
+- Sprawdzenie: `npm test` → 237 przechodzi, 3 pominięte (testy dotyku przez protokół Chromium w projekcie Safari).
 
 ## 0.14.1 (13.10.2026) — poprawki z przeglądu całego kodu
 

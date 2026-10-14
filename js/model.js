@@ -780,13 +780,13 @@ function putDev(d, row, idx) {
 function devRow(id) {
   return S.rows.findIndex(r => r.indexOf(id) >= 0);
 }
-function checks() {
-  const out = [],
-    D = designations(),
-    e = enc(),
-    T = totals(),
-    devs = Object.values(S.dev);
-  const add = (sev, msg, ref, id, fix) => out.push({ sev, msg, ref, id, fix });
+/* ---------- kontrola projektu ----------
+   checks() zbiera uwagi z kolejnych grup reguł. Każda grupa dostaje kontekst k = { add, D, e, T, devs, nB }:
+   add(poziom, komunikat, wskazówka, idAparatu, naprawa), oznaczenia, obudowę, sumy, aparaty i wielkości sieci.
+   Kolejność wywołań ustala kolejność uwag w zakładce Kontrola (testy na nią liczą). */
+/* rzędy: przepełnienie, kilku producentów w jednym rzędzie */
+function checkRows(k) {
+  const { add, e } = k;
   S.rows.forEach((r, i) => {
     const u = rowUse(i);
     if (u > e.mpr)
@@ -803,10 +803,10 @@ function checks() {
         'Sprawdź, czy szyna grzebieniowa pasuje do wszystkich aparatów w rzędzie.'
       );
   });
-  if (!devs.length) {
-    add('info', 'Obudowa jest pusta. Dodaj aparaty z biblioteki.');
-    return out;
-  }
+}
+/* aparaty, które powinny być w każdej rozdzielnicy: rozłącznik główny, ogranicznik przepięć */
+function checkMainDevices(k) {
+  const { add, devs } = k;
   const sws = devs.filter(d => d.t === 'sw');
   if (!sws.length) {
     const In = SW_IN.find(x => x >= S.set.przedl) || 125,
@@ -848,192 +848,211 @@ function checks() {
           }
     );
   }
-  const nB = netCalc();
-  devs.filter(isCirc).forEach(d => {
-    const i = ib(d),
-      z = iz(d),
-      n = D[d.id] + ' ' + esc(d.name);
-    if (i > d.p.In) {
-      const In2 = STD_IN.find(x => x >= i),
-        mm2 = In2 ? cableFor(d, In2) : null,
-        up = mm2 && mm2 > d.c.cable;
-      add(
-        'crit',
-        `<b>${n}</b>: prąd obciążenia ${fmt(i)} A przekracza In ${d.p.In} A.`,
-        'Warunek Ib ≤ In. Zwiększ prąd zabezpieczenia lub podziel obwód.',
-        d.id,
-        mm2
-          ? {
-              l: 'Ustaw In ' + In2 + ' A' + (up ? ' i przewód ' + fmt(mm2) + ' mm²' : ''),
-              f: () => {
-                d.p.In = In2;
-                if (up) d.c.cable = mm2;
-              }
+}
+/* obwód: prąd obciążenia względem zabezpieczenia i zabezpieczenie względem przewodu (Ib ≤ In ≤ Iz) */
+function checkCircuitLoad(k, d) {
+  const { add, D } = k;
+  const i = ib(d),
+    z = iz(d),
+    n = D[d.id] + ' ' + esc(d.name);
+  if (i > d.p.In) {
+    const In2 = STD_IN.find(x => x >= i),
+      mm2 = In2 ? cableFor(d, In2) : null,
+      up = mm2 && mm2 > d.c.cable;
+    add(
+      'crit',
+      `<b>${n}</b>: prąd obciążenia ${fmt(i)} A przekracza In ${d.p.In} A.`,
+      'Warunek Ib ≤ In. Zwiększ prąd zabezpieczenia lub podziel obwód.',
+      d.id,
+      mm2
+        ? {
+            l: 'Ustaw In ' + In2 + ' A' + (up ? ' i przewód ' + fmt(mm2) + ' mm²' : ''),
+            f: () => {
+              d.p.In = In2;
+              if (up) d.c.cable = mm2;
             }
-          : undefined
-      );
-    }
-    if (z && d.p.In > z) {
-      const mm2 = cableFor(d, d.p.In);
-      add(
-        'crit',
-        `<b>${n}</b>: In ${d.p.In} A > Iz ${fmt(z)} A przewodu ${fmt(d.c.cable)} mm².`,
-        'Warunek In ≤ Iz. Zwiększ przekrój przewodu lub zmniejsz In.',
-        d.id,
-        mm2
-          ? {
-              l: 'Zwiększ przewód do ' + fmt(mm2) + ' mm²',
-              f: () => {
-                d.c.cable = mm2;
-              }
+          }
+        : undefined
+    );
+  }
+  if (z && d.p.In > z) {
+    const mm2 = cableFor(d, d.p.In);
+    add(
+      'crit',
+      `<b>${n}</b>: In ${d.p.In} A > Iz ${fmt(z)} A przewodu ${fmt(d.c.cable)} mm².`,
+      'Warunek In ≤ Iz. Zwiększ przekrój przewodu lub zmniejsz In.',
+      d.id,
+      mm2
+        ? {
+            l: 'Zwiększ przewód do ' + fmt(mm2) + ' mm²',
+            f: () => {
+              d.c.cable = mm2;
             }
-          : undefined
-      );
-    }
-    const r = protRcd(d);
-    if (NEED30.includes(d.c.kind) && (!r || r.p.idn > 30)) {
-      let fix;
-      if (d.t === 'rcbo')
+          }
+        : undefined
+    );
+  }
+}
+/* obwód: ochrona różnicowoprądowa (30 mA tam, gdzie wymagana; typ RCD) */
+function checkCircuitRcd(k, d) {
+  const { add, D, devs } = k;
+  const n = D[d.id] + ' ' + esc(d.name);
+  const r = protRcd(d);
+  if (NEED30.includes(d.c.kind) && (!r || r.p.idn > 30)) {
+    let fix;
+    if (d.t === 'rcbo')
+      fix = {
+        l: 'Ustaw IΔn 30 mA',
+        f: () => {
+          d.p.idn = 30;
+        }
+      };
+    else {
+      /* istniejąca różnicówka 30 mA pasująca do obwodu (4P albo 2P na tej samej fazie), najmniej obciążona */
+      const cnt = id => devs.filter(m => m.t === 'mcb' && m.rcd === id).length;
+      const ok = devs
+        .filter(x => x.t === 'rcd' && x.p.idn <= 30 && (x.p.poles == 4 || (!is3(d) && rcdPh(x) === d.c.ph)))
+        .sort((a, b) => cnt(a.id) - cnt(b.id))[0];
+      if (ok)
         fix = {
-          l: 'Ustaw IΔn 30 mA',
+          l: 'Przypisz do ' + D[ok.id],
           f: () => {
-            d.p.idn = 30;
+            d.rcd = ok.id;
           }
         };
       else {
-        /* istniejąca różnicówka 30 mA pasująca do obwodu (4P albo 2P na tej samej fazie), najmniej obciążona */
-        const cnt = id => devs.filter(m => m.t === 'mcb' && m.rcd === id).length;
-        const ok = devs
-          .filter(x => x.t === 'rcd' && x.p.idn <= 30 && (x.p.poles == 4 || (!is3(d) && rcdPh(x) === d.c.ph)))
-          .sort((a, b) => cnt(a.id) - cnt(b.id))[0];
-        if (ok)
+        const here = devRow(d.id),
+          row = rowWithRoom(4, here);
+        if (row >= 0)
           fix = {
-            l: 'Przypisz do ' + D[ok.id],
+            l: 'Dodaj różnicówkę 40 A / 30 mA typ A',
             f: () => {
-              d.rcd = ok.id;
+              const nd = newDev('rcd', d.m, { In: 40, poles: 4, idn: 30, kind: 'A', sel: false }, null, 'Różnicówka');
+              putDev(nd, row, row === here ? S.rows[row].indexOf(d.id) : undefined);
+              d.rcd = nd.id;
             }
           };
-        else {
-          const here = devRow(d.id),
-            row = rowWithRoom(4, here);
-          if (row >= 0)
-            fix = {
-              l: 'Dodaj różnicówkę 40 A / 30 mA typ A',
-              f: () => {
-                const nd = newDev('rcd', d.m, { In: 40, poles: 4, idn: 30, kind: 'A', sel: false }, null, 'Różnicówka');
-                putDev(nd, row, row === here ? S.rows[row].indexOf(d.id) : undefined);
-                d.rcd = nd.id;
-              }
-            };
+      }
+    }
+    add(
+      'crit',
+      `<b>${n}</b> (${KINDS[d.c.kind]}) nie ma ochrony różnicowoprądowej 30 mA.`,
+      'Wymóg ochrony uzupełniającej, PN-HD 60364-4-41 p. 411.3.3 oraz części 7xx.',
+      d.id,
+      fix
+    );
+  }
+  if (d.c.kind === 'ev' && r && r.p.kind !== 'B')
+    add(
+      'warn',
+      `<b>${n}</b>: ładowarka EV za RCD typu ${r.p.kind}.`,
+      'PN-HD 60364-7-722: RCD typu B albo typ A z modułem RDC-DD 6 mA DC w ładowarce.',
+      d.id,
+      {
+        l: 'Zmień typ ' + D[r.id] + ' na B',
+        f: () => {
+          r.p.kind = 'B';
         }
       }
+    );
+  if (r && r.p.kind === 'AC')
+    add(
+      'info',
+      `<b>${n}</b> chroniony RCD typu AC.`,
+      'Dla odbiorników z elektroniką zalecany jest typ A lub F.',
+      d.id,
+      {
+        l: 'Zmień typ ' + D[r.id] + ' na A',
+        f: () => {
+          r.p.kind = 'A';
+        }
+      }
+    );
+}
+/* obwód: spadek napięcia, samoczynne wyłączenie, zdolność zwarciowa */
+function checkCircuitNet(k, d) {
+  const { add, D, nB } = k;
+  const n = D[d.id] + ' ' + esc(d.name);
+  const r = protRcd(d);
+  const cc = circCalc(d),
+    lim = +sv('duObw'),
+    bigger = test => {
+      const m = STD_MM.find(x => x > d.c.cable && test(circCalc(d, x)));
+      return m
+        ? {
+            l: 'Zwiększ przewód do ' + fmt(m) + ' mm²',
+            f: () => {
+              d.c.cable = m;
+            }
+          }
+        : undefined;
+    };
+  if (cc.du > lim)
+    add(
+      'warn',
+      `<b>${n}</b>: spadek napięcia ${fmt(cc.du, 2)}% przekracza ${fmt(lim)}% (${fmt(clen(d))} m, ${fmt(d.c.cable)} mm², ${fmt(+d.c.P)} kW).`,
+      'PN-HD 60364-5-52 zał. G. Zwiększ przekrój albo skróć obwód.',
+      d.id,
+      bigger(x => x.du <= lim)
+    );
+  if (S.set.siec === 'TT') {
+    if (!r)
       add(
         'crit',
-        `<b>${n}</b> (${KINDS[d.c.kind]}) nie ma ochrony różnicowoprądowej 30 mA.`,
-        'Wymóg ochrony uzupełniającej, PN-HD 60364-4-41 p. 411.3.3 oraz części 7xx.',
+        `<b>${n}</b>: w układzie TT samoczynne wyłączenie zasilania wymaga wyłącznika różnicowoprądowego.`,
+        'PN-HD 60364-4-41 p. 411.5 (warunek RA·IΔn ≤ 50 V).',
+        d.id
+      );
+  } else if (!cc.trip) {
+    const txt = `<b>${n}</b>: pętla zwarcia ${fmt(cc.zs, 2)} Ω daje prąd zwarcia ${fmt(cc.ik1, 0)} A, mniej niż próg wyzwalania ${fmt(cc.ia, 0)} A (${d.p.curve}${d.p.In}).`,
+      fix = bigger(x => x.trip);
+    if (r)
+      add(
+        'warn',
+        txt + ' Wyłączenie przy zwarciu do PE zapewnia ' + D[r.id] + '.',
+        'PN-HD 60364-4-41 p. 411.4. Zwarcie L–N nie zostanie wyłączone bezzwłocznie: skróć obwód, zwiększ przekrój albo zmień charakterystykę.',
         d.id,
         fix
       );
-    }
-    if (d.c.kind === 'ev' && r && r.p.kind !== 'B')
-      add(
-        'warn',
-        `<b>${n}</b>: ładowarka EV za RCD typu ${r.p.kind}.`,
-        'PN-HD 60364-7-722: RCD typu B albo typ A z modułem RDC-DD 6 mA DC w ładowarce.',
-        d.id,
-        {
-          l: 'Zmień typ ' + D[r.id] + ' na B',
-          f: () => {
-            r.p.kind = 'B';
-          }
-        }
-      );
-    if (r && r.p.kind === 'AC')
-      add(
-        'info',
-        `<b>${n}</b> chroniony RCD typu AC.`,
-        'Dla odbiorników z elektroniką zalecany jest typ A lub F.',
-        d.id,
-        {
-          l: 'Zmień typ ' + D[r.id] + ' na A',
-          f: () => {
-            r.p.kind = 'A';
-          }
-        }
-      );
-    /* spadek napięcia, samoczynne wyłączenie, zdolność zwarciowa */
-    const cc = circCalc(d),
-      lim = +sv('duObw'),
-      bigger = test => {
-        const m = STD_MM.find(x => x > d.c.cable && test(circCalc(d, x)));
-        return m
-          ? {
-              l: 'Zwiększ przewód do ' + fmt(m) + ' mm²',
-              f: () => {
-                d.c.cable = m;
-              }
-            }
-          : undefined;
-      };
-    if (cc.du > lim)
-      add(
-        'warn',
-        `<b>${n}</b>: spadek napięcia ${fmt(cc.du, 2)}% przekracza ${fmt(lim)}% (${fmt(clen(d))} m, ${fmt(d.c.cable)} mm², ${fmt(+d.c.P)} kW).`,
-        'PN-HD 60364-5-52 zał. G. Zwiększ przekrój albo skróć obwód.',
-        d.id,
-        bigger(x => x.du <= lim)
-      );
-    if (S.set.siec === 'TT') {
-      if (!r)
-        add(
-          'crit',
-          `<b>${n}</b>: w układzie TT samoczynne wyłączenie zasilania wymaga wyłącznika różnicowoprądowego.`,
-          'PN-HD 60364-4-41 p. 411.5 (warunek RA·IΔn ≤ 50 V).',
-          d.id
-        );
-    } else if (!cc.trip) {
-      const txt = `<b>${n}</b>: pętla zwarcia ${fmt(cc.zs, 2)} Ω daje prąd zwarcia ${fmt(cc.ik1, 0)} A, mniej niż próg wyzwalania ${fmt(cc.ia, 0)} A (${d.p.curve}${d.p.In}).`,
-        fix = bigger(x => x.trip);
-      if (r)
-        add(
-          'warn',
-          txt + ' Wyłączenie przy zwarciu do PE zapewnia ' + D[r.id] + '.',
-          'PN-HD 60364-4-41 p. 411.4. Zwarcie L–N nie zostanie wyłączone bezzwłocznie: skróć obwód, zwiększ przekrój albo zmień charakterystykę.',
-          d.id,
-          fix
-        );
-      else
-        add(
-          'crit',
-          txt,
-          'Warunek samoczynnego wyłączenia Zs·Ia ≤ U0 nie jest spełniony (PN-HD 60364-4-41 p. 411.4).',
-          d.id,
-          fix
-        );
-    }
-    const icn = +d.p.icn || 6;
-    if (icn < nB.ikB)
+    else
       add(
         'crit',
-        `<b>${n}</b>: zdolność zwarciowa ${icn} kA jest mniejsza niż prąd zwarciowy w rozdzielnicy ${fmt(nB.ikB, 1)} kA.`,
-        'Warunek Icn ≥ Ik (PN-HD 60364-4-43 p. 434.5.1).',
+        txt,
+        'Warunek samoczynnego wyłączenia Zs·Ia ≤ U0 nie jest spełniony (PN-HD 60364-4-41 p. 411.4).',
         d.id,
-        nB.ikB <= 10
-          ? {
-              l: 'Ustaw Icn 10 kA',
-              f: () => {
-                d.p.icn = 10;
-              }
-            }
-          : undefined
+        fix
       );
-  });
+  }
+  const icn = +d.p.icn || 6;
+  if (icn < nB.ikB)
+    add(
+      'crit',
+      `<b>${n}</b>: zdolność zwarciowa ${icn} kA jest mniejsza niż prąd zwarciowy w rozdzielnicy ${fmt(nB.ikB, 1)} kA.`,
+      'Warunek Icn ≥ Ik (PN-HD 60364-4-43 p. 434.5.1).',
+      d.id,
+      nB.ikB <= 10
+        ? {
+            l: 'Ustaw Icn 10 kA',
+            f: () => {
+              d.p.icn = 10;
+            }
+          }
+        : undefined
+    );
+}
+/* spadek napięcia w WLZ */
+function checkWlz(k) {
+  const { add, T, nB } = k;
   if (nB.duWlz > +sv('duWlz'))
     add(
       'warn',
       `Spadek napięcia w WLZ ${fmt(nB.duWlz, 2)}% przekracza ${fmt(+sv('duWlz'))}% (${fmt(+sv('wlzLen'))} m, ${fmt(wlzMm())} mm², moc szczytowa ${fmt(T.Pd)} kW).`,
       'Zwiększ przekrój WLZ (większe zabezpieczenie przedlicznikowe dobiera większy przekrój) albo zmniejsz moc szczytową.'
     );
+}
+/* różnicówki: bez obwodów, przeciążone, 2P na złej fazie albo z obwodem trójfazowym */
+function checkRcds(k) {
+  const { add, D, devs } = k;
   devs
     .filter(d => d.t === 'rcd')
     .forEach(r => {
@@ -1076,6 +1095,11 @@ function checks() {
       if (r.p.poles == 2 && devs.some(d => d.t === 'mcb' && d.rcd === r.id && is3(d)))
         add('crit', `<b>${D[r.id]}</b> 2P zasila obwód trójfazowy.`, 'Obwody 3F wymagają RCD 4P.', r.id);
     });
+}
+/* zasilanie: selektywność, rozłącznik, prąd i moc szczytowa, fazy, rezerwa miejsca */
+function checkSupply(k) {
+  const { add, D, T, devs } = k;
+  const sws = devs.filter(d => d.t === 'sw');
   const maxIn = Math.max(0, ...devs.filter(isCirc).map(d => d.p.In));
   if (maxIn && maxIn * 1.6 > S.set.przedl)
     add(
@@ -1149,7 +1173,10 @@ function checks() {
       `Rezerwa miejsca ${fmt(Math.max(0, T.cap - T.used))} mod. to mniej niż 20%.`,
       'Zostaw miejsce na rozbudowę instalacji.'
     );
-  /* licznik i stycznik w torze obwodu */
+}
+/* licznik i stycznik w torze obwodu */
+function checkTor(k) {
+  const { add, D, devs } = k;
   devs
     .filter(d => d.t === 'meter' || d.t === 'contactor')
     .forEach(x => {
@@ -1214,6 +1241,32 @@ function checks() {
           }
         );
     });
+}
+function checks() {
+  const out = [];
+  const k = {
+    add: (sev, msg, ref, id, fix) => out.push({ sev, msg, ref, id, fix }),
+    D: designations(),
+    e: enc(),
+    T: totals(),
+    devs: Object.values(S.dev)
+  };
+  checkRows(k);
+  if (!k.devs.length) {
+    k.add('info', 'Obudowa jest pusta. Dodaj aparaty z biblioteki.');
+    return out;
+  }
+  k.nB = netCalc();
+  checkMainDevices(k);
+  k.devs.filter(isCirc).forEach(d => {
+    checkCircuitLoad(k, d);
+    checkCircuitRcd(k, d);
+    checkCircuitNet(k, d);
+  });
+  checkWlz(k);
+  checkRcds(k);
+  checkSupply(k);
+  checkTor(k);
   wireCheck().out.forEach(x => out.push(x));
   termIssues().forEach(x => out.push(x));
   return out;

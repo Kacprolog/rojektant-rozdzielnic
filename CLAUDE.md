@@ -12,7 +12,8 @@ Szczegóły przekazania, znane problemy i plan prac: `HANDOFF.md`. Dziennik zmia
 npm start            # serwer statyczny bez zależności: http://localhost:4173 (testy używają własnego na 4174)
 npm install          # tylko dla testów (@playwright/test)
 npx playwright install chromium webkit   # raz, jeśli nie ma przeglądarek
-npm test             # 69 testów × 3 projekty: desktop 1600 px i telefon 390 px (Chromium), safari (WebKit)
+npm run format       # Prettier (CI sprawdza: npm run format:check)
+npm test             # 80 testów × 3 projekty: desktop 1600 px i telefon 390 px (Chromium), safari (WebKit)
 node scripts/podglad-druku.js            # PDF i zrzuty stron wydruku w test-results/druk/
 ```
 
@@ -41,6 +42,7 @@ tests/obliczenia.spec.js    spadki napięcia, pętla zwarcia, Icn, prąd szczyto
 tests/dotyk.spec.js         powiększanie obudowy, przenoszenie aparatów dotykiem
 tests/tor.spec.js           licznik i stycznik w torze obwodu, sterowanie stycznika
 tests/odpornosc.spec.js     złe dane: HTML w nazwach, parametry spoza zakresu, uszkodzone wpisy
+tests/przeglad.spec.js      poprawki z przeglądu: rozkład faz, listwy, projekty nie do wczytania, klawiatura, Icn RCBO, czcionki
 tests/naprawy.spec.js       naprawy z kontroli, pasek szybkiej edycji
 tests/symulacja.spec.js     symulacja, awarie, przeciąganie przewodów
 tests/p0.spec.js    plik projektu, lista projektów, cofanie, druk
@@ -63,6 +65,7 @@ Skrypty są **klasyczne** i ładowane po kolei. Wszystkie `const`/`function` z n
 - **Tor obwodu**: licznik i stycznik mają `d.circ` (id wyłącznika obwodu). `terms()` daje im zaciski dopiero w torze; `chainOf(obwód)` zwraca aparaty toru w kolejności połączeń; `autoConns()` łączy wyłącznik → licznik → stycznik, a odejście do kabla rysowane jest z końca toru.
 - **Symulacja** (`S.sim`, `js/sim.js`): `renderBoard()` liczy `SIMC=simCalc()` i na tej podstawie nadaje klasy `s-on/off/dead/part` aparatom, a `paint()` w `drawWires()` wygasza przewody bez napięcia i dodaje animację prądu. To stan widoku: żadna akcja symulacji nie może zmieniać `DATA_KEYS`.
 - **Ustawienia zasilania** czytaj przez `sv(klucz)` (wartość domyślna z `SET_DEF`), nie wprost z `S.set`: starsze projekty nie mają nowszych pól.
+- **Kontrola** (`checks()` w `js/model.js`) to ciąg grup reguł `checkRows`, `checkMainDevices`, `checkCircuitLoad`, `checkCircuitRcd`, `checkCircuitNet`, `checkWlz`, `checkRcds`, `checkSupply`, `checkTor` (+ `wireCheck`, `termIssues`). Nową regułę dopisz do właściwej grupy; kolejność grup to kolejność uwag.
 - **Naprawy**: uwaga z `checks()` / `wireCheck()` może mieć `fix = { l: etykieta, f: funkcja }`. `f` tylko zmienia `S`; `render()` woła obsługa kliknięcia, więc naprawa jest jednym krokiem cofania. Dodawaj `fix` tylko wtedy, gdy zmiana jest jednoznaczna.
 - **Druk**: `printView()` renderuje obudowę w `#board` dwa razy (front, okablowanie), kopiuje HTML do `#print` i przywraca widok. `#print` jest widoczny tylko w `@media print`.
 
@@ -76,7 +79,7 @@ Skrypty są **klasyczne** i ładowane po kolei. Wszystkie `const`/`function` z n
 6. **Nie ma `alert/confirm/prompt`.** Potwierdzenia budujemy na stronie przez `ask(komunikat, etykieta, akcja)`. Komunikaty krótkie przez `toast()`.
 7. **Ukrywanie elementów** atrybutem `hidden` (globalna reguła `[hidden]{display:none!important}`).
 8. **Liczby**: `fmt()` (format `pl-PL`), w tabelach `font-variant-numeric: tabular-nums`. CSV z separatorem `;` i przecinkiem dziesiętnym.
-9. **Po każdej zmianie** uruchom `npm test`, dopisz test dla nowej funkcji i wpis w `CHANGELOG.md`. Gdy zmieniasz model przykładu, zaktualizuj oczekiwania w teście „model połączeń dla przykładu jest stabilny” (obecnie 48 połączeń, szyny `3F8` i `3F3`). Zmiany wyglądu sprawdzaj wzrokowo (zrzut ekranu, `scripts/podglad-druku.js`): testy nie wykryły kiedyś paska widocznego mimo `hidden`.
+9. **Po każdej zmianie** uruchom `npm run format` i `npm test`; commituj tylko przy zerowym kodzie wyjścia testów (nie przez potok, który go gubi), dopisz test dla nowej funkcji i wpis w `CHANGELOG.md`. Gdy zmieniasz model przykładu, zaktualizuj oczekiwania w teście „model połączeń dla przykładu jest stabilny” (obecnie 48 połączeń, szyny `3F8` i `3F3`). Zmiany wyglądu sprawdzaj wzrokowo (zrzut ekranu, `scripts/podglad-druku.js`): testy nie wykryły kiedyś paska widocznego mimo `hidden`.
 10. Dane katalogowe są orientacyjne. Nie wpisuj numerów katalogowych ani cen z pamięci; tylko z dostarczonych przez użytkownika katalogów/cenników.
 
 ## Słowniczek skrótów w kodzie
