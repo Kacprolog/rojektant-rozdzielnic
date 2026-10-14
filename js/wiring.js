@@ -259,7 +259,7 @@ function drawWires(){const cab=$('#board');
   const touches=c=>!S.sel||!!SIMC||[c.a,c.b].some(e=>e.id===S.sel||e.rcd===S.sel||e.bar==='N:'+S.sel);
   const shown=c=>wf[(c.kind==='mostek')?'PE':c.ph];
   /* c (opcjonalnie): przewód dodany ręcznie – dostaje data-w do zaznaczania oraz obwódkę błędu / zaznaczenia. */
-  const paint=(d,ph,mm,title,pe,dim,c)=>{const w=wireW(mm),u=c&&c.user,bad=u?wc.bad[c.id]:'',sel=u&&wireSel===c.id,at=u?` data-w="${c.id}"`:'';
+  const paint=(d,ph,mm,title,pe,dim,c)=>{const w=wireW(mm),u=c&&c.user,bad=u?wc.bad[c.id]:'',sel=u&&wireSel===c.id,at=u?` data-w="${c.id}" tabindex="0" role="button" aria-label="${esc(title)}"`:'';
     const mark=bad==='crit'||bad==='warn';
     /* symulacja: przewód bez napięcia jest przygaszony, a po przewodzie z prądem przesuwają się kreski */
     const sd=!!(SIMC&&c&&!SIMC.live(epKey(c.a))),fl=SIMC&&c&&SIMC.flows(c)?`<path class="flow" d="${d}" fill="none" stroke="var(--wire-hl)" stroke-opacity=".9" stroke-width="${Math.max(1,w*.42).toFixed(2)}" stroke-dasharray="3 11" stroke-linecap="round" pointer-events="none"/>`:'';
@@ -314,9 +314,9 @@ function drawWires(){const cab=$('#board');
     out+=`<g opacity="${dim?.25:1}">${g}</g>`;}));
   /* tryb ręczny: klikalne zaciski aparatów, listew i WLZ (data-ep = zapisany koniec przewodu) */
   if(man){const on=wirePick?JSON.stringify(wirePick):'';
-    const tp=(e,x,y,t,r)=>{const s=JSON.stringify(e);return `<circle class="tp${s===on?' on':''}" data-ep="${esc(s)}" cx="${x}" cy="${y}" r="${r}"><title>${esc(t)}</title></circle>`;};
+    const tp=(e,x,y,t,r)=>{const s=JSON.stringify(e);return `<circle class="tp${s===on?' on':''}" data-ep="${esc(s)}" tabindex="0" role="button" aria-label="${esc(t)}" cx="${x}" cy="${y}" r="${r}"><title>${esc(t)}</title></circle>`;};
     S.rows.flat().forEach(id=>{const t=terms(S.dev[id]);['top','bot'].forEach(side=>t[side].forEach((ph,i)=>{const e={k:'dev',id,side,ph},P=pt(e);out+=tp({k:'dev',id,side,i},P.x,P.y,'Zacisk '+epName(e,D),6);}));});
-    const bt=(bar,xa,xb,y,lab)=>{const s=JSON.stringify({k:'bar',bar});out+=`<rect class="tp${s===on?' on':''}" data-ep="${esc(s)}" x="${xa}" y="${y-7}" width="${xb-xa}" height="14" rx="3"><title>${esc(lab)}</title></rect>`;};
+    const bt=(bar,xa,xb,y,lab)=>{const s=JSON.stringify({k:'bar',bar});out+=`<rect class="tp${s===on?' on':''}" data-ep="${esc(s)}" tabindex="0" role="button" aria-label="${esc(lab)}" x="${xa}" y="${y-7}" width="${xb-xa}" height="14" rx="3"><title>${esc(lab)}</title></rect>`;};
     segs.forEach(s=>bt(s.k,s.x0,s.x1,nY,'Listwa '+s.lab));bt('PE',x0,x1,peY,'Listwa PE');
     ['L1','L2','L3','N','PE'].forEach(ph=>{if(ph==='N'&&S.set.siec==='TN-C-S')return;const e={k:'wlz',ph};out+=tp(e,pt(e).x,6+(ord[ph]%2)*11,'WLZ '+(ph==='PE'&&S.set.siec==='TN-C-S'?'PEN':ph),5);});}
   const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('class','wires');svg.setAttribute('width',W);svg.setAttribute('height',H);

@@ -365,3 +365,8 @@ svg.wires .rb{stroke:var(--accent);stroke-width:3;stroke-dasharray:6 4;stroke-li
 svg.wires{-webkit-user-select:none;user-select:none}
 /* Projekty, których nie udało się wczytać */
 .badbox{display:inline-flex;flex-wrap:wrap;align-items:center;gap:6px;padding:2px 8px;border:1px solid var(--warn);border-radius:8px;background:var(--warn-bg)}
+/* Fokus z klawiatury w obudowie */
+svg.wires .tp:focus{outline:none;stroke:var(--accent);stroke-opacity:1;stroke-width:3;fill-opacity:.35}
+svg.wires path.w:focus{outline:none;stroke-width:6}
+.slot:focus{outline:none}
+.slot:focus-visible .dev{box-shadow:0 0 0 3px var(--accent),3px 3px 0 var(--dev-edge)}

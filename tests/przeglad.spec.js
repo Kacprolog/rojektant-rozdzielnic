@@ -93,3 +93,52 @@ test('projekty nie do wczytania: komunikat, pobranie, ponowna próba, usunięcie
   await expect(page.locator('#badBox')).toBeHidden();
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('rozdz-v2')).bad)).toEqual([]);
 });
+
+test('klawiatura: przewód dodany i usunięty bez myszy, aparat zaznaczony Enterem, zakładki strzałkami', async ({ page }) => {
+  await page.click('[data-view="wires"]');
+  await page.click('[data-wmode="manual"]');
+  const d = await ids(page);
+  const ep = e => page.locator(`svg.wires [data-ep='${JSON.stringify(e)}']`);
+  const a = ep({ k: 'wlz', ph: 'L1' }), b = ep({ k: 'dev', id: d['Rozłącznik główny'], side: 'top', i: 0 });
+  await expect(a).toHaveAttribute('tabindex', '0');
+  await a.focus();
+  await page.keyboard.press('Enter');
+  await expect(a).toBeFocused();                      // fokus wraca po przerysowaniu
+  await expect(page.locator('svg.wires .tp.on')).toHaveCount(1);
+  await b.focus();
+  await page.keyboard.press(' ');
+  await expect(page.locator('.toast')).toHaveText('Dodano przewód');
+  const w = page.locator('svg.wires path[data-w]');
+  await expect(w).toHaveCount(1);
+  await w.focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('[data-wact="del"]')).toBeVisible();
+  await page.keyboard.press('Delete');
+  await expect(w).toHaveCount(0);
+
+  // Aparat: Enter zaznacza.
+  await page.click('[data-view="front"]');
+  const s = page.locator(`#board .slot[data-id="${d['Gniazda salon']}"]`);
+  await s.focus();
+  await page.keyboard.press('Enter');
+  await expect(s).toHaveClass(/sel/);
+  await expect(s).toBeFocused();
+
+  // Zakładki: strzałki i End, tylko wybrana w kolejności Tab.
+  await page.locator('#tab-aparat').focus();
+  await page.keyboard.press('ArrowRight');
+  await expect(page.locator('#tab-kontrola')).toBeFocused();
+  await expect(page.locator('#tab-kontrola')).toHaveAttribute('aria-selected', 'true');
+  await expect(page.locator('#panel')).toHaveAttribute('aria-labelledby', 'tab-kontrola');
+  await page.keyboard.press('End');
+  await expect(page.locator('#tab-bom')).toBeFocused();
+  expect(await page.locator('#tabs [tabindex="0"]').count()).toBe(1);
+});
+
+test('Backspace nie usuwa aparatu (poza Makiem); Delete usuwa', async ({ page }) => {
+  const mac = await page.evaluate(() => /Mac|iPhone|iPad/.test(navigator.platform || ''));
+  await page.locator('#board .slot').nth(8).click();
+  await page.keyboard.press('Backspace');
+  await expect(page.locator('#board .slot')).toHaveCount(mac ? 20 : 21);
+  if (!mac) { await page.keyboard.press('Delete'); await expect(page.locator('#board .slot')).toHaveCount(20); }
+});

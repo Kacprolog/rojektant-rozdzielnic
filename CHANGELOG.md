@@ -25,6 +25,16 @@ Każdy punkt to osobny commit; numeracja jak w przeglądzie (HANDOFF.md → „Z
   którego nie da się narysować.
 - Test w `tests/przeglad.spec.js`.
 
+### 4 i 6. Klawiatura, Backspace
+- **Okablowanie z klawiatury:** zaciski i przewody są osiągalne klawiszem Tab (`tabindex`, `role=button`, opis dla czytnika
+  ekranu). Enter lub spacja na zacisku działa jak kliknięcie, na przewodzie go zaznacza (Delete usuwa), na aparacie go
+  zaznacza (w symulacji przełącza dźwignię). Po przerysowaniu fokus wraca na ten sam element.
+- **Zakładki** wg wzorca ARIA: `aria-controls`, panel `role=tabpanel` z `aria-labelledby`, w kolejności Tab tylko wybrana
+  zakładka, przełączanie strzałkami oraz Home i End.
+- **Backspace** nie usuwa już aparatu ani przewodu (poza Makiem, gdzie to jedyny klawisz kasowania); usuwa Delete.
+  Poza polami tekstowymi Backspace jest blokowany: silnik WebKit cofał nim stronę w historii (wykrył to nowy test).
+- Testy w `tests/przeglad.spec.js` (2).
+
 ## 0.14.1 (13.10.2026) — poprawki z przeglądu całego kodu
 
 Przegląd objął `js/`, `css/`, `index.html`, `scripts/`, `tests/` i workflow. Każde znalezisko poniżej zostało najpierw

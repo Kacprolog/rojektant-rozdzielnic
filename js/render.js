@@ -79,7 +79,7 @@ function renderBoard(){const e=enc(),D=designations(),M=34;$('#board').className
   $('#board').innerHTML=S.rows.map((r,i)=>{const u=rowUse(i),wpx=Math.max(e.mpr,u)*M;
     const devs=r.map(id=>{const d=S.dev[id],w=width(d),[a,b]=rate(d);
       const phs=isCirc(d)?phases(d).map(p=>`<i style="background:var(--${p.toLowerCase()})"></i>`).join(''):'';
-      return `<div class="slot ${S.sel===id?'sel':''}${SIMC?' s-'+SIMC.dev[id].st:''}" draggable="${COARSE?'false':'true'}" data-id="${id}" style="width:${w*M}px" title="${esc(D[id]+' '+d.name+' · '+desc(d))}">
+      return `<div class="slot ${S.sel===id?'sel':''}${SIMC?' s-'+SIMC.dev[id].st:''}" draggable="${COARSE?'false':'true'}" tabindex="0" data-id="${id}" style="width:${w*M}px" title="${esc(D[id]+' '+d.name+' · '+desc(d))}">
         <div class="dev m-${d.m}${['mcb','rcbo','rcd','sw'].indexOf(d.t)>=0?' lv':''}" style="--b:${MFR[d.m].c}"><div class="trm">${screwsFor(d,'top')}</div><div class="mk">${w>=2?MFR[d.m].s:MFR[d.m].s.slice(0,4)}</div>
         <div class="rt">${esc(a)}</div><div class="sub">${esc(b)}</div>${face(d)}<div class="trm b">${screwsFor(d,'bot')}</div></div>
         <div class="tag"><b>${D[id]}</b><span>${esc(d.name)}</span><span class="ph">${phs}</span></div>${S.sel===id&&!S.wires&&!simOn()?quickBar(d,r):''}</div>`;}).join('');
@@ -95,7 +95,9 @@ function renderBoard(){const e=enc(),D=designations(),M=34;$('#board').className
   if(z!==1){wrap.style.width=Math.ceil(cab.offsetWidth*z)+'px';wrap.style.height=Math.ceil(cab.offsetHeight*z)+'px';}}
 function renderTabs(){const ck=checks(),nc=ck.filter(c=>c.sev==='crit').length,nw=ck.filter(c=>c.sev==='warn').length;
   const T=[['aparat','Aparat'],['kontrola','Kontrola'],['bilans','Bilans'],['struktura','Struktura'],['kable','Kable'],['bom','Zestawienie']];
-  $('#tabs').innerHTML=T.map(([k,l])=>`<button class="tab" role="tab" data-tab="${k}" aria-selected="${S.tab===k}">${l}${k==='kontrola'&&(nc||nw)?`<span class="badge ${nc?'crit':'warn'}">${nc||nw}</span>`:''}</button>`).join('');}
+  $('#panel').setAttribute('aria-labelledby','tab-'+S.tab);
+  /* zakładki wg wzorca ARIA: tylko wybrana jest w kolejności Tab, strzałki przełączają (obsługa w app.js) */
+  $('#tabs').innerHTML=T.map(([k,l])=>`<button class="tab" role="tab" id="tab-${k}" aria-controls="panel" tabindex="${S.tab===k?0:-1}" data-tab="${k}" aria-selected="${S.tab===k}">${l}${k==='kontrola'&&(nc||nw)?`<span class="badge ${nc?'crit':'warn'}">${nc||nw}</span>`:''}</button>`).join('');}
 /* Wartość i etykieta opcji są zawsze escapowane tutaj: etykiety bywają nazwami aparatów, czyli danymi użytkownika albo z pliku. */
 function opt(v,cur,l){return `<option value="${esc(v)}" ${String(v)===String(cur)?'selected':''}>${esc(l==null?v:l)}</option>`;}
 function fsel(id,label,k,opts,cur){return `<div class="fld"><label for="${id}">${label}</label><select id="${id}" data-k="${k}">${opts.map(o=>Array.isArray(o)?opt(o[0],cur,o[1]):opt(o,cur)).join('')}</select></div>`;}

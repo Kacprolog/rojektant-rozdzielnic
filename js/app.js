@@ -159,11 +159,28 @@ panel.addEventListener('change',e=>{const t=e.target,d=S.dev[S.sel];
   if(k==='c.ph'){const n=rephase(d,t.value);render();if(n)toast('Przepięto przewód zasilający na '+t.value);return;}
   setPath(d,k,parseV(t.value));
   render();});
+/* Usuwanie klawiszem: Delete; Backspace tylko na Macu, gdzie to jedyny klawisz kasowania (gdzie indziej łatwo o pomyłkę). */
+const DEL_KEYS=/Mac|iPhone|iPad/.test(navigator.platform||'')?['Delete','Backspace']:['Delete'];
+/* Klawiatura w obudowie: Enter lub spacja na zacisku działa jak kliknięcie (dodawanie przewodu), na przewodzie zaznacza go
+   (potem Delete usuwa), na aparacie zaznacza go (w symulacji przełącza dźwignię). Fokus wraca na ten sam element po przerysowaniu. */
+function refocus(attr,val){const el=[...board.querySelectorAll('['+attr+']')].find(x=>x.getAttribute(attr)===val);if(el)el.focus();}
+board.addEventListener('keydown',e=>{if(e.key!=='Enter'&&e.key!==' ')return;const t=e.target;if(!t.closest)return;
+  const tp=t.closest('[data-ep]');if(tp){e.preventDefault();const k=tp.getAttribute('data-ep');wireClick(JSON.parse(k));refocus('data-ep',k);return;}
+  const wp=t.closest('[data-w]');if(wp){e.preventDefault();const k=wp.getAttribute('data-w');wireReset();wireSel=k;render(true);refocus('data-w',k);return;}
+  if(t.classList&&t.classList.contains('slot')){e.preventDefault();const id=t.dataset.id;
+    if(simOn()&&t.querySelector('.lever'))simLever(id);else{S.sel=id;S.active=rowOf(id);S.tab='aparat';render();}
+    const s=board.querySelector('.slot[data-id="'+id+'"]');if(s)s.focus();}});
+$('#tabs').addEventListener('keydown',e=>{if(['ArrowLeft','ArrowRight','Home','End'].indexOf(e.key)<0)return;e.preventDefault();
+  const order=[...$('#tabs').querySelectorAll('[data-tab]')].map(b=>b.dataset.tab);let i=order.indexOf(S.tab);
+  i=e.key==='Home'?0:e.key==='End'?order.length-1:(i+(e.key==='ArrowRight'?1:-1)+order.length)%order.length;
+  S.tab=order[i];renderTabs();renderPanel();save();$('#tab-'+S.tab).focus();});
 document.addEventListener('keydown',e=>{const inField=/INPUT|TEXTAREA/.test(document.activeElement.tagName);
+  /* Backspace poza polem tekstowym niczego nie robi; bez tego część przeglądarek (np. WebKit) cofa stronę w historii */
+  if(e.key==='Backspace'&&!/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)&&DEL_KEYS.indexOf('Backspace')<0)e.preventDefault();
   if((e.ctrlKey||e.metaKey)&&!e.altKey&&!inField){const k=e.key.toLowerCase();if(k==='z'||k==='y'){e.preventDefault();if(k==='y'||e.shiftKey)redo();else undo();return;}}
   if(e.key==='Escape'&&(wirePick||wireSel||wireMove)){wireReset();render(true);return;}
-  if((e.key==='Delete'||e.key==='Backspace')&&wireSel&&!/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)){e.preventDefault();wireDel();return;}
-  if((e.key==='Delete'||e.key==='Backspace')&&S.sel&&!/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)){e.preventDefault();delDev(S.sel);}});
+  if(DEL_KEYS.indexOf(e.key)>=0&&wireSel&&!/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)){e.preventDefault();wireDel();return;}
+  if(DEL_KEYS.indexOf(e.key)>=0&&S.sel&&!/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)){e.preventDefault();delDev(S.sel);}});
 $('#bSample').addEventListener('click',()=>{sample();render();toast('Wczytano przykładowy projekt domu jednorodzinnego');});
 $('#bBalance').addEventListener('click',balance);
 $('#bPrint').addEventListener('click',printView);
