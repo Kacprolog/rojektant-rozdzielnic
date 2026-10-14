@@ -14,7 +14,7 @@ npm install          # tylko dla testów (@playwright/test)
 npx playwright install chromium webkit   # raz, jeśli nie ma przeglądarek
 npm run format       # Prettier (CI sprawdza: npm run format:check)
 npm run typecheck    # TypeScript w trybie checkJs: sprawdza typy w js/*.js i sw.js, niczego nie kompiluje
-npm test             # 95 testów × 3 projekty: desktop 1600 px i telefon 390 px (Chromium), safari (WebKit)
+npm test             # 98 testów × 3 projekty: desktop 1600 px i telefon 390 px (Chromium), safari (WebKit)
 node scripts/podglad-druku.js            # PDF i zrzuty stron wydruku w test-results/druk/
 ```
 
@@ -53,6 +53,7 @@ tests/schemat.spec.js       schemat jednokreskowy
 tests/pwa.spec.js           manifest, lista plików service workera, instalacja, start bez sieci
 tests/sterowanie.spec.js    przewody sterownicze: cewka, przekaźnik, G12, kontrola, symulacja, plik
 tests/jednofazowe.spec.js   zasilanie jednofazowe: przełączenie, naprawy, obliczenia, okablowanie, plik
+tests/podpisy.spec.js       rozwijane podpisy aparatów i ich adnotacje
 types/projekt.d.ts  typy danych (State, Device, Endpoint, Wire, Conn…) tylko dla sprawdzania typów; strona go nie ładuje
 tsconfig.json, tsconfig.sw.json   konfiguracja sprawdzania typów (strona) i service workera (typy WebWorker)
 .github/workflows/pages.yml   CI: testy w 3 silnikach, potem publikacja na GitHub Pages
@@ -74,6 +75,7 @@ Skrypty są **klasyczne** i ładowane po kolei. Wszystkie `const`/`function` z n
 - **Tor obwodu**: licznik i stycznik mają `d.circ` (id wyłącznika obwodu). `terms()` daje im zaciski dopiero w torze; `chainOf(obwód)` zwraca aparaty toru w kolejności połączeń; `autoConns()` łączy wyłącznik → licznik → stycznik, a odejście do kabla rysowane jest z końca toru. Zaciski sterownicze (cewka A1/A2, styki 11/14 i 15/18) daje osobno `ctlTerms()`; `allTerms(d, strona)` to zaciski mocy i sterownicze w kolejności rysowania. Koniec przewodu na zacisku sterowniczym jest zapisany nazwą (`{k:'dev', id, side, c:'A1'}`), żyła takiego przewodu to `'S'`.
 - **Symulacja** (`S.sim`, `js/sim.js`): `renderBoard()` liczy `SIMC=simCalc()` i na tej podstawie nadaje klasy `s-on/off/dead/part` aparatom, a `paint()` w `drawWires()` wygasza przewody bez napięcia i dodaje animację prądu. To stan widoku: żadna akcja symulacji nie może zmieniać `DATA_KEYS`.
 - **Zasilanie jednofazowe** (`S.set.faz` = 1 albo 3, domyślnie 3): fazy dostępne w złączu daje `supPh()`, a `is1F()` mówi, czy zasilanie jest jednofazowe. Nie wpisuj na sztywno `['L1', 'L2', 'L3']` tam, gdzie chodzi o fazy zasilania (WLZ, źródła w symulacji, wybór fazy obwodu, wykres obciążenia).
+- **Podpisy aparatów**: przycisk `.tag[data-tag]` pod aparatem rozwija opis `tagPop()` (jeden naraz, `tagOpen`; Escape i kliknięcie obok zwijają). Adnotację liczy `annot()` w `js/render.js` z danych projektu (moc i faza obwodu, chronione obwody różnicówki, tor licznika i stycznika); nie jest zapisywana.
 - **Biblioteka aparatów** (z wyborem obudowy) to szuflada `#lib` otwierana przyciskiem `#bLib` „Dodaj aparat”; `libOpen` (null = automatycznie: otwarta w pustym projekcie) i `libShown()` w `js/render.js`. W testach przed użyciem biblioteki: `if (await page.locator('#lib').isHidden()) await page.click('#bLib')`.
 - **Ustawienia zasilania** czytaj przez `sv(klucz)` (wartość domyślna z `SET_DEF`), nie wprost z `S.set`: starsze projekty nie mają nowszych pól.
 - **Kontrola** (`checks()` w `js/model.js`) to ciąg grup reguł `checkRows`, `checkMainDevices`, `checkCircuitLoad`, `checkCircuitRcd`, `checkCircuitNet`, `checkWlz`, `checkRcds`, `checkSupply`, `checkTor` (+ `wireCheck`, `termIssues`). Nową regułę dopisz do właściwej grupy; kolejność grup to kolejność uwag.

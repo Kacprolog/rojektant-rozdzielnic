@@ -279,6 +279,63 @@ function modPx() {
   const v = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--M'));
   return v > 0 ? v : 44;
 }
+/* Podpis aparatu: mały przycisk z oznaczeniem pod aparatem; rozwinięty (tagOpen) pokazuje przeznaczenie i adnotację.
+   Adnotacja wynika z projektu, nie trzeba jej wpisywać. Rozwinięty jest najwyżej jeden podpis naraz. */
+let tagOpen = null;
+/** @param {Device} d */
+function annot(d, D) {
+  const devs = S.rows.flat().map(id => S.dev[id]),
+    /* kolejne numery zwijamy w zakres (-F3 … -F10), resztę wymieniamy: zakres nie może objąć aparatu spoza listy */
+    list = ids => {
+      const n = s => +(/(\d+)$/.exec(s) || [0, NaN])[1],
+        pre = s => s.replace(/\d+$/, ''),
+        out = [];
+      ids.forEach(s => {
+        const g = out[out.length - 1];
+        if (g && pre(g[g.length - 1]) === pre(s) && n(g[g.length - 1]) + 1 === n(s)) g.push(s);
+        else out.push([s]);
+      });
+      return out.map(g => (g.length > 2 ? g[0] + ' … ' + g[g.length - 1] : g.join(', '))).join(', ');
+    };
+  if (isCirc(d)) {
+    const r = protRcd(d);
+    return (
+      fmt(+d.c.P) +
+      ' kW · ' +
+      (is3(d) ? 'trójfazowy' : 'faza ' + d.c.ph) +
+      (r && r !== d ? ' · za ' + D[r.id] : d.t === 'rcbo' ? ' · z ochroną ' + d.p.idn + ' mA' : '')
+    );
+  }
+  switch (d.t) {
+    case 'sw':
+      return 'odłącza całą instalację';
+    case 'rcd': {
+      const ids = devs.filter(m => m.t === 'mcb' && m.rcd === d.id).map(m => D[m.id]);
+      return ids.length ? 'chroni ' + list(ids) : 'nie chroni jeszcze żadnego obwodu';
+    }
+    case 'spd':
+      return 'chroni przed przepięciami z sieci i wyładowań';
+    case 'lamp':
+      return is1F() ? 'sygnalizuje napięcie L1' : 'sygnalizuje obecność faz L1–L3';
+    case 'meter':
+      return d.circ && S.dev[d.circ] ? 'mierzy energię obwodu ' + D[d.circ] : 'poza torem obwodu';
+    case 'contactor':
+      return d.circ && S.dev[d.circ]
+        ? 'łączy obwód ' +
+            D[d.circ] +
+            ' · ' +
+            ({ man: 'ręcznie', g12: 'sygnał taryfy G12', relay: 'przekaźnik kontroli faz' }[d.p.ctl] || '')
+        : 'poza torem obwodu';
+    case 'relay':
+      return 'pilnuje zaniku i kolejności faz';
+  }
+  return TNAME[d.t] || '';
+}
+/** @param {Device} d */
+function tagPop(d, D, up) {
+  const dot = isCirc(d) && !is3(d) ? `<i style="background:var(--${d.c.ph.toLowerCase()})"></i>` : '';
+  return `<div class="tagpop${up ? ' up' : ''}" role="note"><div class="tagpop-h"><span>${D[d.id]}</span><b>${esc(d.name)}</b></div><div class="tagpop-a">${dot}${esc(annot(d, D))}</div><div class="tagpop-s">${esc(desc(d))}</div></div>`;
+}
 function renderBoard() {
   const e = enc(),
     D = designations(),
@@ -307,10 +364,10 @@ function renderBoard() {
                 .map(p => `<i style="background:var(--${p.toLowerCase()})"></i>`)
                 .join('')
             : '';
-          return `<div class="slot ${S.sel === id ? 'sel' : ''}${SIMC ? ' s-' + SIMC.dev[id].st : ''}" draggable="${COARSE ? 'false' : 'true'}" tabindex="0" data-id="${id}" style="width:${w * M}px" title="${esc(D[id] + ' ' + d.name + ' · ' + desc(d))}">
+          return `<div class="slot ${S.sel === id ? 'sel' : ''}${tagOpen === id ? ' tagopen' : ''}${SIMC ? ' s-' + SIMC.dev[id].st : ''}" draggable="${COARSE ? 'false' : 'true'}" tabindex="0" data-id="${id}" style="width:${w * M}px" title="${esc(D[id] + ' ' + d.name + ' · ' + desc(d))}">
         <div class="dev m-${d.m}${['mcb', 'rcbo', 'rcd', 'sw'].indexOf(d.t) >= 0 ? ' lv' : ''}" style="--b:${MFR[d.m].c}"><div class="trm">${screwsFor(d, 'top')}</div><div class="mk">${w >= 2 ? MFR[d.m].s : MFR[d.m].s.slice(0, 4)}</div>
         <div class="rt">${esc(a)}</div><div class="sub">${esc(b)}</div>${face(d)}<div class="trm b">${screwsFor(d, 'bot')}</div></div>
-        <div class="tag"><b>${D[id]}</b><span>${esc(d.name)}</span><span class="ph">${phs}</span></div>${S.sel === id && !S.wires && !simOn() ? quickBar(d, r) : ''}</div>`;
+        <button class="tag${tagOpen === id ? ' open' : ''}" data-tag="${id}" aria-expanded="${tagOpen === id}" title="${esc(D[id] + ' ' + d.name + ' — pokaż opis')}"><b>${D[id]}</b><span class="ph">${phs}</span><svg class="chev" width="8" height="8" viewBox="0 0 8 8" aria-hidden="true"><path d="M1.5 3l2.5 2.5L6.5 3" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button>${tagOpen === id ? tagPop(d, D, i === S.rows.length - 1) : ''}${S.sel === id && !S.wires && !simOn() ? quickBar(d, r) : ''}</div>`;
         })
         .join('');
       const free = e.mpr - u;

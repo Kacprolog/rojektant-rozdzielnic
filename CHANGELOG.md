@@ -2,13 +2,27 @@
 
 Każdy wpis odpowiada jednemu commitowi. Format: co zrobiono, dlaczego, jak sprawdzono.
 
+## 0.23.0 (14.10.2026) — nowy wygląd, etap 3: rozwijane podpisy aparatów
+
+- Pod aparatem mały przycisk z oznaczeniem, kropkami faz i strzałką (`.tag[data-tag]`). Kliknięcie albo Enter rozwija
+  opis: oznaczenie, nazwa, adnotacja i dane aparatu. Rozwinięty jest jeden opis naraz; Escape, ponowne kliknięcie
+  i kliknięcie obok zwijają go. W ostatnim rzędzie opis otwiera się w górę. Rozwinięcie nie zmienia danych projektu.
+- Adnotacja liczona z projektu (`annot()` w `js/render.js`): obwód – moc, faza albo „trójfazowy”, różnicówka przed nim; różnicówka –
+  chronione obwody; rozłącznik, ogranicznik, kontrolki, przekaźnik – ich zadanie; licznik i stycznik – obwód, w którego
+  torze stoją, i sposób sterowania.
+- Zakres oznaczeń tylko dla kolejnych numerów (`-F3 … -F10, -F13`): pierwsza wersja pisała „-F3 … -F13”, co sugerowało
+  też -F11 i -F12 (wykrył to nowy test).
+- Rezerwa w rzędzie ma wysokość aparatu przy nowym module.
+- Testy `tests/podpisy.spec.js` (3). Zrzuty w jasnym i ciemnym motywie.
+- Poprawka dziennika: we wpisie 0.22.0 brakowało nazwy przycisku `#bLib` (powłoka zinterpretowała odwrócone apostrofy).
+
 ## 0.22.0 (14.10.2026) — nowy wygląd, etap 2: układ
 
 - Nagłówek jako karta: opis obudowy i zasilania (np. „Hager Volta · 3 × 18 mod. · TN-C-S · 3 × 400 V”), nazwa projektu,
   moc i prąd szczytowy, zajęte moduły, znacznik stanu kontroli (kliknięcie otwiera zakładkę Kontrola), Cofnij, Ponów,
   Drukuj. Odmiana liczebników: „1 błąd”, „2 błędy”, „5 błędów” (było „1 błędy”).
 - Pasek projektu: projekty, pliki, „Wczytaj przykład” i „Wyczyść”. „Rozłóż fazy” przeniesione do narzędzi obudowy.
-- Biblioteka aparatów razem z wyborem obudowy to szuflada otwierana przyciskiem „+ Dodaj aparat” (, zamykana ✕).
+- Biblioteka aparatów razem z wyborem obudowy to szuflada otwierana przyciskiem „+ Dodaj aparat” (`#bLib`, zamykana ✕).
   W pustym projekcie otwarta od razu; zamknięta oddaje obudowie całą środkową szerokość.
 - Zakładki panelu bocznego w siatce 3 × 2, aktywna na tle akcentu.
 - Testy korzystające z biblioteki najpierw ją otwierają; test liczebnika oczekuje „1 błąd”. Zrzuty komputer i telefon.

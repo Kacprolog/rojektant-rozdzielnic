@@ -433,6 +433,19 @@ $('#libList').addEventListener('dragstart', e => {
 });
 const board = $('#board');
 board.addEventListener('click', e => {
+  /* podpis aparatu: rozwija / zwija opis; kliknięcie gdzie indziej go zwija */
+  const tg = e.target.closest('[data-tag]');
+  if (tg) {
+    const id = tg.getAttribute('data-tag');
+    tagOpen = tagOpen === id ? null : id;
+    render(true);
+    refocus('data-tag', id);
+    return;
+  }
+  if (tagOpen && !e.target.closest('.tagpop')) {
+    tagOpen = null;
+    render(true);
+  }
   const tp = e.target.closest('[data-ep]');
   if (tp) {
     wireClick(JSON.parse(tp.getAttribute('data-ep')));
@@ -861,6 +874,13 @@ document.addEventListener('keydown', e => {
       else undo();
       return;
     }
+  }
+  if (e.key === 'Escape' && tagOpen) {
+    const id = tagOpen;
+    tagOpen = null;
+    render(true);
+    refocus('data-tag', id);
+    return;
   }
   if (e.key === 'Escape' && (wirePick || wireSel || wireMove)) {
     wireReset();
