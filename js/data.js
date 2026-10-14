@@ -198,6 +198,7 @@ const NEED30 = ['gniazda', 'kuchnia', 'lazienka', 'ev', 'zewn'];
 const IZ2 = { 1.5: 14.5, 2.5: 19.5, 4: 26, 6: 34, 10: 46, 16: 61 };
 const IZ3 = { 1.5: 13.5, 2.5: 18, 4: 24, 6: 31, 10: 42, 16: 56 };
 
+/** @type {{ g: string, t: DevType, p: DevParams, c?: Partial<CircParams>, name: string, l: string }[]} */
 const PRESETS = [
   {
     g: 'Zasilanie i ochrona',

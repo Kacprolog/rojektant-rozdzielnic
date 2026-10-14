@@ -1,6 +1,6 @@
 # Przekazanie projektu: Projektant Rozdzielnic
 
-Stan na 14.10.2026, wersja 0.18.0. Projekt powstał w czacie z Claude jako pojedyncza strona (artefakt claude.ai), został podzielony na pliki i jest rozwijany w Claude Code jako zwykła strona w przeglądarce. Wersja 0.5.0 zamyka zadania P0 (1–5 w całości, 6 przygotowane, czeka na decyzję o hostingu). Szczegóły każdej zmiany: `CHANGELOG.md`.
+Stan na 14.10.2026, wersja 0.19.0. Projekt powstał w czacie z Claude jako pojedyncza strona (artefakt claude.ai), został podzielony na pliki i jest rozwijany w Claude Code jako zwykła strona w przeglądarce. Wersja 0.5.0 zamyka zadania P0 (1–5 w całości, 6 przygotowane, czeka na decyzję o hostingu). Szczegóły każdej zmiany: `CHANGELOG.md`.
 
 ![Widok frontu](docs/front.png)
 
@@ -30,6 +30,8 @@ Narzędzie dla elektryka lub projektanta do wstępnego zaprojektowania rozdzieln
 - Struktura: drzewo zasilania WLZ → rozłącznik → RCD → obwody.
 - Kable: WLZ, kable obwodowe, przewody w rozdzielnicy według przekroju i koloru, lista połączeń, kopiowanie CSV.
 - Zestawienie: aparaty + akcesoria + przewody, kopiowanie CSV i opisówki.
+
+**Sprawdzanie typów** (0.19.0): `npm run typecheck` (TypeScript w trybie checkJs, w CI przed testami), typy danych w `types/projekt.d.ts`. Następny krok, jeśli potrzebny: `strictNullChecks` (obecnie ok. 70 zgłoszeń, głównie `S.dev[S.sel]` po wcześniejszym sprawdzeniu).
 
 **Przewody sterownicze** (0.18.0): cewki styczników (A1/A2), styk przekaźnika kontroli faz (11–14), sygnał G12; rysowane na czerwono, w zestawieniu, w kontroli i w symulacji. Opis: `docs/DOMAIN.md` → „Obwody sterowania”. Zasilacz 24 V nie ma jeszcze zacisków, funkcja przekaźnika czasowego nie jest symulowana.
 

@@ -27,6 +27,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run format:check
+      # sprawdzanie typów (TypeScript w trybie checkJs, bez kompilacji; strona działa bez zmian)
+      - run: npm run typecheck
       - run: npx playwright install --with-deps chromium webkit firefox
       # reporter github zapisuje każdy nieudany test jako adnotację widoczną bez logowania
       - name: Testy

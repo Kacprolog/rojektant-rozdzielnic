@@ -1,6 +1,7 @@
 /* Stan projektu, geometria aparatów, obliczenia i kontrola projektu — Projektant Rozdzielnic. Skrypt klasyczny (bez modułów ES), ładowany w kolejności z index.html. */
-let S,
-  uid = 1,
+/** @type {State} */
+let S;
+let uid = 1,
   dragInfo = null;
 const $ = s => document.querySelector(s);
 const esc = s =>
@@ -63,9 +64,13 @@ function termRange(d) {
   }
   return [0.5, 25];
 }
+/** @param {{ t: DevType, m: string }} d */
 const series = d => (SER[d.m] && SER[d.m][d.t]) || 'seria modułowa';
+/** @param {Device} d */
 const clen = d => (d.c && d.c.len != null ? d.c.len : 15);
+/** @param {Device} d */
 const isCirc = d => d.t === 'mcb' || d.t === 'rcbo';
+/** @param {Device} d */
 const is3 = d => (d.t === 'mcb' && d.p.poles >= 3) || (d.t === 'rcbo' && d.p.poles == 4);
 function rate(d) {
   const p = d.p;
@@ -234,6 +239,7 @@ function specs(d) {
 }
 
 /* ---------- state ---------- */
+/** @param {DevType} t @param {string} m @param {DevParams} p @param {Partial<CircParams>} [c] @param {string} [name] @returns {Device} */
 function newDev(t, m, p, c, name) {
   const d = { id: 'd' + uid++, t, m, p: { ...p }, name: name || TNAME[t] };
   if (t === 'mcb' || t === 'rcbo') {
@@ -278,6 +284,7 @@ function sample() {
   add(0, newDev('relay', m, {}, null, 'Kontrola faz PC'));
   const kb = add(0, newDev('contactor', m, { In: 25, poles: 2, ctl: 'g12' }, null, 'Bojler – taryfa G12'));
   const r1 = add(1, newDev('rcd', m, { In: 40, poles: 4, idn: 30, kind: 'A', sel: false }, null, 'RCD obwody ogólne'));
+  /** @type {[string, number, string, number, number, Phase, string][]} */
   const c1 = [
     ['B', 10, 'oswietlenie', 0.4, 1.5, 'L1', 'Oświetlenie parter'],
     ['B', 10, 'oswietlenie', 0.4, 1.5, 'L2', 'Oświetlenie piętro'],
@@ -520,6 +527,7 @@ function fixUid(s, u) {
 /* Lista projektów: localStorage['rozdz-v2'] = { version:2, cur:<id>, list:[{ id, S, uid, mod }] }. S to zawsze projekt PR.cur. */
 const KEY = 'rozdz-v2',
   KEY1 = 'rozdz-v1';
+/** @type {ProjectList} */
 const PR = {
   cur: null,
   list: [],
@@ -528,6 +536,7 @@ const PR = {
 function pid() {
   return 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 }
+/** @returns {State} */
 function blankS() {
   return {
     name: 'Nowy projekt',
@@ -541,8 +550,10 @@ function blankS() {
 }
 /* Cofnij / Ponów: stos migawek danych projektu (DATA_KEYS + uid), limit 50. Zmiany widoku nie tworzą migawek.
    histTag ustawiony przed save() skleja serię zmian tego samego pola (pisanie w polu) w jeden krok. */
+/** @type {UndoHistory} */
 const HIST = { u: [], r: [], cur: null, t: 0, tag: null },
   HIST_MAX = 50;
+/** @type {string | null} */
 let histTag = null;
 function snap() {
   const o = { uid: uid };
@@ -716,6 +727,7 @@ function netCalc() {
   };
 }
 /* Obwód (opcjonalnie dla innego przekroju mm): du spadek [%], zs pętla na końcu [Ω], ik1 prąd zwarcia [A], ia próg wyzwalania [A], trip: czy Zs·Ia ≤ U0. */
+/** @param {Device} d @param {number} [mm] */
 function circCalc(d, mm) {
   const n = netCalc(),
     s = mm || +d.c.cable,
@@ -756,7 +768,7 @@ function totals() {
   const e = enc(),
     cap = e.mpr * S.enc.rows;
   let used = 0;
-  S.rows.forEach((r, i) => (used += rowUse(i)));
+  S.rows.forEach((_, i) => (used += rowUse(i)));
   return { P, Pd, Ibm, cap, used };
 }
 

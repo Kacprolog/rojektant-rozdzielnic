@@ -2,7 +2,9 @@
    Strategia „najpierw sieć”: z siecią użytkownik zawsze dostaje najnowszą wersję (kopia w pamięci jest przy okazji
    odświeżana), bez sieci strona działa z kopii. Projekty i tak są w localStorage, więc offline nic nie ginie.
    Nowy plik potrzebny stronie dopisz do ASSETS (test „lista plików service workera jest kompletna” to sprawdza). */
-const CACHE = 'rozdz-0.18.0';
+/** @type {ServiceWorkerGlobalScope} */
+const sw = /** @type {any} */ (self);
+const CACHE = 'rozdz-0.19.0';
 const ASSETS = [
   './',
   'index.html',
@@ -39,27 +41,27 @@ const ASSETS = [
   'fonts/jetbrains-mono-500-latin.woff2'
 ];
 
-self.addEventListener('install', e => {
+sw.addEventListener('install', e => {
   e.waitUntil(
     caches
       .open(CACHE)
       .then(c => c.addAll(ASSETS))
-      .then(() => self.skipWaiting())
+      .then(() => sw.skipWaiting())
   );
 });
 
-self.addEventListener('activate', e => {
+sw.addEventListener('activate', e => {
   e.waitUntil(
     caches
       .keys()
       .then(keys => Promise.all(keys.filter(k => k.indexOf('rozdz-') === 0 && k !== CACHE).map(k => caches.delete(k))))
-      .then(() => self.clients.claim())
+      .then(() => sw.clients.claim())
   );
 });
 
-self.addEventListener('fetch', e => {
+sw.addEventListener('fetch', e => {
   const req = e.request;
-  if (req.method !== 'GET' || new URL(req.url).origin !== self.location.origin) return;
+  if (req.method !== 'GET' || new URL(req.url).origin !== sw.location.origin) return;
   e.respondWith(
     fetch(req)
       .then(res => {
@@ -72,7 +74,9 @@ self.addEventListener('fetch', e => {
       .catch(() =>
         caches
           .match(req, { ignoreSearch: true })
-          .then(hit => hit || (req.mode === 'navigate' ? caches.match('index.html') : Response.error()))
+          .then(hit => hit || (req.mode === 'navigate' ? caches.match('index.html') : undefined))
+          /* brak kopii: zwykły błąd sieci zamiast undefined, którego respondWith() nie przyjmuje */
+          .then(hit => hit || Response.error())
       )
   );
 });

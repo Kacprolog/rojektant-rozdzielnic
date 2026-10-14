@@ -9,6 +9,7 @@ const PHN = {
   S: 'sterowniczy czerwony'
 };
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+/** @param {Device} r */
 function rcdPh(r) {
   const m = S.rows
     .flat()
@@ -69,6 +70,7 @@ function ctlTerms(d) {
   return { top: [], bot: [] };
 }
 const isCtl = p => CTL_T.indexOf(p) >= 0 || p === 'G12';
+/** @param {Device} d @param {'top' | 'bot'} side @returns {string[]} */
 const allTerms = (d, side) => terms(d)[side].concat(ctlTerms(d)[side]);
 function wlzMm() {
   const t = [
@@ -202,6 +204,7 @@ function epLive(e) {
   }
   return e.ph === 'N' && S.set.siec === 'TN-C-S' ? null : { k: 'wlz', ph: e.ph };
 }
+/** @returns {Endpoint} */
 function epStore(e) {
   return e.k === 'dev'
     ? isCtl(e.ph)
@@ -1393,7 +1396,7 @@ function drawWires() {
     };
     S.rows.flat().forEach(id => {
       const d = S.dev[id];
-      ['top', 'bot'].forEach(side =>
+      /** @type {('top' | 'bot')[]} */ (['top', 'bot']).forEach(side =>
         allTerms(d, side).forEach(ph => {
           const e = { k: 'dev', id, side, ph },
             P = pt(e);

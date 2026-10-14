@@ -2,6 +2,24 @@
 
 Każdy wpis odpowiada jednemu commitowi. Format: co zrobiono, dlaczego, jak sprawdzono.
 
+## 0.19.0 (14.10.2026) — sprawdzanie typów
+
+- `npm run typecheck`: TypeScript 5.6.3 w trybie `checkJs` sprawdza `js/*.js` (`tsconfig.json`) i `sw.js`
+  (`tsconfig.sw.json`, typy WebWorker, tryb `strict`). Nic nie jest kompilowane: strona dalej działa z dysku
+  (`file://`), bez kroku budowania. CI uruchamia sprawdzanie przed testami.
+- Dlaczego nie przejście na Vite + TypeScript: wymagałoby kroku budowania i modułów ES, a to psuje otwieranie
+  `index.html` z dysku (jedno z założeń projektu) i zmienia każdy plik naraz. Sprawdzanie typów w JSDoc daje większość
+  korzyści (literówki w polach, złe argumenty, porównania z nieistniejącym typem aparatu) bez tych kosztów; przejście na
+  pliki `.ts` można zrobić później po jednym pliku.
+- `types/projekt.d.ts`: typy `State`, `Device`, `DevType`, `DevParams`, `CircParams`, `Endpoint`, `Wire`, `Conn`,
+  `ProjectList`, `UndoHistory`. Adnotacje JSDoc przy stanie `S`, liście projektów, historii, `newDev()`, `PRESETS`
+  i funkcjach przyjmujących aparat (`terms`, `width`, `rate`, `ib`, `iz`, `circCalc`…). Sprawdzone na celowo
+  błędnym pliku: wykrywa `d.t === 'contacter'`, `d.nme`, złą liczbę argumentów.
+- Znalezione i poprawione: `sw.js` przy braku kopii `index.html` przekazywał `undefined` do `respondWith()` (wyjątek
+  zamiast zwykłego błędu sieci); nieużywany parametr w `totals()`.
+- Opcja `strictNullChecks` na razie wyłączona: ok. 70 zgłoszeń, prawie wszystkie po wcześniejszym sprawdzeniu wartości
+  (np. `S.dev[S.sel]`), a w JS nie ma operatora `!`. Zapisane w HANDOFF.md jako możliwy następny krok.
+
 ## 0.18.0 (14.10.2026) — przewody sterownicze
 
 - Zaciski sterownicze osobno od zacisków mocy (`ctlTerms()`, `allTerms()` w `js/wiring.js`): stycznik w torze obwodu ma

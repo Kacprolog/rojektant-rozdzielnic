@@ -13,6 +13,7 @@ npm start            # serwer statyczny bez zależności: http://localhost:4173 
 npm install          # tylko dla testów (@playwright/test)
 npx playwright install chromium webkit   # raz, jeśli nie ma przeglądarek
 npm run format       # Prettier (CI sprawdza: npm run format:check)
+npm run typecheck    # TypeScript w trybie checkJs: sprawdza typy w js/*.js i sw.js, niczego nie kompiluje
 npm test             # 91 testów × 3 projekty: desktop 1600 px i telefon 390 px (Chromium), safari (WebKit)
 node scripts/podglad-druku.js            # PDF i zrzuty stron wydruku w test-results/druk/
 ```
@@ -51,6 +52,8 @@ tests/p0.spec.js    plik projektu, lista projektów, cofanie, druk
 tests/schemat.spec.js       schemat jednokreskowy
 tests/pwa.spec.js           manifest, lista plików service workera, instalacja, start bez sieci
 tests/sterowanie.spec.js    przewody sterownicze: cewka, przekaźnik, G12, kontrola, symulacja, plik
+types/projekt.d.ts  typy danych (State, Device, Endpoint, Wire, Conn…) tylko dla sprawdzania typów; strona go nie ładuje
+tsconfig.json, tsconfig.sw.json   konfiguracja sprawdzania typów (strona) i service workera (typy WebWorker)
 .github/workflows/pages.yml   CI: testy w 3 silnikach, potem publikacja na GitHub Pages
 ```
 
@@ -78,14 +81,15 @@ Skrypty są **klasyczne** i ładowane po kolei. Wszystkie `const`/`function` z n
 
 1. **Zgodność wstecz zapisanego stanu.** Użytkownicy mają projekty w `localStorage` i w plikach. Nowe pola dodawaj z wartością domyślną przy odczycie (`normalize()`, wzór: `clen(d)` dla `d.c.len`). Gdy zmiana schematu jest niezgodna, dodaj migrację w `load()` (wzór: `rozdz-v1` → `rozdz-v2`) i podnieś wersję w kluczu tylko z migracją; dla plików podnieś `FILE_VERSION` i dopisz migrację w `importData()`.
 2. **Dane z zewnątrz.** Wszystko, co przychodzi z pliku lub `localStorage`, przechodzi przez `valid()` i `normalize()`. Pole wstawiane do HTML bez `esc()` musi być tam sprowadzone do słownika albo liczby (`cleanDev()`). Nazwy (aparatu, projektu) są tekstem dowolnym: **zawsze** przez `esc()`; opcje list tylko przez `opt()`, które escapuje samo. Parametr, od którego zależy `terms()` albo `width()` (bieguny, fazy), musi mieć w `cleanDev()` zamkniętą listę wartości. Projektu, którego nie da się wczytać, nie wolno usuwać ani nadpisywać: trafia do `PR.bad`.
-3. **Bez `?.` i `??`** oraz innych świeżych API bez sprawdzenia wsparcia. Testy przechodzą w WebKit, ale przyczyna dawnego zgłoszenia „nie ładuje się” nie została potwierdzona (patrz `HANDOFF.md`).
-4. **Kolory tylko przez tokeny CSS** z `:root` (+ oba bloki ciemnego motywu). Kolory żył: `--l1` brązowy, `--l2` czarny, `--l3` szary, `--n` niebieski, `--pe`/`--pe2` zielono-żółty, `--s` przewód sterowniczy (czerwony), `--cu` szyna grzebieniowa.
-5. **Teksty dla użytkownika po polsku**, rzeczowo, z jednostkami (A, mA, kW, mm², m) i odwołaniem do normy przy regułach kontroli.
-6. **Nie ma `alert/confirm/prompt`.** Potwierdzenia budujemy na stronie przez `ask(komunikat, etykieta, akcja)`. Komunikaty krótkie przez `toast()`.
-7. **Ukrywanie elementów** atrybutem `hidden` (globalna reguła `[hidden]{display:none!important}`).
-8. **Liczby**: `fmt()` (format `pl-PL`), w tabelach `font-variant-numeric: tabular-nums`. CSV z separatorem `;` i przecinkiem dziesiętnym.
-9. **Po każdej zmianie** uruchom `npm run format` i `npm test`; commituj tylko przy zerowym kodzie wyjścia testów (nie przez potok, który go gubi), dopisz test dla nowej funkcji i wpis w `CHANGELOG.md`. Gdy zmieniasz model przykładu, zaktualizuj oczekiwania w teście „model połączeń dla przykładu jest stabilny” (obecnie 50 połączeń, w tym 2 przewody cewki stycznika, szyny `3F8` i `3F3`). Zmiany wyglądu sprawdzaj wzrokowo (zrzut ekranu, `scripts/podglad-druku.js`): testy nie wykryły kiedyś paska widocznego mimo `hidden`.
-10. Dane katalogowe są orientacyjne. Nie wpisuj numerów katalogowych ani cen z pamięci; tylko z dostarczonych przez użytkownika katalogów/cenników.
+3. **Typy w JSDoc.** Parametr będący aparatem opisz `/** @param {Device} d */`; nowe pole danych dopisz też do `types/projekt.d.ts`. Literały, które TypeScript poszerza do `string` (np. `['top', 'bot']`), rzutuj w JSDoc zamiast zmieniać kod.
+4. **Bez `?.` i `??`** oraz innych świeżych API bez sprawdzenia wsparcia. Testy przechodzą w WebKit, ale przyczyna dawnego zgłoszenia „nie ładuje się” nie została potwierdzona (patrz `HANDOFF.md`).
+5. **Kolory tylko przez tokeny CSS** z `:root` (+ oba bloki ciemnego motywu). Kolory żył: `--l1` brązowy, `--l2` czarny, `--l3` szary, `--n` niebieski, `--pe`/`--pe2` zielono-żółty, `--s` przewód sterowniczy (czerwony), `--cu` szyna grzebieniowa.
+6. **Teksty dla użytkownika po polsku**, rzeczowo, z jednostkami (A, mA, kW, mm², m) i odwołaniem do normy przy regułach kontroli.
+7. **Nie ma `alert/confirm/prompt`.** Potwierdzenia budujemy na stronie przez `ask(komunikat, etykieta, akcja)`. Komunikaty krótkie przez `toast()`.
+8. **Ukrywanie elementów** atrybutem `hidden` (globalna reguła `[hidden]{display:none!important}`).
+9. **Liczby**: `fmt()` (format `pl-PL`), w tabelach `font-variant-numeric: tabular-nums`. CSV z separatorem `;` i przecinkiem dziesiętnym.
+10. **Po każdej zmianie** uruchom `npm run format`, `npm run typecheck` i `npm test`; commituj tylko przy zerowym kodzie wyjścia testów (nie przez potok, który go gubi), dopisz test dla nowej funkcji i wpis w `CHANGELOG.md`. Gdy zmieniasz model przykładu, zaktualizuj oczekiwania w teście „model połączeń dla przykładu jest stabilny” (obecnie 50 połączeń, w tym 2 przewody cewki stycznika, szyny `3F8` i `3F3`). Zmiany wyglądu sprawdzaj wzrokowo (zrzut ekranu, `scripts/podglad-druku.js`): testy nie wykryły kiedyś paska widocznego mimo `hidden`.
+11. Dane katalogowe są orientacyjne. Nie wpisuj numerów katalogowych ani cen z pamięci; tylko z dostarczonych przez użytkownika katalogów/cenników.
 
 ## Słowniczek skrótów w kodzie
 

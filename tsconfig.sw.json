@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": true,
+    "noEmit": true,
+    "target": "ES2019",
+    "lib": ["ES2019", "WebWorker"],
+    "strict": true,
+    "skipLibCheck": true
+  },
+  "include": ["sw.js"]
+}

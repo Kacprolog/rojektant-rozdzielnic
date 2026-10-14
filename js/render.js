@@ -125,6 +125,7 @@ function face(d) {
   }
   return '';
 }
+/** @param {Device} d @param {'top' | 'bot'} side */
 function screwsFor(d, side) {
   const w = width(d),
     t = terms(d);
@@ -135,7 +136,7 @@ function screwsFor(d, side) {
 }
 /* Edytor zaznaczonego przewodu (tryb ręczny): przekrój, kolor izolacji, przepinanie końców, usunięcie. */
 function wireEditor(w, D) {
-  const st = S.conn.find(x => x.id === w.id) || {},
+  const st = /** @type {Partial<Wire>} */ (S.conn.find(x => x.id === w.id) || {}),
     cols = [
       ['', 'wg normy'],
       ['L1', 'brązowy'],
