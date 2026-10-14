@@ -27,7 +27,8 @@ jobs:
       - run: npm ci
       - run: npm run format:check
       - run: npx playwright install --with-deps chromium webkit firefox
-      - run: npm test
+      # reporter github zapisuje każdy nieudany test jako adnotację widoczną bez logowania
+      - run: npx playwright test --reporter=github,line
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
