@@ -18,7 +18,7 @@ node scripts/podglad-druku.js            # PDF i zrzuty stron wydruku w test-res
 
 Firefox jest w konfiguracji tylko dla CI albo `PW_FIREFOX=1` (na komputerze użytkownika Firefox z Playwright nie startuje; użytkownik pracuje w Operze, czyli na silniku Chromium).
 
-`index.html` działa też po zwykłym otwarciu z dysku (`file://`): nie ma kroku budowania, modułów ES ani zależności w czasie działania. Jedyny zasób zewnętrzny to Google Fonts (z fallbackiem systemowym).
+`index.html` działa też po zwykłym otwarciu z dysku (`file://`): nie ma kroku budowania, modułów ES ani zależności w czasie działania. Strona nie pobiera nic z zewnątrz: czcionki (Barlow, Barlow Condensed, JetBrains Mono, licencja OFL) są w `fonts/`, opisane w `css/fonts.css`. Nowe pliki potrzebne stronie dopisz też do kroku kopiowania w `.github/workflows/pages.yml`.
 
 ## Struktura
 

@@ -41,6 +41,13 @@ Każdy punkt to osobny commit; numeracja jak w przeglądzie (HANDOFF.md → „Z
   Icn. Starsze projekty i pliki dostają 6 kA.
 - Test w `tests/przeglad.spec.js`.
 
+### 5. Czcionki bez Google Fonts
+- Barlow, Barlow Condensed i JetBrains Mono są w `fonts/` (16 plików woff2, podzbiory latin i latin-ext z polskimi znakami,
+  razem ok. 300 KB) wraz z licencjami SIL OFL 1.1, która pozwala na redystrybucję. `css/fonts.css` je opisuje.
+- Strona nie łączy się już z żadnym serwerem zewnętrznym: adres IP odwiedzającego nie trafia do Google, a aplikacja
+  wygląda tak samo bez internetu. Workflow kopiuje `fonts/` do publikacji; serwer deweloperski zna typ `font/woff2`.
+- Test: brak żądań poza własny serwer i dostępność trzech krojów z polskimi znakami; wygląd porównany na zrzucie.
+
 ## 0.14.1 (13.10.2026) — poprawki z przeglądu całego kodu
 
 Przegląd objął `js/`, `css/`, `index.html`, `scripts/`, `tests/` i workflow. Każde znalezisko poniżej zostało najpierw

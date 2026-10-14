@@ -159,3 +159,20 @@ test('wyłącznik różnicowonadprądowy ma zdolność zwarciową do ustawienia 
   await page.setInputFiles('#fOpen', { name: 'x.rozdz.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(j)) });
   expect(await page.evaluate(() => Object.values(S.dev).find(x => x.t === 'rcbo').p.icn)).toBe(6);
 });
+
+test('strona nie łączy się z Google Fonts; czcionki z własnych plików mają polskie znaki', async ({ browser }) => {
+  const ctx = await browser.newContext();
+  const page = await ctx.newPage();
+  const external = [];
+  page.on('request', r => { const u = new URL(r.url()); if (!['127.0.0.1', 'localhost'].includes(u.hostname) && u.protocol !== 'data:' && u.protocol !== 'blob:') external.push(r.url()); });
+  await page.goto('/');
+  await page.evaluate(() => document.fonts.ready);
+  expect(external).toEqual([]);
+  const ok = await page.evaluate(async () => {
+    const want = ['600 16px "Barlow Condensed"', '400 14px "Barlow"', '400 12px "JetBrains Mono"'];
+    await Promise.all(want.map(f => document.fonts.load(f, 'Ąćęłńóśźż')));
+    return want.map(f => document.fonts.check(f, 'Ąćęłńóśźż'));
+  });
+  expect(ok).toEqual([true, true, true]);
+  await ctx.close();
+});
