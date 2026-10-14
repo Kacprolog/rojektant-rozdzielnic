@@ -228,16 +228,17 @@ test.describe('druk / PDF', () => {
     expect(await page.evaluate(() => window.__printed)).toBe(1);
 
     const pages = page.locator('#print .ppage');
-    await expect(pages).toHaveCount(4);
-    for (let i = 0; i < 4; i++) await expect(pages.nth(i).locator('.phead')).toContainText('Dom jednorodzinny');
+    await expect(pages).toHaveCount(5);
+    for (let i = 0; i < 5; i++) await expect(pages.nth(i).locator('.phead')).toContainText('Dom jednorodzinny');
     await expect(pages.nth(0).locator('.slot')).toHaveCount(21);
     await expect(pages.nth(0).locator('svg.wires')).toHaveCount(0);
     await expect(pages.nth(1).locator('svg.wires')).toHaveCount(1);
     expect(await pages.nth(1).locator('svg.wires path.w').count()).toBeGreaterThan(30);
-    await expect(pages.nth(2)).toContainText('WLZ');
-    await expect(pages.nth(2).locator('.issue').first()).toBeAttached();
-    await expect(pages.nth(3)).toContainText('Szyna grzebieniowa');
-    await expect(pages.nth(3)).toContainText('YKY 4×10');
+    await expect(pages.nth(2).locator('svg.schem [data-sid]')).toHaveCount(19);
+    await expect(pages.nth(3)).toContainText('WLZ');
+    await expect(pages.nth(3).locator('.issue').first()).toBeAttached();
+    await expect(pages.nth(4)).toContainText('Szyna grzebieniowa');
+    await expect(pages.nth(4)).toContainText('YKY 4×10');
 
     // Obudowa mieści się na stronie A4 poziomo (obszar roboczy ok. 1047 × 718 px).
     const fit = await page.evaluate(() =>

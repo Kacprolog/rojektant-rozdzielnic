@@ -2,6 +2,23 @@
 
 Każdy wpis odpowiada jednemu commitowi. Format: co zrobiono, dlaczego, jak sprawdzono.
 
+## 0.16.0 (14.10.2026) — schemat jednokreskowy
+
+### Schemat jednokreskowy (widok „Schemat” i strona wydruku)
+- Nowy plik `js/schemat.js`: `schemGroups()` układa kolumny (aparaty pomocnicze, różnicówki z obwodami, obwody bez
+  różnicówki i RCBO), `schemSvg(fit)` rysuje SVG. Schemat powstaje z tych samych danych co kontrola i zestawienie, więc
+  zawsze odpowiada projektowi; nic nie jest zapisywane.
+- Rysunek: zabezpieczenie przedlicznikowe i WLZ, granica rozdzielnicy, rozłącznik główny, szyna zbiorcza, różnicówki
+  z szynami obwodów, wyłączniki, aparaty w torze obwodu (licznik kWh, stycznik ze sposobem sterowania), odejścia z
+  oznaczeniem, nazwą, kablem, długością, mocą i prądem Ib; trzy kreski dla obwodów trójfazowych, faza dla jednofazowych.
+  Symbole uproszczone według PN-EN 60617.
+- Trzeci przycisk widoku „Schemat” (`S.schem`, stan widoku jak `S.wires`). Kliknięcie obwodu lub aparatu zaznacza go
+  i otwiera jego parametry; każdy element ma niewidoczne pole kliknięcia (cienkie linie i tekst to za mały cel,
+  szczególnie na dotyku; WebKit w testach trafiał w tło). Powiększenie działa jak dla obudowy.
+- Wydruk ma piątą stronę „Schemat jednokreskowy” (bez zaznaczenia aparatu).
+- Testy `tests/schemat.spec.js` (3: zawartość schematu przykładu i brak zmian danych, kliknięcie, pusta obudowa
+  i zapamiętanie widoku); test druku oczekuje 5 stron. Zrzut schematu i strony wydruku sprawdzone wzrokowo.
+
 ## 0.15.0 (14.10.2026) — wszystkie sugestie z przeglądu kodu
 
 Każdy punkt to osobny commit; numeracja jak w przeglądzie (HANDOFF.md → „Z przeglądu kodu 0.14.1”).

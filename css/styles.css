@@ -1918,3 +1918,71 @@ svg.wires path.w:focus {
     0 0 0 3px var(--accent),
     3px 3px 0 var(--dev-edge);
 }
+
+/* Schemat jednokreskowy (widok „Schemat” i strona wydruku) */
+.cabinet.schem {
+  background: var(--dev);
+  padding: 12px;
+}
+svg.schem {
+  display: block;
+}
+svg.schem text {
+  font-family: var(--f-body);
+  font-size: 11px;
+  fill: var(--ink);
+}
+svg.schem text.b {
+  font-weight: 600;
+}
+svg.schem text.sm {
+  font-size: 9.5px;
+  fill: var(--muted);
+}
+svg.schem text.h {
+  font-family: var(--f-display);
+  font-size: 16px;
+  font-weight: 600;
+}
+svg.schem text.mid {
+  text-anchor: middle;
+}
+svg.schem .ln {
+  stroke: var(--ink);
+  stroke-width: 1.4;
+  fill: none;
+  stroke-linecap: round;
+}
+svg.schem .dash {
+  stroke-dasharray: 4 3;
+  stroke-width: 1;
+}
+svg.schem rect.dash {
+  stroke: var(--muted);
+}
+svg.schem .bus {
+  stroke-width: 3;
+}
+svg.schem .bus2 {
+  stroke-width: 2.2;
+}
+svg.schem .sg {
+  cursor: pointer;
+}
+svg.schem .hit {
+  fill: transparent;
+}
+svg.schem .sg:hover > .hit {
+  fill: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+svg.schem .sg:hover > .ln {
+  stroke: var(--accent);
+}
+svg.schem .sg.sel > .ln,
+svg.schem .sg.sel > path,
+svg.schem .sg.sel > rect,
+svg.schem .sg.sel > ellipse,
+svg.schem .sg.sel > circle {
+  stroke: var(--accent);
+  stroke-width: 2;
+}

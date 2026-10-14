@@ -13,7 +13,7 @@ npm start            # serwer statyczny bez zależności: http://localhost:4173 
 npm install          # tylko dla testów (@playwright/test)
 npx playwright install chromium webkit   # raz, jeśli nie ma przeglądarek
 npm run format       # Prettier (CI sprawdza: npm run format:check)
-npm test             # 80 testów × 3 projekty: desktop 1600 px i telefon 390 px (Chromium), safari (WebKit)
+npm test             # 83 testy × 3 projekty: desktop 1600 px i telefon 390 px (Chromium), safari (WebKit)
 node scripts/podglad-druku.js            # PDF i zrzuty stron wydruku w test-results/druk/
 ```
 
@@ -33,6 +33,7 @@ js/render.js        render(), renderTop/Enc/Lib/Board/Tabs/Panel, panele: aparat
                     printView() (druk / PDF)
 js/wiring.js        terms(), buildConns(), drawWires() (routing SVG), panelKable(), materiały przewodów
 js/sim.js           symulacja: simCalc() (kto ma napięcie), dźwignie, test RCD, awarie, pasek renderSim()
+js/schemat.js       schemat jednokreskowy: schemGroups() (kolumny), schemSvg() (widok „Schemat” i strona wydruku)
 js/app.js           akcje (dodaj/przenieś/usuń/rozłóż fazy/kopiuj), plik projektu, lista projektów, ask(), zdarzenia, boot()
 scripts/serve.js    serwer statyczny (Node, bez zależności)
 scripts/podglad-druku.js   PDF i zrzuty stron wydruku (Playwright)
@@ -46,6 +47,7 @@ tests/przeglad.spec.js      poprawki z przeglądu: rozkład faz, listwy, projekt
 tests/naprawy.spec.js       naprawy z kontroli, pasek szybkiej edycji
 tests/symulacja.spec.js     symulacja, awarie, przeciąganie przewodów
 tests/p0.spec.js    plik projektu, lista projektów, cofanie, druk
+tests/schemat.spec.js       schemat jednokreskowy
 .github/workflows/pages.yml   CI: testy w 3 silnikach, potem publikacja na GitHub Pages
 ```
 
@@ -54,7 +56,7 @@ Skrypty są **klasyczne** i ładowane po kolei. Wszystkie `const`/`function` z n
 ## Jak działa aplikacja
 
 - **Jeden obiekt stanu `S`** (+ licznik `uid`). Każda zmiana: zmodyfikuj `S`, wywołaj `render()` (albo `render(true)`, żeby nie przerysowywać panelu bocznego, np. podczas pisania w polu). `render()` woła `save()`, które dopisuje migawkę do historii cofania i zapisuje listę projektów do `localStorage` pod kluczem `rozdz-v2`.
-- **Dane a widok.** `DATA_KEYS` (`name, enc, set, rows, dev, wmode, conn`) to dane projektu: trafiają do pliku `.rozdz.json` i do historii cofania. Reszta `S` (`sel, active, mfr, tab, q, wires, wf, sim, zoom`) to stan widoku. Nowe pole danych dopisz do `DATA_KEYS` i do `normalize()`.
+- **Dane a widok.** `DATA_KEYS` (`name, enc, set, rows, dev, wmode, conn`) to dane projektu: trafiają do pliku `.rozdz.json` i do historii cofania. Reszta `S` (`sel, active, mfr, tab, q, wires, schem, wf, sim, zoom`) to stan widoku. Nowe pole danych dopisz do `DATA_KEYS` i do `normalize()`.
 - **Lista projektów `PR`**: `S` to zawsze projekt `PR.cur`. Przełączaj tylko przez `projUse()` (normalizuje stan i resetuje historię).
 - **Cofanie** działa samo dla każdej akcji, która kończy się `render()` albo `save()`. Dla pól pisanych znak po znaku ustaw wcześniej `histTag`, żeby seria zmian była jednym krokiem.
 - **Pełne przerysowanie przez `innerHTML`** + delegacja zdarzeń na kontenerach (`#board`, `#panel`, `#libList`, `#tabs`). Nie podpinaj nasłuchiwaczy do elementów, które są przerysowywane.

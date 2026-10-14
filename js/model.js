@@ -499,6 +499,7 @@ function normalize(s) {
   s.tab = oneOf(s.tab, TABS);
   if (typeof s.q !== 'string') s.q = '';
   s.wires = !!s.wires;
+  s.schem = !!s.schem && !s.wires; /* widok schematu jednokreskowego (stan widoku) */
   return s;
 }
 /* Licznik id musi być większy od każdego istniejącego 'dN'. */

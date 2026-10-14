@@ -432,6 +432,15 @@ board.addEventListener('click', e => {
       return;
     }
   }
+  /* schemat: kliknięcie obwodu lub aparatu zaznacza go */
+  const sg = e.target.closest('[data-sid]');
+  if (sg && S.schem) {
+    S.sel = sg.getAttribute('data-sid');
+    S.active = rowOf(S.sel);
+    S.tab = 'aparat';
+    render();
+    return;
+  }
   const s = e.target.closest('.slot');
   if (s) {
     S.sel = s.dataset.id;
@@ -1076,6 +1085,7 @@ $('#viewSeg').addEventListener('click', e => {
   const b = e.target.closest('[data-view]');
   if (!b) return;
   S.wires = b.dataset.view === 'wires';
+  S.schem = b.dataset.view === 'schem';
   render(true);
 });
 $('#bClear').addEventListener('click', () =>

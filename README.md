@@ -25,7 +25,8 @@ Fronty aparatów pięciu producentów (rysunki własne, uproszczone):
 | Powiększenie | Przyciski − / + nad obudową albo Ctrl + kółko myszy; środkowy przycisk dopasowuje obudowę do szerokości okna |
 | Telefon i tablet | Przytrzymaj aparat palcem i przeciągnij go na nowe miejsce; przewody ciągnie się od zacisku do zacisku |
 | Szybka edycja | Kliknij aparat w widoku frontu: pod nim pojawia się pasek z fazą, prądem − / +, charakterystyką, przesuwaniem, kopią i usunięciem |
-| Okablowanie | Przełącznik „Front / Okablowanie” nad obudową; tryb „Automatyczne” rysuje przewody sam |
+| Okablowanie | Przełącznik „Front / Okablowanie / Schemat” nad obudową; tryb „Automatyczne” rysuje przewody sam |
+| Schemat jednokreskowy | Przycisk „Schemat” nad obudową: schemat rysowany z projektu (zasilanie, rozłącznik, różnicówki, obwody z kablami i mocą); kliknij obwód, żeby go edytować. Jest też na wydruku |
 | Własne przewody | W okablowaniu wybierz „Ręczne”: przeciągnij przewód od zacisku do zacisku (zielone zaciski są poprawne, czerwone dadzą błąd) albo kliknij zacisk, potem drugi. Kliknij przewód i Delete, żeby usunąć. „Przejmij automatyczne” daje gotowy punkt wyjścia |
 | Edycja przewodu | Kliknij przewód w trybie ręcznym: przekrój, kolor izolacji, „Przepnij początek / koniec”, „Usuń przewód” |
 | Kolory żył | Wg PN-EN 60445 w jasnym i ciemnym motywie: L1 brązowy, L2 czarny, L3 szary, N niebieski, PE zielono-żółty, PEN zielono-żółty z niebieskimi końcami; kolor niezgodny z normą daje alert |

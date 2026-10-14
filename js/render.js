@@ -252,12 +252,14 @@ function renderBoard() {
   const e = enc(),
     D = designations(),
     M = 34;
-  $('#board').className = 'cabinet' + (S.wires ? ' wiring' : '') + (simOn() ? ' sim' : '');
+  $('#board').className = 'cabinet' + (S.wires ? ' wiring' : '') + (S.schem ? ' schem' : '') + (simOn() ? ' sim' : '');
   SIMC = simOn() ? simCalc() : null;
   renderSim();
   $('#viewSeg')
     .querySelectorAll('button')
-    .forEach(b => b.setAttribute('aria-pressed', String((b.dataset.view === 'wires') === !!S.wires)));
+    .forEach(b =>
+      b.setAttribute('aria-pressed', String(b.dataset.view === (S.schem ? 'schem' : S.wires ? 'wires' : 'front')))
+    );
   $('#wireHint').hidden = !S.wires;
   renderWireFilter();
   $('#board').innerHTML = S.rows
@@ -290,6 +292,7 @@ function renderBoard() {
       <div class="rail ${S.active === i ? 'active' : ''}" data-row="${i}" style="width:${wpx}px">${devs}${blank}${limit}</div></div>`;
     })
     .join('');
+  if (S.schem) $('#board').innerHTML = schemSvg(false); /* widok schematu zamiast obudowy */
   const cab = $('#board'),
     wrap = $('#boardZoom'),
     z = zf();
@@ -715,6 +718,8 @@ function printView() {
   };
   S.sel = null;
   S.sim = null;
+  const keepSchem = S.schem;
+  S.schem = false;
   S.zoom = 1;
   S.wf = { L1: 1, L2: 1, L3: 1, N: 1, PE: 1 };
   wireReset();
@@ -728,6 +733,7 @@ function printView() {
     S.wf = keep.wf;
     S.sim = keep.sim;
     S.zoom = keep.zoom;
+    S.schem = keepSchem;
     renderBoard();
   }
   const e = enc(),
@@ -738,6 +744,7 @@ function printView() {
   const pages = [
     ['Widok frontu z opisówką', front + `<div class="legend">${legend}</div>`],
     ['Okablowanie', wires + `<div class="legend">${legend}</div>`],
+    ['Schemat jednokreskowy', schemSvg(true)],
     [
       'Struktura zasilania i kontrola projektu',
       `<div class="pcols"><div>${panelTree()}</div><div>${panelChecks()}<dl class="specs" style="margin-top:14px"><dt>Moc zainstalowana</dt><dd>${fmt(T.P)} kW</dd><dt>Moc szczytowa (ks = ${fmt(S.set.ks, 2)})</dt><dd>${fmt(T.Pd)} kW · ${fmt(T.Ibm)} A</dd><dt>Moc przyłączeniowa</dt><dd>${fmt(S.set.moc)} kW</dd><dt>Zab. przedlicznikowe</dt><dd>${S.set.przedl} A</dd><dt>Układ sieci</dt><dd>${esc(S.set.siec)}</dd></dl></div></div>`
