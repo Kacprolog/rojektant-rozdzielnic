@@ -883,6 +883,22 @@ $('#bSample').addEventListener('click', () => {
   toast('Wczytano przykładowy projekt domu jednorodzinnego');
 });
 $('#bBalance').addEventListener('click', balance);
+$('#bLib').addEventListener('click', () => {
+  libOpen = !libShown();
+  render(true);
+  if (libOpen) $('#libSearch').focus();
+});
+$('#bLibX').addEventListener('click', () => {
+  libOpen = false;
+  render(true);
+  $('#bLib').focus();
+});
+/* znacznik stanu kontroli w nagłówku otwiera zakładkę Kontrola */
+$('#stats').addEventListener('click', e => {
+  if (!e.target.closest('.ckpill')) return;
+  S.tab = 'kontrola';
+  render();
+});
 $('#bPrint').addEventListener('click', printView);
 window.addEventListener('afterprint', () => {
   const pv = $('#print');

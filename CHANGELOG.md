@@ -2,6 +2,17 @@
 
 Każdy wpis odpowiada jednemu commitowi. Format: co zrobiono, dlaczego, jak sprawdzono.
 
+## 0.22.0 (14.10.2026) — nowy wygląd, etap 2: układ
+
+- Nagłówek jako karta: opis obudowy i zasilania (np. „Hager Volta · 3 × 18 mod. · TN-C-S · 3 × 400 V”), nazwa projektu,
+  moc i prąd szczytowy, zajęte moduły, znacznik stanu kontroli (kliknięcie otwiera zakładkę Kontrola), Cofnij, Ponów,
+  Drukuj. Odmiana liczebników: „1 błąd”, „2 błędy”, „5 błędów” (było „1 błędy”).
+- Pasek projektu: projekty, pliki, „Wczytaj przykład” i „Wyczyść”. „Rozłóż fazy” przeniesione do narzędzi obudowy.
+- Biblioteka aparatów razem z wyborem obudowy to szuflada otwierana przyciskiem „+ Dodaj aparat” (, zamykana ✕).
+  W pustym projekcie otwarta od razu; zamknięta oddaje obudowie całą środkową szerokość.
+- Zakładki panelu bocznego w siatce 3 × 2, aktywna na tle akcentu.
+- Testy korzystające z biblioteki najpierw ją otwierają; test liczebnika oczekuje „1 błąd”. Zrzuty komputer i telefon.
+
 ## 0.21.0 (14.10.2026) — nowy wygląd, etap 1: paleta, moduł 44 px, kontrolki
 
 - Wdrożenie zaakceptowanego systemu projektowego (https://claude.ai/artifact/Vpoe9YowNQmZ8BExgihHkm) i projektu ekranów

@@ -54,6 +54,7 @@ test('zakładki Kontrola, Kable i Zestawienie mają treść', async ({ page }) =
 
 test('dodanie aparatu z biblioteki i usunięcie klawiszem Delete', async ({ page }) => {
   await page.goto('/');
+  if (await page.locator('#lib').isHidden()) await page.click('#bLib'); // szuflada biblioteki
   await page.locator('.libitem', { hasText: 'MCB B16 1P' }).click();
   await expect(page.locator('.slot')).toHaveCount(22);
   await page.keyboard.press('Delete');
@@ -118,6 +119,7 @@ test('front aparatu zależy od producenta', async ({ page }) => {
   // Ten sam aparat pięciu producentów: inna klasa, inna barwa znaku, inny kształt dźwigni.
   const looks = [];
   for (const m of ['hager', 'schneider', 'abb', 'eaton', 'legrand']) {
+    if (await page.locator('#lib').isHidden()) await page.click('#bLib'); // szuflada biblioteki
     await page.click(`[data-mfr="${m}"]`);
     await page.locator('.libitem', { hasText: 'MCB B16 1P' }).click();
     const dev = page.locator(`#board .slot.sel .dev.m-${m}.lv`);

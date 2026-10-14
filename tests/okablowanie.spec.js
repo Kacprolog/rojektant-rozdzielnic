@@ -111,7 +111,7 @@ test('zwarcie międzyfazowe: alert od razu, czerwona obwódka, wpis w Kontroli, 
   await page.click('[data-tab="kontrola"]');
   await expect(page.locator('.issue .sev.crit')).toHaveCount(1);
   await expect(page.locator('#panel')).toContainText('zwarcie międzyfazowe 400 V');
-  await expect(page.locator('#stats')).toContainText('1 błędy');
+  await expect(page.locator('#stats')).toContainText('1 błąd');
 
   const id = await page.evaluate(() => S.conn[S.conn.length - 1].id);
   // Kliknięcie w przewód (zdarzenie wysyłane wprost, bo środek obrysu ścieżki może zasłaniać inny przewód).

@@ -9,6 +9,17 @@ function render(skipPanel) {
   renderTabs();
   if (!skipPanel) renderPanel();
 }
+/* Odmiana rzeczownika po liczebniku: 1 błąd, 2 błędy, 5 błędów. */
+function plural(n, one, few, many) {
+  const d = n % 10,
+    dd = n % 100;
+  return n === 1 ? one : d >= 2 && d <= 4 && (dd < 12 || dd > 14) ? few : many;
+}
+/* Szuflada biblioteki: null = automatycznie (otwarta, gdy projekt jest pusty), true/false = wybór użytkownika. */
+let libOpen = null;
+function libShown() {
+  return libOpen === null ? !Object.keys(S.dev).length : libOpen;
+}
 function renderTop() {
   const pn = $('#pname');
   if (document.activeElement !== pn) pn.value = S.name;
@@ -30,11 +41,20 @@ function renderTop() {
     .join('');
   const nc = ck.filter(c => c.sev === 'crit').length,
     nw = ck.filter(c => c.sev === 'warn').length;
+  const e = enc();
+  $('#eyebrow').textContent =
+    `${MFR[S.enc.mfr].n} ${e.n} · ${S.enc.rows} × ${e.mpr} mod. · ${S.set.siec} · ${is1F() ? '1 × 230 V' : '3 × 400 V'}`;
+  const ck2 = nc ? 'crit' : nw ? 'warn' : 'ok';
   $('#stats').innerHTML =
-    `<div class="stat"><div class="k">Moduły</div><div class="v">${fmt(T.used)}<small> / ${T.cap}</small></div></div>
-  <div class="stat"><div class="k">Moc zainst.</div><div class="v">${fmt(T.P)}<small> kW</small></div></div>
-  <div class="stat"><div class="k">Moc szczyt.</div><div class="v">${fmt(T.Pd)}<small> kW · ${fmt(T.Ibm)} A</small></div></div>
-  <div class="stat"><div class="k">Kontrola</div><div class="v" style="color:${nc ? 'var(--crit)' : nw ? 'var(--warn)' : 'var(--ok)'}">${nc ? nc + ' błędy' : nw ? nw + ' uwagi' : 'OK'}</div></div>`;
+    `<div class="stat"><div class="k">Moc szczytowa</div><div class="v">${fmt(T.Pd)}<small>kW</small></div></div>
+  <div class="stat"><div class="k">Prąd szczytowy</div><div class="v">${fmt(T.Ibm)}<small>A</small></div></div>
+  <div class="stat"><div class="k">Moduły</div><div class="v">${fmt(T.used)}<small>/ ${T.cap}</small></div></div>
+  <button class="ckpill ${ck2}" data-tab="kontrola" title="Pokaż kontrolę projektu">${nc ? 'Kontrola: ' + nc + ' ' + plural(nc, 'błąd', 'błędy', 'błędów') : nw ? 'Kontrola: ' + nw + ' ' + plural(nw, 'uwaga', 'uwagi', 'uwag') : '✓ Kontrola: bez uwag'}</button>`;
+  /* biblioteka aparatów jako szuflada: w pustym projekcie otwarta, potem według wyboru użytkownika */
+  const lo = libShown();
+  $('#lib').hidden = !lo;
+  $('.grid').classList.toggle('libclosed', !lo);
+  $('#bLib').setAttribute('aria-expanded', String(lo));
 }
 function renderEnc() {
   const e = enc();

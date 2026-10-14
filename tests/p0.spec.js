@@ -118,6 +118,7 @@ test.describe('lista projektów', () => {
 
   test('historia cofania jest osobna dla każdego projektu', async ({ page }) => {
     await page.goto('/');
+    if (await page.locator('#lib').isHidden()) await page.click('#bLib'); // szuflada biblioteki
     await page.locator('.libitem', { hasText: 'MCB B16 1P' }).click();
     await expect(page.locator('#bUndo')).toBeEnabled();
     await page.click('#bNew');
@@ -148,9 +149,12 @@ test.describe('cofnij / ponów', () => {
     await page.click('[data-wf="N"]');
     await page.click('[data-tab="bilans"]');
     await slots.first().click();
+    if (await page.locator('#lib').isHidden()) await page.click('#bLib'); // szuflada biblioteki
     await page.fill('#libSearch', 'B16');
     await page.fill('#libSearch', '');
     await expect(undo).toBeDisabled();
+
+    if (await page.locator('#lib').isHidden()) await page.click('#bLib'); // szuflada biblioteki
 
     await page.locator('.libitem', { hasText: 'MCB B16 1P' }).click();
     await expect(slots).toHaveCount(22);

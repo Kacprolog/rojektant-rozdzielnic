@@ -61,6 +61,7 @@ test('kontrola proponuje naprawę obwodu: prąd, przekrój, różnicówka; cofni
 
 test('naprawy dodające aparaty: różnicówka przed obwodem, rozłącznik, ogranicznik', async ({ page }) => {
   await page.click('#bNew');
+  if (await page.locator('#lib').isHidden()) await page.click('#bLib'); // szuflada biblioteki
   await page.locator('.libitem', { hasText: 'MCB B16 1P' }).click();
   await page.click('[data-tab="kontrola"]');
   await fix(page, 'Dodaj różnicówkę 40 A / 30 mA typ A').click();

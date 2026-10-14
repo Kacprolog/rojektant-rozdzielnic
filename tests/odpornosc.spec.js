@@ -128,6 +128,7 @@ test('projektu, którego nie da się wczytać, aplikacja nie usuwa z pamięci pr
   await page.reload();
   await expect(page.locator('#projSel option')).toHaveCount(1);
   // Zmiana w działającym projekcie wymusza zapis; uszkodzony wpis nadal jest w pamięci, bez zmian.
+  if (await page.locator('#lib').isHidden()) await page.click('#bLib'); // szuflada biblioteki
   await page.locator('.libitem', { hasText: 'MCB B16 1P' }).click();
   const st = await page.evaluate(() => {
     const j = JSON.parse(localStorage.getItem('rozdz-v2'));

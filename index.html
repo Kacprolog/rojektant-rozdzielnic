@@ -19,14 +19,20 @@
     <div class="app">
       <header class="top">
         <div class="ttl">
-          <div class="eyebrow">Rozdzielnica modułowa · szyna TH35 · 1 moduł = 18 mm</div>
+          <div class="eyebrow" id="eyebrow">Rozdzielnica modułowa · szyna TH35 · 1 moduł = 18 mm</div>
           <input id="pname" class="pname" aria-label="Nazwa projektu" />
         </div>
         <div class="stats" id="stats"></div>
         <div class="actions">
-          <button class="btn" id="bSample">Wczytaj przykład</button>
-          <button class="btn" id="bBalance" title="Rozłóż obwody jednofazowe równomiernie na L1–L3">Rozłóż fazy</button>
-          <button class="btn danger" id="bClear">Wyczyść</button>
+          <button class="btn" id="bUndo" title="Cofnij ostatnią zmianę projektu (Ctrl+Z)">Cofnij</button>
+          <button class="btn" id="bRedo" title="Ponów cofniętą zmianę (Ctrl+Shift+Z lub Ctrl+Y)">Ponów</button>
+          <button
+            class="btn"
+            id="bPrint"
+            title="Wydruk lub PDF: front, okablowanie, struktura, zestawienie (A4 poziomo)"
+          >
+            Drukuj / PDF
+          </button>
           <button class="btn" id="bInstall" hidden title="Zainstaluj jako aplikację: osobne okno, praca bez internetu">
             Zainstaluj
           </button>
@@ -47,17 +53,10 @@
             Otwórz projekt
           </button>
           <input type="file" id="fOpen" accept=".json,application/json" hidden />
-          <button
-            class="btn sm"
-            id="bPrint"
-            title="Wydruk lub PDF: front, okablowanie, struktura, zestawienie (A4 poziomo)"
-          >
-            Drukuj / PDF
-          </button>
         </div>
         <div class="pgroup">
-          <button class="btn sm" id="bUndo" title="Cofnij ostatnią zmianę projektu (Ctrl+Z)">↶ Cofnij</button>
-          <button class="btn sm" id="bRedo" title="Ponów cofniętą zmianę (Ctrl+Shift+Z lub Ctrl+Y)">↷ Ponów</button>
+          <button class="btn sm" id="bSample">Wczytaj przykład</button>
+          <button class="btn sm danger" id="bClear">Wyczyść</button>
         </div>
       </div>
       <div class="confirm" id="confirm" hidden>
@@ -67,7 +66,11 @@
       </div>
 
       <main class="grid">
-        <aside class="lib">
+        <aside class="lib" id="lib" aria-label="Biblioteka aparatów i obudowa">
+          <div class="libhead">
+            <h2>Biblioteka</h2>
+            <button class="btn sm" id="bLibX" aria-label="Zamknij bibliotekę">✕</button>
+          </div>
           <section class="card">
             <h2>Obudowa</h2>
             <div class="fld">
@@ -109,6 +112,10 @@
               <div class="encsub" id="encSub"></div>
             </div>
             <div class="headtools">
+              <button class="btn pri" id="bLib" aria-controls="lib" aria-expanded="false">+ Dodaj aparat</button>
+              <button class="btn sm" id="bBalance" title="Rozłóż obwody jednofazowe równomiernie na L1–L3">
+                Rozłóż fazy
+              </button>
               <button
                 class="btn sm"
                 id="bSim"
