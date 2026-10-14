@@ -142,3 +142,20 @@ test('Backspace nie usuwa aparatu (poza Makiem); Delete usuwa', async ({ page })
   await expect(page.locator('#board .slot')).toHaveCount(mac ? 20 : 21);
   if (!mac) { await page.keyboard.press('Delete'); await expect(page.locator('#board .slot')).toHaveCount(20); }
 });
+
+test('wyłącznik różnicowonadprądowy ma zdolność zwarciową do ustawienia i naprawy', async ({ page }) => {
+  const d = await ids(page), rc = d['Gniazda garaż / ogród'];
+  expect(await page.evaluate(id => S.dev[id].p.icn, rc)).toBe(6);
+  await page.evaluate(() => { S.set.ik0 = 10; S.set.wlzLen = 2; render(); });
+  expect((await issues(page)).some(x => x.includes('-F14') && x.includes('zdolność zwarciowa 6 kA'))).toBe(true);
+  await page.locator(`#board .slot[data-id="${rc}"] .rt`).click();
+  await expect(page.locator('#pIcn')).toHaveValue('6');
+  await page.selectOption('#pIcn', '10');
+  expect((await issues(page)).some(x => x.includes('-F14') && x.includes('zdolność zwarciowa'))).toBe(false);
+  await expect(page.locator('#panel')).toContainText('typ A, 10 kA');
+  // Plik sprzed tej wersji (RCBO bez pola icn) dostaje 6 kA.
+  const j = await page.evaluate(() => exportData());
+  delete Object.values(j.S.dev).find(x => x.t === 'rcbo').p.icn;
+  await page.setInputFiles('#fOpen', { name: 'x.rozdz.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(j)) });
+  expect(await page.evaluate(() => Object.values(S.dev).find(x => x.t === 'rcbo').p.icn)).toBe(6);
+});

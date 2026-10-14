@@ -35,6 +35,12 @@ Każdy punkt to osobny commit; numeracja jak w przeglądzie (HANDOFF.md → „Z
   Poza polami tekstowymi Backspace jest blokowany: silnik WebKit cofał nim stronę w historii (wykrył to nowy test).
 - Testy w `tests/przeglad.spec.js` (2).
 
+### 7. Zdolność zwarciowa RCBO
+- Wyłącznik różnicowonadprądowy ma pole „Zdolność Icn” (6 albo 10 kA) jak wyłącznik nadprądowy; dotąd przyjmowane
+  było na stałe 6 kA. Kontrola Icn ≥ Ik i naprawa „Ustaw Icn 10 kA” obejmują oba typy. Opis RCBO w zestawieniu zawiera
+  Icn. Starsze projekty i pliki dostają 6 kA.
+- Test w `tests/przeglad.spec.js`.
+
 ## 0.14.1 (13.10.2026) — poprawki z przeglądu całego kodu
 
 Przegląd objął `js/`, `css/`, `index.html`, `scripts/`, `tests/` i workflow. Każde znalezisko poniżej zostało najpierw

@@ -33,7 +33,7 @@ function rate(d){const p=d.p;switch(d.t){
 function desc(d){const p=d.p;switch(d.t){
   case 'mcb':return `${TNAME.mcb} ${p.curve}${p.In} ${p.poles}P, ${p.icn} kA`;
   case 'rcd':return `${TNAME.rcd} ${p.In} A / ${p.idn} mA, ${p.poles}P, typ ${p.kind}${p.sel?' selektywny S':''}`;
-  case 'rcbo':return `${TNAME.rcbo} ${p.curve}${p.In} / ${p.idn} mA, ${p.poles==2?'1P+N':'3P+N'}, typ ${p.kind}`;
+  case 'rcbo':return `${TNAME.rcbo} ${p.curve}${p.In} / ${p.idn} mA, ${p.poles==2?'1P+N':'3P+N'}, typ ${p.kind}, ${p.icn} kA`;
   case 'sw':return `${TNAME.sw} ${p.In} A ${p.poles}P`;
   case 'spd':return `${TNAME.spd} ${p.cls} ${p.sys}`;
   case 'meter':return `${TNAME.meter} ${p.ph==3?'3-fazowy':'1-fazowy'}${p.mid?', MID':''}`;
@@ -44,7 +44,7 @@ function specs(d){const p=d.p,r=[];
   switch(d.t){
   case 'mcb':r.push(['Norma','PN-EN 60898-1'],['Napięcie Ue','230/400 V AC'],['Prąd In',p.In+' A'],['Charakterystyka',p.curve+({B:' · wyzw. 3–5 × In',C:' · wyzw. 5–10 × In',D:' · wyzw. 10–20 × In'}[p.curve])],['Zdolność Icn',p.icn+' kA'],['Klasa ogr. energii','3'],['Bieguny',p.poles+'P']);break;
   case 'rcd':r.push(['Norma','PN-EN 61008-1'],['Napięcie Ue',p.poles==2?'230 V AC':'400 V AC'],['Prąd In',p.In+' A'],['IΔn',p.idn+' mA'],['Typ',p.kind+' · '+({AC:'prąd przemienny',A:'+ pulsujący jednokierunkowy',F:'+ prądy o mieszanej częstotliwości',B:'+ prąd stały wygładzony'}[p.kind])],['Zwłoka',p.sel?'selektywny (S)':'bezzwłoczny'],['Uwaga','wymaga zabezpieczenia zwarciowego przed aparatem']);break;
-  case 'rcbo':r.push(['Norma','PN-EN 61009-1'],['Prąd In',p.In+' A'],['Charakterystyka',p.curve],['IΔn',p.idn+' mA, typ '+p.kind],['Zdolność Icn','6 kA'],['Bieguny',p.poles==2?'1P+N':'3P+N']);break;
+  case 'rcbo':r.push(['Norma','PN-EN 61009-1'],['Prąd In',p.In+' A'],['Charakterystyka',p.curve],['IΔn',p.idn+' mA, typ '+p.kind],['Zdolność Icn',p.icn+' kA'],['Bieguny',p.poles==2?'1P+N':'3P+N']);break;
   case 'sw':r.push(['Norma','PN-EN 60947-3'],['Napięcie Ue','400 V AC'],['Prąd In',p.In+' A'],['Kategoria','AC-22A'],['Bieguny',p.poles+'P']);break;
   case 'spd':r.push(['Norma','PN-EN 61643-11'],['Typ',p.cls],['Układ',p.sys],['Uc','275 V AC'],['In (8/20)','20 kA / biegun'],...(p.cls==='T1+T2'?[['Iimp (10/350)','12,5 kA / biegun']]:[]),['Up','≤ 1,5 kV'],['Sygnalizacja','okienko stanu wkładki']);break;
   case 'meter':r.push(['Dyrektywa','MID'+(p.mid?' (legalizacja)':' – brak')],['Klasa dokładności','B (1)'],['Zasilanie',p.ph==3?'3 × 230/400 V':'230 V'],['Prąd ref. (maks.)',p.ph==3?'5 (80) A':'5 (45) A'],['Pomiar','bezpośredni']);break;
@@ -61,6 +61,7 @@ function specs(d){const p=d.p,r=[];
 function newDev(t,m,p,c,name){const d={id:'d'+(uid++),t,m,p:{...p},name:name||TNAME[t]};
   if(t==='mcb'||t==='rcbo'){d.c={kind:'gniazda',P:1,cable:2.5,ph:'L1',len:15,...(c||{})};}
   if(t==='mcb')d.rcd=null;
+  if(t==='rcbo'&&!d.p.icn)d.p.icn=6;                     /* zdolność zwarciowa Icn [kA] */
   if(t==='meter'||t==='contactor')d.circ=null;          /* id obwodu (MCB / RCBO), w którego torze stoi aparat */
   if(t==='contactor'&&!d.p.ctl)d.p.ctl='man';            /* sterowanie cewki: man ręczne, g12 sygnał taryfy, relay przekaźnik kontroli faz */
   return d;}
@@ -112,7 +113,7 @@ function cleanDev(d){const p=d.p;d.name=String(d.name==null?TNAME[d.t]:d.name);i
   if(d.t==='meter')p.ph=oneOf(p.ph,[3,1]);
   if(d.t==='psu')p.W=oneOf(p.W,[30,60]);
   if(['mcb','rcbo','rcd','sw','contactor'].indexOf(d.t)>=0&&!(p.In>0))p.In=16;
-  if(d.t==='mcb')p.icn=oneOf(p.icn,[6,10]);
+  if(isCirc(d))p.icn=oneOf(p.icn,[6,10]);
   if(d.t==='rcd'||d.t==='rcbo')p.idn=p.idn>0?p.idn:30;
   if(isCirc(d))p.curve=oneOf(p.curve,['B','C','D']);
   if(d.t==='rcd'||d.t==='rcbo')p.kind=oneOf(p.kind,['A','AC','F','B']);
@@ -261,8 +262,8 @@ function checks(){const out=[],D=designations(),e=enc(),T=totals(),devs=Object.v
     else if(!cc.trip){const txt=`<b>${n}</b>: pętla zwarcia ${fmt(cc.zs,2)} Ω daje prąd zwarcia ${fmt(cc.ik1,0)} A, mniej niż próg wyzwalania ${fmt(cc.ia,0)} A (${d.p.curve}${d.p.In}).`,fix=bigger(x=>x.trip);
       if(r)add('warn',txt+' Wyłączenie przy zwarciu do PE zapewnia '+D[r.id]+'.','PN-HD 60364-4-41 p. 411.4. Zwarcie L–N nie zostanie wyłączone bezzwłocznie: skróć obwód, zwiększ przekrój albo zmień charakterystykę.',d.id,fix);
       else add('crit',txt,'Warunek samoczynnego wyłączenia Zs·Ia ≤ U0 nie jest spełniony (PN-HD 60364-4-41 p. 411.4).',d.id,fix);}
-    const icn=d.t==='mcb'?d.p.icn:6;
-    if(icn<nB.ikB)add('crit',`<b>${n}</b>: zdolność zwarciowa ${icn} kA jest mniejsza niż prąd zwarciowy w rozdzielnicy ${fmt(nB.ikB,1)} kA.`,'Warunek Icn ≥ Ik (PN-HD 60364-4-43 p. 434.5.1).',d.id,d.t==='mcb'&&nB.ikB<=10?{l:'Ustaw Icn 10 kA',f:()=>{d.p.icn=10;}}:undefined);});
+    const icn=+d.p.icn||6;
+    if(icn<nB.ikB)add('crit',`<b>${n}</b>: zdolność zwarciowa ${icn} kA jest mniejsza niż prąd zwarciowy w rozdzielnicy ${fmt(nB.ikB,1)} kA.`,'Warunek Icn ≥ Ik (PN-HD 60364-4-43 p. 434.5.1).',d.id,nB.ikB<=10?{l:'Ustaw Icn 10 kA',f:()=>{d.p.icn=10;}}:undefined);});
   if(nB.duWlz>+sv('duWlz'))add('warn',`Spadek napięcia w WLZ ${fmt(nB.duWlz,2)}% przekracza ${fmt(+sv('duWlz'))}% (${fmt(+sv('wlzLen'))} m, ${fmt(wlzMm())} mm², moc szczytowa ${fmt(T.Pd)} kW).`,'Zwiększ przekrój WLZ (większe zabezpieczenie przedlicznikowe dobiera większy przekrój) albo zmniejsz moc szczytową.');
   devs.filter(d=>d.t==='rcd').forEach(r=>{const L=phaseLoads(d=>d.t==='mcb'&&d.rcd===r.id);const mx=Math.max(L.L1,L.L2,L.L3)*S.set.ks;
     const nn=devs.filter(d=>d.t==='mcb'&&d.rcd===r.id).length;
