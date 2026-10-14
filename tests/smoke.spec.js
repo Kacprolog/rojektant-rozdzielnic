@@ -33,7 +33,10 @@ test('widok okablowania rysuje przewody, szyny grzebieniowe i listwy', async ({ 
 
 test('model połączeń dla przykładu jest stabilny', async ({ page }) => {
   await page.goto('/');
-  const r = await page.evaluate(() => { const b = buildConns(); return { n: b.C.length, combs: b.combs.map(c => c.type + c.mod) }; });
+  const r = await page.evaluate(() => {
+    const b = buildConns();
+    return { n: b.C.length, combs: b.combs.map(c => c.type + c.mod) };
+  });
   expect(r.n).toBe(48); // 42 połączenia mocy + 6 w torach obwodów (licznik pompy ciepła, stycznik bojlera)
   expect(r.combs).toEqual(['3F8', '3F3']);
 });
@@ -77,8 +80,11 @@ test('stan zapisany przez starą wersję (bez len/wf) wczytuje się', async ({ p
   await page.evaluate(() => {
     // Stan w formacie sprzed listy projektów: jeden projekt pod kluczem rozdz-v1.
     const s = JSON.parse(localStorage.getItem('rozdz-v2')).list[0].S;
-    delete s.wf; s.wires = true;
-    Object.values(s.dev).forEach(d => { if (d.c) delete d.c.len; });
+    delete s.wf;
+    s.wires = true;
+    Object.values(s.dev).forEach(d => {
+      if (d.c) delete d.c.len;
+    });
     localStorage.removeItem('rozdz-v2');
     localStorage.setItem('rozdz-v1', JSON.stringify({ S: s, uid: 99 }));
   });
@@ -86,7 +92,10 @@ test('stan zapisany przez starą wersję (bez len/wf) wczytuje się', async ({ p
   await expect(page.locator('.slot')).toHaveCount(21);
   await expect(page.locator('svg.wires')).toHaveCount(1);
   // Migracja: projekt trafia na listę (rozdz-v2), stary klucz znika.
-  const keys = await page.evaluate(() => [localStorage.getItem('rozdz-v1'), JSON.parse(localStorage.getItem('rozdz-v2')).list.length]);
+  const keys = await page.evaluate(() => [
+    localStorage.getItem('rozdz-v1'),
+    JSON.parse(localStorage.getItem('rozdz-v2')).list.length
+  ]);
   expect(keys).toEqual([null, 1]);
   expect(errors).toEqual([]);
 });
@@ -113,10 +122,21 @@ test('front aparatu zależy od producenta', async ({ page }) => {
     await page.locator('.libitem', { hasText: 'MCB B16 1P' }).click();
     const dev = page.locator(`#board .slot.sel .dev.m-${m}.lv`);
     await expect(dev).toHaveCount(1);
-    looks.push(await dev.evaluate(e => {
-      const mk = getComputedStyle(e.querySelector('.mk')), lv = getComputedStyle(e.querySelector('.lever'));
-      return [mk.color, mk.backgroundColor, mk.borderTopWidth, mk.borderBottomWidth, mk.borderLeftWidth, lv.borderTopLeftRadius, lv.borderBottomLeftRadius].join('|');
-    }));
+    looks.push(
+      await dev.evaluate(e => {
+        const mk = getComputedStyle(e.querySelector('.mk')),
+          lv = getComputedStyle(e.querySelector('.lever'));
+        return [
+          mk.color,
+          mk.backgroundColor,
+          mk.borderTopWidth,
+          mk.borderBottomWidth,
+          mk.borderLeftWidth,
+          lv.borderTopLeftRadius,
+          lv.borderBottomLeftRadius
+        ].join('|');
+      })
+    );
   }
   expect(new Set(looks).size).toBe(5);
 });

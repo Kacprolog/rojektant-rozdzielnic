@@ -8,13 +8,30 @@ test.beforeEach(async ({ page }) => {
 });
 
 // Aparaty przykładu po nazwie → id; zapisany koniec przewodu na zacisku aparatu.
-const ids = page => page.evaluate(() => { const m = {}; Object.values(S.dev).forEach(d => { m[d.name] = d.id; }); return m; });
+const ids = page =>
+  page.evaluate(() => {
+    const m = {};
+    Object.values(S.dev).forEach(d => {
+      m[d.name] = d.id;
+    });
+    return m;
+  });
 const dev = (id, side, i) => ({ k: 'dev', id, side, i });
 const bar = b => ({ k: 'bar', bar: b });
 const wlz = ph => ({ k: 'wlz', ph });
-const connect = (page, a, b) => page.evaluate(([x, y]) => { wireClick(x); wireClick(y); }, [a, b]);
+const connect = (page, a, b) =>
+  page.evaluate(
+    ([x, y]) => {
+      wireClick(x);
+      wireClick(y);
+    },
+    [a, b]
+  );
 const issues = page => page.evaluate(() => wireCheck().out.map(x => x.sev + ': ' + x.msg.replace(/<[^>]+>/g, '')));
-const manualAdopted = async page => { await page.click('[data-wmode="manual"]'); await page.click('[data-wact="adopt"]'); };
+const manualAdopted = async page => {
+  await page.click('[data-wmode="manual"]');
+  await page.click('[data-wact="adopt"]');
+};
 const target = (page, ep) => page.locator(`svg.wires [data-ep='${JSON.stringify(ep)}']`);
 
 test('tryb automatyczny jest domyślny i nie ma klikalnych zacisków', async ({ page }) => {
@@ -52,9 +69,24 @@ test('tryb ręczny: pusty daje informację, zaciski są klikalne, kliknięcia do
 });
 
 test('„Przejmij automatyczne” daje to samo okablowanie bez żadnych uwag', async ({ page }) => {
-  const auto = await page.evaluate(() => ({ n: buildConns().C.length, mat: JSON.stringify(wireMat()), sev: checks().map(c => c.sev).sort().join() }));
+  const auto = await page.evaluate(() => ({
+    n: buildConns().C.length,
+    mat: JSON.stringify(wireMat()),
+    sev: checks()
+      .map(c => c.sev)
+      .sort()
+      .join()
+  }));
   await manualAdopted(page);
-  const man = await page.evaluate(() => ({ n: buildConns().C.length, mat: JSON.stringify(wireMat()), sev: checks().map(c => c.sev).sort().join(), user: S.conn.length }));
+  const man = await page.evaluate(() => ({
+    n: buildConns().C.length,
+    mat: JSON.stringify(wireMat()),
+    sev: checks()
+      .map(c => c.sev)
+      .sort()
+      .join(),
+    user: S.conn.length
+  }));
   expect(man.n).toBe(48);
   expect(man.user).toBe(42); // 48 połączeń minus 6 zworek szyn grzebieniowych
   expect(man.n).toBe(auto.n);
@@ -64,11 +96,13 @@ test('„Przejmij automatyczne” daje to samo okablowanie bez żadnych uwag', a
   await expect(page.locator('svg.wires path.halo')).toHaveCount(0);
 });
 
-test('zwarcie międzyfazowe: alert od razu, czerwona obwódka, wpis w Kontroli, usunięcie klawiszem Delete', async ({ page }) => {
+test('zwarcie międzyfazowe: alert od razu, czerwona obwódka, wpis w Kontroli, usunięcie klawiszem Delete', async ({
+  page
+}) => {
   await manualAdopted(page);
   const d = await ids(page);
-  await target(page, dev(d['Rozłącznik główny'], 'bot', 0)).click();          // wyj. L1
-  await target(page, dev(d['RCD obwody ogólne'], 'top', 1)).click();          // wej. L2
+  await target(page, dev(d['Rozłącznik główny'], 'bot', 0)).click(); // wyj. L1
+  await target(page, dev(d['RCD obwody ogólne'], 'top', 1)).click(); // wej. L2
   const toast = page.locator('.toast');
   await expect(toast).toContainText('Złe podłączenie');
   await expect(toast).toContainText('dwie różne fazy (L1 i L2)');
@@ -92,7 +126,9 @@ test('zwarcie międzyfazowe: alert od razu, czerwona obwódka, wpis w Kontroli, 
 test('pozostałe rodzaje złych podłączeń', async ({ page }) => {
   await manualAdopted(page);
   const d = await ids(page);
-  const q = d['Rozłącznik główny'], r1 = d['RCD obwody ogólne'], r2 = d['RCD ładowarka EV'];
+  const q = d['Rozłącznik główny'],
+    r1 = d['RCD obwody ogólne'],
+    r2 = d['RCD ładowarka EV'];
   const cases = [
     [dev(q, 'bot', 0), bar('N'), 'łączy fazę z przewodem neutralnym: zwarcie'],
     [dev(q, 'bot', 2), bar('PE'), 'łączy fazę z PE: zwarcie doziemne'],
@@ -100,7 +136,11 @@ test('pozostałe rodzaje złych podłączeń', async ({ page }) => {
     [bar('N'), bar('N:' + r1), 'łączy przewody N z różnych stref (przed różnicówkami / za różnicówką -F2)'],
     [bar('N:' + r1), bar('N:' + r2), 'łączy przewody N z różnych stref (za różnicówką -F2 / za różnicówką -F11)'],
     [wlz('L1'), dev(r1, 'top', 0), 'omija rozłącznik główny'],
-    [dev(q, 'bot', 0), dev(d['Płyta indukcyjna'], 'top', 0), 'łączy tory z różnych stref (przed różnicówkami / za różnicówką -F2)'],
+    [
+      dev(q, 'bot', 0),
+      dev(d['Płyta indukcyjna'], 'top', 0),
+      'łączy tory z różnych stref (przed różnicówkami / za różnicówką -F2)'
+    ],
     [dev(r1, 'bot', 0), dev(r2, 'bot', 0), 'łączy tory z różnych stref (za różnicówką -F2 / za różnicówką -F11)'],
     [dev(q, 'bot', 2), dev(d['Podgrzewacz wody'], 'bot', 0), 'jest wpięty w zacisk odejścia obwodu']
   ];
@@ -110,7 +150,10 @@ test('pozostałe rodzaje złych podłączeń', async ({ page }) => {
     expect(out.length, msg).toBe(1);
     expect(out[0]).toContain(msg);
     await expect(page.locator('.toast')).toContainText(msg.slice(0, 20));
-    await page.evaluate(() => { wireSel = S.conn[S.conn.length - 1].id; wireDel(); });
+    await page.evaluate(() => {
+      wireSel = S.conn[S.conn.length - 1].id;
+      wireDel();
+    });
     expect(await issues(page)).toEqual([]);
   }
 });
@@ -118,11 +161,22 @@ test('pozostałe rodzaje złych podłączeń', async ({ page }) => {
 test('brak zasilania: usunięty przewód, niepodłączona listwa PE i listwa N za różnicówką', async ({ page }) => {
   await manualAdopted(page);
   const d = await ids(page);
-  const drop = (a, b) => page.evaluate(([x, y]) => { const k = JSON.stringify; S.conn = S.conn.filter(w => !((k(w.a) === k(x) && k(w.b) === k(y)) || (k(w.a) === k(y) && k(w.b) === k(x)))); render(); }, [a, b]);
+  const drop = (a, b) =>
+    page.evaluate(
+      ([x, y]) => {
+        const k = JSON.stringify;
+        S.conn = S.conn.filter(w => !((k(w.a) === k(x) && k(w.b) === k(y)) || (k(w.a) === k(y) && k(w.b) === k(x))));
+        render();
+      },
+      [a, b]
+    );
 
   await drop(dev(d['Rozłącznik główny'], 'bot', 2), dev(d['Podgrzewacz wody'], 'top', 0));
   // Bez napięcia zostaje wyłącznik i stycznik stojący w jego torze.
-  expect(await issues(page)).toEqual(['crit: -K2 Bojler – taryfa G12: brak połączenia z zasilaniem na zaciskach wej. L3.', 'crit: -F15 Podgrzewacz wody: brak połączenia z zasilaniem na zaciskach wej. L3.']);
+  expect(await issues(page)).toEqual([
+    'crit: -K2 Bojler – taryfa G12: brak połączenia z zasilaniem na zaciskach wej. L3.',
+    'crit: -F15 Podgrzewacz wody: brak połączenia z zasilaniem na zaciskach wej. L3.'
+  ]);
 
   await drop(wlz('PE'), bar('PE'));
   const out = await issues(page);
@@ -138,7 +192,10 @@ test('brak zasilania: usunięty przewód, niepodłączona listwa PE i listwa N z
 test('zmiana fazy obwodu i układu sieci ujawnia złe podłączenie istniejących przewodów', async ({ page }) => {
   await manualAdopted(page);
   const d = await ids(page);
-  await page.evaluate(id => { S.dev[id].c.ph = 'L1'; render(); }, d['Podgrzewacz wody']);
+  await page.evaluate(id => {
+    S.dev[id].c.ph = 'L1';
+    render();
+  }, d['Podgrzewacz wody']);
   let out = await issues(page);
   expect(out.length).toBe(1);
   expect(out[0]).toContain('-Q1 wyj. L3 → -F15 wej. L1');
@@ -147,7 +204,10 @@ test('zmiana fazy obwodu i układu sieci ujawnia złe podłączenie istniejącyc
   expect(await issues(page)).toEqual([]);
 
   // TN-S: mostek PE–N jest błędem, a przewód N zasilania przestaje istnieć po stronie PEN.
-  await page.evaluate(() => { S.set.siec = 'TN-S'; render(); });
+  await page.evaluate(() => {
+    S.set.siec = 'TN-S';
+    render();
+  });
   out = await issues(page);
   expect(out.some(x => x.includes('łączy N z PE') && x.includes('TN-S'))).toBe(true);
 });
@@ -177,12 +237,18 @@ test('przewody są danymi projektu: cofanie, plik, usunięcie aparatu, przełado
   const j = JSON.parse(file);
   j.S.conn.push({ id: 'w999', a: { k: 'dev', id: '__proto__', side: 'top', i: 0 }, b: { k: 'bar', bar: 'N' } });
   j.S.conn.push({ id: 'zły', a: { k: 'wlz', ph: 'L1' }, b: { k: 'bar', bar: 'N:nic' } });
-  await page.setInputFiles('#fOpen', { name: 'x.rozdz.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(j)) });
+  await page.setInputFiles('#fOpen', {
+    name: 'x.rozdz.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify(j))
+  });
   await expect(page.locator('.toast')).toContainText('Wczytano projekt');
   expect(await page.evaluate(() => [S.wmode, S.conn.length])).toEqual(['manual', 2]);
 });
 
-test('„Usuń przewody” i zastąpienie wymagają potwierdzenia; powrót do trybu automatycznego niczego nie kasuje', async ({ page }) => {
+test('„Usuń przewody” i zastąpienie wymagają potwierdzenia; powrót do trybu automatycznego niczego nie kasuje', async ({
+  page
+}) => {
   await manualAdopted(page);
   await page.click('[data-wact="adopt"]');
   await expect(page.locator('#confirm')).toContainText('Zastąpić ręczne okablowanie (42 przewodów)');
@@ -203,7 +269,11 @@ test('edycja przewodu: przekrój, kolor izolacji wg PN-EN 60445, przepinanie ko�
   await manualAdopted(page);
   const d = await ids(page);
   // Przewód -Q1 wyj. L1 → -F2 wej. L1 (10 mm², brązowy).
-  const id = await page.evaluate(([q, r]) => buildConns().C.find(c => c.user && c.a.id === q && c.a.side === 'bot' && c.a.ph === 'L1' && c.b.id === r).id, [d['Rozłącznik główny'], d['RCD obwody ogólne']]);
+  const id = await page.evaluate(
+    ([q, r]) =>
+      buildConns().C.find(c => c.user && c.a.id === q && c.a.side === 'bot' && c.a.ph === 'L1' && c.b.id === r).id,
+    [d['Rozłącznik główny'], d['RCD obwody ogólne']]
+  );
   const wire = page.locator(`svg.wires path[data-w="${id}"]`);
   const pick = () => wire.dispatchEvent('click');
   await pick();
@@ -229,12 +299,14 @@ test('edycja przewodu: przekrój, kolor izolacji wg PN-EN 60445, przepinanie ko�
   expect((await issues(page))[0]).toContain('warn: Przewód -Q1 wyj. L1 → -F2 wej. L1 ma izolację niebieską');
   await page.selectOption('[data-wprop="col"]', 'PE');
   await expect(page.locator('.toast')).toContainText('Złe podłączenie');
-  expect((await issues(page))[0]).toContain('crit: Przewód -Q1 wyj. L1 → -F2 wej. L1 ma izolację zielono-żółtą, a nie jest przewodem ochronnym');
+  expect((await issues(page))[0]).toContain(
+    'crit: Przewód -Q1 wyj. L1 → -F2 wej. L1 ma izolację zielono-żółtą, a nie jest przewodem ochronnym'
+  );
   await page.selectOption('[data-wprop="col"]', '');
   expect(await issues(page)).toEqual([]);
 
   // Przewód ochronny w innym kolorze = błąd.
-  const pe = await page.evaluate(() => buildConns().C.find(c => c.user && c.ph === 'PE' && c.b.k === 'dev').id);   // ogranicznik: listwa PE → -F1 wyj. PE
+  const pe = await page.evaluate(() => buildConns().C.find(c => c.user && c.ph === 'PE' && c.b.k === 'dev').id); // ogranicznik: listwa PE → -F1 wyj. PE
   await page.locator(`svg.wires path[data-w="${pe}"]`).dispatchEvent('click');
   await page.selectOption('[data-wprop="col"]', 'L2');
   expect((await issues(page))[0]).toContain('jest przewodem ochronnym, a ma izolację czarną');
@@ -253,12 +325,17 @@ test('edycja przewodu: przekrój, kolor izolacji wg PN-EN 60445, przepinanie ko�
 test('przepięcie końca przewodu zgłasza złą fazę, a powrót ją usuwa', async ({ page }) => {
   await manualAdopted(page);
   const d = await ids(page);
-  const q = d['Rozłącznik główny'], f15 = d['Podgrzewacz wody'], r1 = d['RCD obwody ogólne'];
-  const id = await page.evaluate(([a, b]) => buildConns().C.find(c => c.user && c.a.id === a && c.b.id === b).id, [q, f15]);
+  const q = d['Rozłącznik główny'],
+    f15 = d['Podgrzewacz wody'],
+    r1 = d['RCD obwody ogólne'];
+  const id = await page.evaluate(
+    ([a, b]) => buildConns().C.find(c => c.user && c.a.id === a && c.b.id === b).id,
+    [q, f15]
+  );
   const n = await page.evaluate(() => S.conn.length);
   await page.locator(`svg.wires path[data-w="${id}"]`).dispatchEvent('click');
-  await page.click('[data-wact="movea"]');                                  // początek: -Q1 wyj. L3
-  await target(page, dev(q, 'bot', 0)).click();                             // przepinamy na wyj. L1
+  await page.click('[data-wact="movea"]'); // początek: -Q1 wyj. L3
+  await target(page, dev(q, 'bot', 0)).click(); // przepinamy na wyj. L1
   await expect(page.locator('.toast')).toContainText('dwie różne fazy (L1 i L3)');
   await expect(page.locator('[data-wact="del"]')).toContainText('-Q1 wyj. L1 → -F15 wej. L3');
   await page.click('[data-wact="movea"]');
@@ -274,18 +351,27 @@ test('przepięcie końca przewodu zgłasza złą fazę, a powrót ją usuwa', as
 });
 
 test('kolory żył są normatywne także w ciemnym motywie; PEN ma niebieskie końce', async ({ page }) => {
-  const read = () => page.evaluate(() => { const s = getComputedStyle(document.querySelector('#board')); return ['--l1', '--l2', '--l3', '--n', '--pe', '--pe2'].map(k => s.getPropertyValue(k).trim()); });
+  const read = () =>
+    page.evaluate(() => {
+      const s = getComputedStyle(document.querySelector('#board'));
+      return ['--l1', '--l2', '--l3', '--n', '--pe', '--pe2'].map(k => s.getPropertyValue(k).trim());
+    });
   const light = await read();
   expect(light).toEqual(['#7b4a22', '#232323', '#8c9195', '#2a62c9', '#2f9a3c', '#e2c21c']);
   await page.emulateMedia({ colorScheme: 'dark' });
   expect(await read()).toEqual(light);
   // TN-C-S: przewód PEN z WLZ i mostek PEN mają niebieskie oznaczenie końców; w TN-S go nie ma.
   await expect(page.locator('svg.wires path.pen')).toHaveCount(2);
-  await page.evaluate(() => { S.set.siec = 'TN-S'; render(); });
+  await page.evaluate(() => {
+    S.set.siec = 'TN-S';
+    render();
+  });
   await expect(page.locator('svg.wires path.pen')).toHaveCount(0);
 });
 
-test('przekroje: grubość linii rośnie z przekrojem, przewód ma połysk i cień, zaciski mają zakres', async ({ page }) => {
+test('przekroje: grubość linii rośnie z przekrojem, przewód ma połysk i cień, zaciski mają zakres', async ({
+  page
+}) => {
   // Tryb automatyczny: przykład nie ma zastrzeżeń do przekrojów, a przewody 10 mm² są grubsze niż 1,5 mm².
   expect(await page.evaluate(() => termIssues())).toEqual([]);
   const w = await page.evaluate(() => [1.5, 2.5, 4, 6, 10, 16, 25, 35].map(wireW));
@@ -301,12 +387,15 @@ test('przekroje: grubość linii rośnie z przekrojem, przewód ma połysk i cie
   // Tryb ręczny: 35 mm² nie wejdzie w zacisk różnicówki 40 A, 4 mm² nie wejdzie w przekaźnik kontroli faz.
   await manualAdopted(page);
   const d = await ids(page);
-  const find = (a, b) => page.evaluate(([x, y]) => buildConns().C.find(c => c.user && c.a.id === x && c.b.id === y).id, [a, b]);
+  const find = (a, b) =>
+    page.evaluate(([x, y]) => buildConns().C.find(c => c.user && c.a.id === x && c.b.id === y).id, [a, b]);
   const big = await find(d['Rozłącznik główny'], d['RCD obwody ogólne']);
   await page.locator(`svg.wires path[data-w="${big}"]`).dispatchEvent('click');
   const thin = +(await page.locator(`svg.wires path[data-w="${big}"]`).getAttribute('stroke-width'));
   await page.selectOption('[data-wprop="mm"]', '35');
-  await expect(page.locator('.toast')).toContainText('35 mm² nie pasuje do zacisku -Q1 Rozłącznik główny (zakres 1,5–25 mm²)');
+  await expect(page.locator('.toast')).toContainText(
+    '35 mm² nie pasuje do zacisku -Q1 Rozłącznik główny (zakres 1,5–25 mm²)'
+  );
   expect(+(await page.locator(`svg.wires path[data-w="${big}"]`).getAttribute('stroke-width'))).toBeGreaterThan(thin);
   expect((await issues(page)).filter(x => x.startsWith('crit')).length).toBe(1);
   await page.selectOption('[data-wprop="mm"]', '');
@@ -314,7 +403,9 @@ test('przekroje: grubość linii rośnie z przekrojem, przewód ma połysk i cie
   const rel = await find(d['Rozłącznik główny'], d['Kontrola faz PC']);
   await page.locator(`svg.wires path[data-w="${rel}"]`).dispatchEvent('click');
   await page.selectOption('[data-wprop="mm"]', '4');
-  await expect(page.locator('.toast')).toContainText('4 mm² nie pasuje do zacisku -K1 Kontrola faz PC (zakres 0,5–2,5 mm²)');
+  await expect(page.locator('.toast')).toContainText(
+    '4 mm² nie pasuje do zacisku -K1 Kontrola faz PC (zakres 0,5–2,5 mm²)'
+  );
   await page.selectOption('[data-wprop="mm"]', '');
   expect(await issues(page)).toEqual([]);
 });

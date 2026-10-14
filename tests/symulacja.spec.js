@@ -6,7 +6,14 @@ test.beforeEach(async ({ page }) => {
   await page.goto('/');
 });
 
-const ids = page => page.evaluate(() => { const m = {}; Object.values(S.dev).forEach(d => { m[d.name] = d.id; }); return m; });
+const ids = page =>
+  page.evaluate(() => {
+    const m = {};
+    Object.values(S.dev).forEach(d => {
+      m[d.name] = d.id;
+    });
+    return m;
+  });
 const slot = (page, id) => page.locator(`#board .slot[data-id="${id}"]`);
 const count = page => page.locator('#simCount');
 const log = page => page.locator('#simBar .simlog');
@@ -33,7 +40,8 @@ test('symulacja jest domyślnie wyłączona; po włączeniu wszystkie obwody są
 test('dźwignie: różnicówka gasi swoje obwody, rozłącznik główny gasi wszystko', async ({ page }) => {
   await page.click('#bSim');
   const d = await ids(page);
-  const r1 = d['RCD obwody ogólne'], q = d['Rozłącznik główny'];
+  const r1 = d['RCD obwody ogólne'],
+    q = d['Rozłącznik główny'];
 
   await slot(page, r1).locator('.lever').click();
   await expect(count(page)).toHaveText('Zasilone obwody: 4/13'); // 8 obwodów w rzędzie 2 i płyta indukcyjna są za tą różnicówką
@@ -56,7 +64,9 @@ test('dźwignie: różnicówka gasi swoje obwody, rozłącznik główny gasi wsz
   await expect(count(page)).toHaveText('Zasilone obwody: 13/13');
   await slot(page, r1).locator('.tbtn').click();
   await expect(count(page)).toHaveText('Zasilone obwody: 4/13');
-  await expect(log(page)).toContainText('Test -F2 RCD obwody ogólne: wyłącznik zadziałał prawidłowo. Bez zasilania: 9 obw.');
+  await expect(log(page)).toContainText(
+    'Test -F2 RCD obwody ogólne: wyłącznik zadziałał prawidłowo. Bez zasilania: 9 obw.'
+  );
 });
 
 test('awarie: zwarcie, upływ z różnicówką i bez niej, przeciążenie', async ({ page }) => {
@@ -98,14 +108,21 @@ test('awarie: zwarcie, upływ z różnicówką i bez niej, przeciążenie', asyn
   await expect(log(page)).toContainText('nie ma wyłącznika różnicowoprądowego, więc nic go nie wyłączy');
 
   // Przeciążenie przy przewodzie słabszym niż zabezpieczenie.
-  await page.evaluate(id => { S.dev[id].c.cable = 1.5; render(); }, d['Podgrzewacz wody']);
+  await page.evaluate(id => {
+    S.dev[id].c.cable = 1.5;
+    render();
+  }, d['Podgrzewacz wody']);
   await page.click('[data-sim="over"]');
   await expect(log(page)).toContainText('człon termiczny');
   await expect(log(page)).toContainText('Przewód 1,5 mm² (Iz 14,5 A) jest słabszy niż zabezpieczenie 16 A');
 
   // Brak selektywności: obwód 25 A przy zabezpieczeniu przedlicznikowym 32 A.
   await page.click('[data-sim="reset"]');
-  await page.evaluate(id => { S.dev[id].p.In = 25; S.dev[id].c.cable = 4; render(); }, d['Gniazda salon']);
+  await page.evaluate(id => {
+    S.dev[id].p.In = 25;
+    S.dev[id].c.cable = 4;
+    render();
+  }, d['Gniazda salon']);
   await slot(page, d['Gniazda salon']).locator('.rt').click();
   await page.click('[data-sim="short"]');
   await expect(log(page)).toContainText('Brak selektywności: zabezpieczenie przedlicznikowe 32 A');
@@ -126,7 +143,9 @@ test('zanik fazy gasi obwody jednofazowe tej fazy i zostawia trójfazowe z niepe
   await expect(count(page)).toHaveText('Zasilone obwody: 13/13');
 });
 
-test('symulacja nie zmienia projektu: brak kroków cofania, brak w pliku, wyłączona po przeładowaniu', async ({ page }) => {
+test('symulacja nie zmienia projektu: brak kroków cofania, brak w pliku, wyłączona po przeładowaniu', async ({
+  page
+}) => {
   await page.click('#bSim');
   const d = await ids(page);
   await slot(page, d['RCD obwody ogólne']).locator('.lever').click();
@@ -155,10 +174,14 @@ test('przeciąganie przewodu: gumka, zielone i czerwone zaciski, nowy przewód p
   await page.click('[data-wact="adopt"]');
   const d = await ids(page);
   const ep = e => page.locator(`svg.wires [data-ep='${JSON.stringify(e)}']`);
-  const from = ep({ k: 'dev', id: d['Rozłącznik główny'], side: 'bot', i: 0 });          // wyj. L1
-  const bad = ep({ k: 'dev', id: d['RCD obwody ogólne'], side: 'top', i: 1 });            // wej. L2
+  const from = ep({ k: 'dev', id: d['Rozłącznik główny'], side: 'bot', i: 0 }); // wyj. L1
+  const bad = ep({ k: 'dev', id: d['RCD obwody ogólne'], side: 'top', i: 1 }); // wej. L2
   const n = await page.evaluate(() => S.conn.length);
-  const center = async l => { await l.scrollIntoViewIfNeeded(); const b = await l.boundingBox(); return [b.x + b.width / 2, b.y + b.height / 2]; };
+  const center = async l => {
+    await l.scrollIntoViewIfNeeded();
+    const b = await l.boundingBox();
+    return [b.x + b.width / 2, b.y + b.height / 2];
+  };
 
   let [x, y] = await center(from);
   await page.mouse.move(x, y);

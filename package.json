@@ -7,9 +7,12 @@
     "start": "node scripts/serve.js 4173",
     "test": "playwright test --reporter=list",
     "test:ui": "playwright test --ui",
-    "druk": "node scripts/podglad-druku.js"
+    "druk": "node scripts/podglad-druku.js",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "devDependencies": {
-    "@playwright/test": "1.56.0"
+    "@playwright/test": "1.56.0",
+    "prettier": "3.3.3"
   }
 }

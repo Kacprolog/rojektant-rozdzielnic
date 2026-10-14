@@ -35,7 +35,14 @@ test.describe('plik projektu', () => {
       ['to nie json', 'nie jest poprawnym plikiem JSON'],
       [JSON.stringify({ foo: 1 }), 'To nie jest plik Projektanta'],
       [JSON.stringify({ app: 'projektant-rozdzielnic', version: 99, S: {} }), 'nowszej wersji'],
-      [JSON.stringify({ app: 'projektant-rozdzielnic', version: 1, S: { rows: [['d1']], dev: {}, enc: { mfr: 'hager' } } }), 'uszkodzony']
+      [
+        JSON.stringify({
+          app: 'projektant-rozdzielnic',
+          version: 1,
+          S: { rows: [['d1']], dev: {}, enc: { mfr: 'hager' } }
+        }),
+        'uszkodzony'
+      ]
     ];
     for (const [text, msg] of cases) {
       await page.setInputFiles('#fOpen', asFile('x.json', text));
@@ -130,7 +137,9 @@ test.describe('lista projektów', () => {
 test.describe('cofnij / ponów', () => {
   test('przyciski cofają i ponawiają zmiany danych, a zmiany widoku pomijają', async ({ page }) => {
     await page.goto('/');
-    const undo = page.locator('#bUndo'), redo = page.locator('#bRedo'), slots = page.locator('.slot');
+    const undo = page.locator('#bUndo'),
+      redo = page.locator('#bRedo'),
+      slots = page.locator('.slot');
     await expect(undo).toBeDisabled();
     await expect(redo).toBeDisabled();
 
@@ -193,7 +202,13 @@ test.describe('cofnij / ponów', () => {
 
   test('stos ma limit 50 kroków', async ({ page }) => {
     await page.goto('/');
-    const n = await page.evaluate(() => { for (let i = 0; i < 60; i++) { S.set.moc = 10 + i; render(); } return HIST.u.length; });
+    const n = await page.evaluate(() => {
+      for (let i = 0; i < 60; i++) {
+        S.set.moc = 10 + i;
+        render();
+      }
+      return HIST.u.length;
+    });
     expect(n).toBe(50);
   });
 });
@@ -203,7 +218,11 @@ test.describe('druk / PDF', () => {
     const errors = [];
     page.on('pageerror', e => errors.push(e.message));
     await page.goto('/');
-    await page.evaluate(() => { window.print = () => { window.__printed = (window.__printed || 0) + 1; }; });
+    await page.evaluate(() => {
+      window.print = () => {
+        window.__printed = (window.__printed || 0) + 1;
+      };
+    });
     await page.locator('.slot').nth(3).click();
     await page.click('#bPrint');
     expect(await page.evaluate(() => window.__printed)).toBe(1);
@@ -221,8 +240,13 @@ test.describe('druk / PDF', () => {
     await expect(pages.nth(3)).toContainText('YKY 4×10');
 
     // Obudowa mieści się na stronie A4 poziomo (obszar roboczy ok. 1047 × 718 px).
-    const fit = await page.evaluate(() => [...document.querySelectorAll('#print .pfit')].map(e => [parseFloat(e.style.width), parseFloat(e.style.height)]));
-    for (const [w, h] of fit) { expect(w).toBeLessThanOrEqual(1040); expect(h).toBeLessThanOrEqual(570); }
+    const fit = await page.evaluate(() =>
+      [...document.querySelectorAll('#print .pfit')].map(e => [parseFloat(e.style.width), parseFloat(e.style.height)])
+    );
+    for (const [w, h] of fit) {
+      expect(w).toBeLessThanOrEqual(1040);
+      expect(h).toBeLessThanOrEqual(570);
+    }
 
     // Ekran bez zmian: widok frontu, zaznaczenie zachowane, #print ukryty.
     await expect(page.locator('#board svg.wires')).toHaveCount(0);
@@ -238,7 +262,9 @@ test.describe('druk / PDF', () => {
 
   test('przewody na wydruku trafiają w zaciski tak samo jak na ekranie', async ({ page }) => {
     await page.goto('/');
-    await page.evaluate(() => { window.print = () => {}; });
+    await page.evaluate(() => {
+      window.print = () => {};
+    });
     await page.click('[data-view="wires"]');
     const screen = await page.evaluate(() => document.querySelector('#board svg.wires').innerHTML);
     await page.click('#bPrint');

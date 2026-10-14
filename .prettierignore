@@ -1,0 +1,8 @@
+# Wygenerowane albo zewnętrzne: nie formatujemy
+css/fonts.css
+fonts/
+docs/
+test-results/
+playwright-report/
+node_modules/
+*.md

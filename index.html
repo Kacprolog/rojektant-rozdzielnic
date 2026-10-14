@@ -1,108 +1,169 @@
 <!doctype html>
 <html lang="pl">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Projektant Rozdzielnic</title>
-<link rel="stylesheet" href="css/fonts.css">
-<link rel="stylesheet" href="css/styles.css">
-</head>
-<body>
-
-<div class="app">
-  <header class="top">
-    <div class="ttl">
-      <div class="eyebrow">Rozdzielnica modułowa · szyna TH35 · 1 moduł = 18 mm</div>
-      <input id="pname" class="pname" aria-label="Nazwa projektu">
-    </div>
-    <div class="stats" id="stats"></div>
-    <div class="actions">
-      <button class="btn" id="bSample">Wczytaj przykład</button>
-      <button class="btn" id="bBalance" title="Rozłóż obwody jednofazowe równomiernie na L1–L3">Rozłóż fazy</button>
-      <button class="btn danger" id="bClear">Wyczyść</button>
-    </div>
-  </header>
-  <div class="projbar" id="projbar">
-    <div class="pgroup">
-      <label for="projSel">Projekt</label><select id="projSel"></select>
-      <button class="btn sm" id="bNew" title="Nowy, pusty projekt">Nowy</button>
-      <button class="btn sm" id="bDup" title="Kopia bieżącego projektu">Duplikuj</button>
-      <button class="btn sm danger" id="bDel" title="Usuń bieżący projekt z tej przeglądarki">Usuń</button>
-      <span class="badbox" id="badBox" hidden></span>
-    </div>
-    <div class="pgroup">
-      <button class="btn sm" id="bSave" title="Pobierz projekt jako plik .rozdz.json">Zapisz projekt</button>
-      <button class="btn sm" id="bOpen" title="Wczytaj plik .rozdz.json (można też przeciągnąć plik na stronę)">Otwórz projekt</button>
-      <input type="file" id="fOpen" accept=".json,application/json" hidden>
-      <button class="btn sm" id="bPrint" title="Wydruk lub PDF: front, okablowanie, struktura, zestawienie (A4 poziomo)">Drukuj / PDF</button>
-    </div>
-    <div class="pgroup">
-      <button class="btn sm" id="bUndo" title="Cofnij ostatnią zmianę projektu (Ctrl+Z)">↶ Cofnij</button>
-      <button class="btn sm" id="bRedo" title="Ponów cofniętą zmianę (Ctrl+Shift+Z lub Ctrl+Y)">↷ Ponów</button>
-    </div>
-  </div>
-  <div class="confirm" id="confirm" hidden>
-    <span id="cMsg"></span>
-    <button class="btn sm pri" id="cYes">Usuń wszystko</button>
-    <button class="btn sm" id="cNo">Anuluj</button>
-  </div>
-
-  <main class="grid">
-    <aside class="lib">
-      <section class="card">
-        <h2>Obudowa</h2>
-        <div class="fld"><label for="encMfr">Producent</label><select id="encMfr"></select></div>
-        <div class="fld2">
-          <div class="fld"><label for="encSeries">Seria</label><select id="encSeries"></select></div>
-          <div class="fld"><label for="encRows">Liczba rzędów</label><select id="encRows"></select></div>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <title>Projektant Rozdzielnic</title>
+    <link rel="stylesheet" href="css/fonts.css" />
+    <link rel="stylesheet" href="css/styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="top">
+        <div class="ttl">
+          <div class="eyebrow">Rozdzielnica modułowa · szyna TH35 · 1 moduł = 18 mm</div>
+          <input id="pname" class="pname" aria-label="Nazwa projektu" />
         </div>
-        <dl class="specs" id="encSpecs"></dl>
-      </section>
-      <section class="card">
-        <h2>Aparaty</h2>
-        <div class="chips" id="mfrChips" role="group" aria-label="Producent aparatów"></div>
-        <div class="fld"><input id="libSearch" type="search" placeholder="Szukaj: B16, różnicówka, licznik…" aria-label="Szukaj aparatu"></div>
-        <div class="libgroups" id="libList"></div>
-        <p class="hint">Przeciągnij aparat na szynę albo kliknij, aby dodać go na koniec aktywnego rzędu.</p>
-      </section>
-    </aside>
-
-    <section class="boardcol">
-      <div class="boardhead">
-        <div><div class="enc" id="encTitle"></div><div class="encsub" id="encSub"></div></div>
-        <div class="headtools"><button class="btn sm" id="bSim" aria-pressed="false" title="Żywa rozdzielnica: klikane dźwignie, napięcie na przewodach, awarie">▶ Symulacja</button><div class="seg" role="group" aria-label="Powiększenie obudowy" id="zoomSeg"><button data-zoom="-" title="Pomniejsz (Ctrl + kółko myszy)" aria-label="Pomniejsz">−</button><button data-zoom="fit" title="Dopasuj obudowę do szerokości okna" id="zoomVal">100%</button><button data-zoom="+" title="Powiększ (Ctrl + kółko myszy)" aria-label="Powiększ">+</button></div><div class="seg" role="group" aria-label="Widok obudowy" id="viewSeg"><button data-view="front">Front</button><button data-view="wires">Okablowanie</button></div></div>
+        <div class="stats" id="stats"></div>
+        <div class="actions">
+          <button class="btn" id="bSample">Wczytaj przykład</button>
+          <button class="btn" id="bBalance" title="Rozłóż obwody jednofazowe równomiernie na L1–L3">Rozłóż fazy</button>
+          <button class="btn danger" id="bClear">Wyczyść</button>
+        </div>
+      </header>
+      <div class="projbar" id="projbar">
+        <div class="pgroup">
+          <label for="projSel">Projekt</label
+          ><select id="projSel"></select>
+          <button class="btn sm" id="bNew" title="Nowy, pusty projekt">Nowy</button>
+          <button class="btn sm" id="bDup" title="Kopia bieżącego projektu">Duplikuj</button>
+          <button class="btn sm danger" id="bDel" title="Usuń bieżący projekt z tej przeglądarki">Usuń</button>
+          <span class="badbox" id="badBox" hidden></span>
+        </div>
+        <div class="pgroup">
+          <button class="btn sm" id="bSave" title="Pobierz projekt jako plik .rozdz.json">Zapisz projekt</button>
+          <button class="btn sm" id="bOpen" title="Wczytaj plik .rozdz.json (można też przeciągnąć plik na stronę)">
+            Otwórz projekt
+          </button>
+          <input type="file" id="fOpen" accept=".json,application/json" hidden />
+          <button
+            class="btn sm"
+            id="bPrint"
+            title="Wydruk lub PDF: front, okablowanie, struktura, zestawienie (A4 poziomo)"
+          >
+            Drukuj / PDF
+          </button>
+        </div>
+        <div class="pgroup">
+          <button class="btn sm" id="bUndo" title="Cofnij ostatnią zmianę projektu (Ctrl+Z)">↶ Cofnij</button>
+          <button class="btn sm" id="bRedo" title="Ponów cofniętą zmianę (Ctrl+Shift+Z lub Ctrl+Y)">↷ Ponów</button>
+        </div>
       </div>
-      <div class="chips" id="wireFilter" hidden role="group" aria-label="Pokazywane żyły"></div>
-      <div class="simbar" id="simBar" hidden></div>
-      <div class="boardscroll" id="boardScroll"><div class="boardzoom" id="boardZoom"><div class="cabinet" id="board"></div></div></div>
-      <div class="legend">
-        <span><i style="background:var(--l1)"></i>L1 (brązowy)</span>
-        <span><i style="background:var(--l2)"></i>L2 (czarny)</span>
-        <span><i style="background:var(--l3)"></i>L3 (szary)</span>
-        <span><i style="background:var(--n)"></i>N (niebieski)</span>
-        <span><i style="background:linear-gradient(90deg,var(--pe) 50%,var(--pe2) 50%)"></i>PE (zielono-żółty)</span>
-        <span><i style="background:linear-gradient(90deg,var(--n) 30%,var(--pe) 30% 50%,var(--pe2) 50% 70%,var(--n) 70%)"></i>PEN (zielono-żółty, końce niebieskie)</span>
-        <span>kolory żył wg PN-EN 60445 · grubość linii rośnie z przekrojem</span>
-        <span><i style="background:var(--cu);border-radius:2px"></i>szyna grzebieniowa</span>
-        <span id="wireHint" hidden>Kliknij aparat, aby wyróżnić jego przewody. Najedź na przewód, aby zobaczyć skąd i dokąd prowadzi.</span>
-        <span>Klawisz Delete usuwa zaznaczony aparat</span>
+      <div class="confirm" id="confirm" hidden>
+        <span id="cMsg"></span>
+        <button class="btn sm pri" id="cYes">Usuń wszystko</button>
+        <button class="btn sm" id="cNo">Anuluj</button>
       </div>
-    </section>
 
-    <aside class="side card">
-      <div class="tabs" role="tablist" id="tabs"></div>
-      <div id="panel" role="tabpanel"></div>
-    </aside>
-  </main>
+      <main class="grid">
+        <aside class="lib">
+          <section class="card">
+            <h2>Obudowa</h2>
+            <div class="fld">
+              <label for="encMfr">Producent</label
+              ><select id="encMfr"></select>
+            </div>
+            <div class="fld2">
+              <div class="fld">
+                <label for="encSeries">Seria</label
+                ><select id="encSeries"></select>
+              </div>
+              <div class="fld">
+                <label for="encRows">Liczba rzędów</label
+                ><select id="encRows"></select>
+              </div>
+            </div>
+            <dl class="specs" id="encSpecs"></dl>
+          </section>
+          <section class="card">
+            <h2>Aparaty</h2>
+            <div class="chips" id="mfrChips" role="group" aria-label="Producent aparatów"></div>
+            <div class="fld">
+              <input
+                id="libSearch"
+                type="search"
+                placeholder="Szukaj: B16, różnicówka, licznik…"
+                aria-label="Szukaj aparatu"
+              />
+            </div>
+            <div class="libgroups" id="libList"></div>
+            <p class="hint">Przeciągnij aparat na szynę albo kliknij, aby dodać go na koniec aktywnego rzędu.</p>
+          </section>
+        </aside>
 
-  <footer>Parametry aparatów i obudów są orientacyjne i służą do wstępnego projektu. Numer katalogowy, zgodność szyn grzebieniowych i dane znamionowe sprawdź w aktualnym katalogu producenta. Obciążalność przewodów: Cu/PVC, metoda A1 wg PN-HD 60364-5-52. Weryfikacja projektu i pomiary należą do osoby z uprawnieniami SEP.</footer>
-</div>
+        <section class="boardcol">
+          <div class="boardhead">
+            <div>
+              <div class="enc" id="encTitle"></div>
+              <div class="encsub" id="encSub"></div>
+            </div>
+            <div class="headtools">
+              <button
+                class="btn sm"
+                id="bSim"
+                aria-pressed="false"
+                title="Żywa rozdzielnica: klikane dźwignie, napięcie na przewodach, awarie"
+              >
+                ▶ Symulacja
+              </button>
+              <div class="seg" role="group" aria-label="Powiększenie obudowy" id="zoomSeg">
+                <button data-zoom="-" title="Pomniejsz (Ctrl + kółko myszy)" aria-label="Pomniejsz">−</button
+                ><button data-zoom="fit" title="Dopasuj obudowę do szerokości okna" id="zoomVal">100%</button
+                ><button data-zoom="+" title="Powiększ (Ctrl + kółko myszy)" aria-label="Powiększ">+</button>
+              </div>
+              <div class="seg" role="group" aria-label="Widok obudowy" id="viewSeg">
+                <button data-view="front">Front</button><button data-view="wires">Okablowanie</button>
+              </div>
+            </div>
+          </div>
+          <div class="chips" id="wireFilter" hidden role="group" aria-label="Pokazywane żyły"></div>
+          <div class="simbar" id="simBar" hidden></div>
+          <div class="boardscroll" id="boardScroll">
+            <div class="boardzoom" id="boardZoom"><div class="cabinet" id="board"></div></div>
+          </div>
+          <div class="legend">
+            <span><i style="background: var(--l1)"></i>L1 (brązowy)</span>
+            <span><i style="background: var(--l2)"></i>L2 (czarny)</span>
+            <span><i style="background: var(--l3)"></i>L3 (szary)</span>
+            <span><i style="background: var(--n)"></i>N (niebieski)</span>
+            <span
+              ><i style="background: linear-gradient(90deg, var(--pe) 50%, var(--pe2) 50%)"></i>PE (zielono-żółty)</span
+            >
+            <span
+              ><i
+                style="
+                  background: linear-gradient(90deg, var(--n) 30%, var(--pe) 30% 50%, var(--pe2) 50% 70%, var(--n) 70%);
+                "
+              ></i
+              >PEN (zielono-żółty, końce niebieskie)</span
+            >
+            <span>kolory żył wg PN-EN 60445 · grubość linii rośnie z przekrojem</span>
+            <span><i style="background: var(--cu); border-radius: 2px"></i>szyna grzebieniowa</span>
+            <span id="wireHint" hidden
+              >Kliknij aparat, aby wyróżnić jego przewody. Najedź na przewód, aby zobaczyć skąd i dokąd prowadzi.</span
+            >
+            <span>Klawisz Delete usuwa zaznaczony aparat</span>
+          </div>
+        </section>
 
-<script src="js/data.js"></script>
-<script src="js/model.js"></script>
-<script src="js/render.js"></script>
-<script src="js/wiring.js"></script>
-<script src="js/sim.js"></script>
-<script src="js/app.js"></script>
-</body>
+        <aside class="side card">
+          <div class="tabs" role="tablist" id="tabs"></div>
+          <div id="panel" role="tabpanel"></div>
+        </aside>
+      </main>
+
+      <footer>
+        Parametry aparatów i obudów są orientacyjne i służą do wstępnego projektu. Numer katalogowy, zgodność szyn
+        grzebieniowych i dane znamionowe sprawdź w aktualnym katalogu producenta. Obciążalność przewodów: Cu/PVC, metoda
+        A1 wg PN-HD 60364-5-52. Weryfikacja projektu i pomiary należą do osoby z uprawnieniami SEP.
+      </footer>
+    </div>
+
+    <script src="js/data.js"></script>
+    <script src="js/model.js"></script>
+    <script src="js/render.js"></script>
+    <script src="js/wiring.js"></script>
+    <script src="js/sim.js"></script>
+    <script src="js/app.js"></script>
+  </body>
 </html>

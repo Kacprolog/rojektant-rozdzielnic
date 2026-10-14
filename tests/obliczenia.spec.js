@@ -6,9 +6,29 @@ test.beforeEach(async ({ page }) => {
   await page.goto('/');
 });
 
-const ids = page => page.evaluate(() => { const m = {}; Object.values(S.dev).forEach(d => { m[d.name] = d.id; }); return m; });
-const found = page => page.evaluate(() => checks().filter(c => c.sev !== 'info').map(c => c.sev + ': ' + c.msg.replace(/<[^>]+>/g, '')));
-const set = (page, id, path, v) => page.evaluate(([i, k, x]) => { const [a, b] = k.split('.'); S.dev[i][a][b] = x; render(); }, [id, path, v]);
+const ids = page =>
+  page.evaluate(() => {
+    const m = {};
+    Object.values(S.dev).forEach(d => {
+      m[d.name] = d.id;
+    });
+    return m;
+  });
+const found = page =>
+  page.evaluate(() =>
+    checks()
+      .filter(c => c.sev !== 'info')
+      .map(c => c.sev + ': ' + c.msg.replace(/<[^>]+>/g, ''))
+  );
+const set = (page, id, path, v) =>
+  page.evaluate(
+    ([i, k, x]) => {
+      const [a, b] = k.split('.');
+      S.dev[i][a][b] = x;
+      render();
+    },
+    [id, path, v]
+  );
 const fix = (page, label) => page.locator('#panel [data-fix]', { hasText: label });
 
 test('przykład: wielkości sieci zgodne z ręcznym rachunkiem i brak nowych uwag', async ({ page }) => {
@@ -28,11 +48,14 @@ test('przykład: wielkości sieci zgodne z ręcznym rachunkiem i brak nowych uwa
 });
 
 test('za długi obwód: spadek napięcia z naprawą przekroju', async ({ page }) => {
-  const d = await ids(page), id = d['Gniazda pokoje piętro'];
+  const d = await ids(page),
+    id = d['Gniazda pokoje piętro'];
   await set(page, id, 'c.len', 120);
   const out = await found(page);
   expect(out.length).toBe(1);
-  expect(out[0]).toContain('warn: -F10 Gniazda pokoje piętro: spadek napięcia 5,83% przekracza 3% (120 m, 2,5 mm², 1,8 kW).');
+  expect(out[0]).toContain(
+    'warn: -F10 Gniazda pokoje piętro: spadek napięcia 5,83% przekracza 3% (120 m, 2,5 mm², 1,8 kW).'
+  );
   await page.click('[data-tab="kontrola"]');
   await fix(page, 'Zwiększ przewód do 6 mm²').click();
   expect(await found(page)).toEqual([]);
@@ -45,7 +68,9 @@ test('samoczynne wyłączenie: błąd bez różnicówki, uwaga z różnicówką'
   await set(page, d['Pompa ciepła'], 'c.len', 100);
   let out = await found(page);
   expect(out.length).toBe(1);
-  expect(out[0]).toContain('crit: -F16 Pompa ciepła: pętla zwarcia 2,15 Ω daje prąd zwarcia 107 A, mniej niż próg wyzwalania 160 A (C16).');
+  expect(out[0]).toContain(
+    'crit: -F16 Pompa ciepła: pętla zwarcia 2,15 Ω daje prąd zwarcia 107 A, mniej niż próg wyzwalania 160 A (C16).'
+  );
   await page.click('[data-tab="kontrola"]');
   await fix(page, 'Zwiększ przewód do 6 mm²').click();
   expect(await found(page)).toEqual([]);
@@ -54,7 +79,9 @@ test('samoczynne wyłączenie: błąd bez różnicówki, uwaga z różnicówką'
   await set(page, d['Ładowarka EV 11 kW'], 'c.len', 200);
   out = await found(page);
   expect(out.filter(x => x.startsWith('crit'))).toEqual([]);
-  expect(out.some(x => x.includes('pętla zwarcia') && x.includes('Wyłączenie przy zwarciu do PE zapewnia -F11.'))).toBe(true);
+  expect(out.some(x => x.includes('pętla zwarcia') && x.includes('Wyłączenie przy zwarciu do PE zapewnia -F11.'))).toBe(
+    true
+  );
   expect(out.some(x => x.includes('-F12') && x.includes('spadek napięcia'))).toBe(true);
 });
 
@@ -83,9 +110,15 @@ test('zdolność zwarciowa aparatów względem prądu zwarciowego w rozdzielnicy
 test('układ TT: obwody bez różnicówki są błędem, pętla zwarcia nie jest oceniana', async ({ page }) => {
   const d = await ids(page);
   await set(page, d['Pompa ciepła'], 'c.len', 100);
-  await page.evaluate(() => { S.set.siec = 'TT'; render(); });
+  await page.evaluate(() => {
+    S.set.siec = 'TT';
+    render();
+  });
   const out = await found(page);
-  expect(out.filter(x => x.includes('w układzie TT samoczynne wyłączenie zasilania wymaga wyłącznika różnicowoprądowego')).length).toBe(2); // podgrzewacz, pompa ciepła
+  expect(
+    out.filter(x => x.includes('w układzie TT samoczynne wyłączenie zasilania wymaga wyłącznika różnicowoprądowego'))
+      .length
+  ).toBe(2); // podgrzewacz, pompa ciepła
   expect(out.some(x => x.includes('pętla zwarcia'))).toBe(false);
 });
 
@@ -111,7 +144,9 @@ test('starszy projekt bez danych sieci dostaje wartości domyślne', async ({ pa
     localStorage.setItem('rozdz-v2', JSON.stringify(j));
   });
   await page.reload();
-  expect(await page.evaluate(() => [sv('zs0'), sv('ik0'), sv('wlzLen'), sv('duObw'), sv('duWlz')])).toEqual([0.3, 6, 15, 3, 0.5]);
+  expect(await page.evaluate(() => [sv('zs0'), sv('ik0'), sv('wlzLen'), sv('duObw'), sv('duWlz')])).toEqual([
+    0.3, 6, 15, 3, 0.5
+  ]);
   expect(await found(page)).toEqual([]);
 });
 
@@ -121,18 +156,25 @@ test('symulacja zwarcia korzysta z obliczonego prądu', async ({ page }) => {
   await page.click('#bSim');
   await page.locator(`#board .slot[data-id="${d['Pompa ciepła']}"] .rt`).click();
   await page.click('[data-sim="short"]');
-  await expect(page.locator('#simBar .simlog')).toContainText('prąd zwarcia na końcu obwodu ok. 107 A jest mniejszy niż próg 160 A, więc człon zwarciowy nie zadziała');
+  await expect(page.locator('#simBar .simlog')).toContainText(
+    'prąd zwarcia na końcu obwodu ok. 107 A jest mniejszy niż próg 160 A, więc człon zwarciowy nie zadziała'
+  );
 });
 
 test('prąd szczytowy każdej fazy osobno względem zabezpieczenia przedlicznikowego', async ({ page }) => {
   // Przykład mieści się na każdej fazie (L1 27,2 A, L2 31,1 A, L3 31,8 A przy 32 A).
-  const peak = await page.evaluate(() => { const L = phaseLoads(); return ['L1', 'L2', 'L3'].map(p => +(L[p] * S.set.ks).toFixed(1)); });
+  const peak = await page.evaluate(() => {
+    const L = phaseLoads();
+    return ['L1', 'L2', 'L3'].map(p => +(L[p] * S.set.ks).toFixed(1));
+  });
   expect(peak).toEqual([27.2, 31.1, 31.8]);
   expect(await found(page)).toEqual([]);
   // Przeniesienie gniazd garażowych z L2 na L3 przeciąża L3, choć średni prąd trzech faz się nie zmienia.
   const d = await ids(page);
   await set(page, d['Gniazda garaż / ogród'], 'c.ph', 'L3');
-  expect(await found(page)).toEqual(['warn: Prąd szczytowy fazy L3 (35,2 A) przekracza zabezpieczenie przedlicznikowe 32 A.']);
+  expect(await found(page)).toEqual([
+    'warn: Prąd szczytowy fazy L3 (35,2 A) przekracza zabezpieczenie przedlicznikowe 32 A.'
+  ]);
   await page.click('[data-tab="kontrola"]');
   await fix(page, 'Rozłóż fazy').click();
   expect(await found(page)).toEqual([]);
