@@ -1,6 +1,6 @@
 {
   "name": "projektant-rozdzielnic",
-  "version": "0.23.0",
+  "version": "0.23.1",
   "private": true,
   "description": "Interaktywny konfigurator rozdzielnic modułowych (DIN TH35) z widokiem okablowania, kontrolą projektu i zestawieniem materiałów.",
   "scripts": {

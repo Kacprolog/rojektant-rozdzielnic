@@ -2,6 +2,19 @@
 
 Każdy wpis odpowiada jednemu commitowi. Format: co zrobiono, dlaczego, jak sprawdzono.
 
+## 0.23.1 (14.10.2026) — szybsze rysowanie (publikacja nowego wyglądu)
+
+- Publikację 0.21–0.23 zatrzymało CI: w WebKit na Linuksie (bez akceleracji grafiki) klatka rysowała się ponad 2 s,
+  więc sprawdzanie stabilności elementów przed kliknięciem trwało 4–5 s i testy przekraczały limit czasu (31 testów
+  Safari). Wyłączenie animacji (`reducedMotion`) nie pomogło; pomiar `scripts/ci-klatki.js` (czas klatki w wariantach
+  stylu) wskazał rozmyte cienie: wewnątrz obudowy (po powiększeniu modułu duża powierzchnia) i pod kartami.
+- Cień obudowy z małym promieniem rozmycia, cień paneli (`--shadow-raised`) bez rozmycia. Wygląd praktycznie bez zmian.
+  Lokalnie WebKit: klatka 43 → 25 ms (front), 43 → 27 ms (okablowanie); 0.20.0 miała 36 i 28 ms. Na maszynie CI:
+  211 ms i 334 ms (bez żadnych cieni 64 i 180 ms: dalsze przyspieszenie możliwe przez cienie aparatów).
+- Znacznik kontroli w nagłówku ma atrybut `data-ck` zamiast `data-tab` (selektor `[data-tab="kontrola"]` trafiał w niego
+  zamiast w zakładkę). Testy działają z `reducedMotion: reduce` (aplikacja nie animuje wtedy przepływu prądu).
+- Gałęzie `ci-*`: pomiar klatek, potem testy WebKit raz. Na CI: 94 z 94 testów Safari w 7,2 min.
+
 ## 0.23.0 (14.10.2026) — nowy wygląd, etap 3: rozwijane podpisy aparatów
 
 - Pod aparatem mały przycisk z oznaczeniem, kropkami faz i strzałką (`.tag[data-tag]`). Kliknięcie albo Enter rozwija

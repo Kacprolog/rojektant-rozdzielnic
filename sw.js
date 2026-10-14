@@ -4,7 +4,7 @@
    Nowy plik potrzebny stronie dopisz do ASSETS (test „lista plików service workera jest kompletna” to sprawdza). */
 /** @type {ServiceWorkerGlobalScope} */
 const sw = /** @type {any} */ (self);
-const CACHE = 'rozdz-0.23.0';
+const CACHE = 'rozdz-0.23.1';
 const ASSETS = [
   './',
   'index.html',
