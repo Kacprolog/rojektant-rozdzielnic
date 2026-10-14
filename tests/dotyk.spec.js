@@ -29,6 +29,7 @@ const terminalError = page =>
   });
 
 test('powiększenie: przyciski, dopasowanie do szerokości, przewody nadal trafiają w zaciski', async ({ page }) => {
+  test.slow(); // najcięższy scenariusz; na wolnych maszynach CI (WebKit) potrzebuje więcej czasu
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
   await page.click('[data-view="wires"]');

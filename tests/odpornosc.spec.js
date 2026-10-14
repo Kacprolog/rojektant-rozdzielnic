@@ -10,6 +10,7 @@ test.beforeEach(async ({ page }) => {
 const EVIL = '</option></select><img src=x onerror="window.__x=1"><b id="inj">';
 
 test('nazwa aparatu z HTML nie jest wykonywana nigdzie w interfejsie ani po wczytaniu z pliku', async ({ page }) => {
+  test.slow(); // najcięższy scenariusz; na wolnych maszynach CI (WebKit) potrzebuje więcej czasu
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
   // Każdy aparat i projekt dostaje złośliwą nazwę; przechodzimy przez wszystkie zakładki, widoki, symulację i wydruk.

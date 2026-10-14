@@ -58,6 +58,14 @@ Każdy punkt to osobny commit; numeracja jak w przeglądzie (HANDOFF.md → „Z
 - Przenoszenie aparatu palcem i przewijanie krótkim ruchem działały poprawnie także na prawdziwych zdarzeniach.
 - Nadal nie sprawdzono na fizycznym telefonie.
 
+### CI: dwa testy w WebKit na Linuksie
+- Publikacja 0.15.0 została zatrzymana przez CI: dwa najcięższe testy (okablowanie ręczne w powiększeniu; wszystkie
+  zakładki, symulacja i wydruk) przekroczyły 30 s w WebKit na Linuksie, czekając, aż przycisk przestanie się przesuwać.
+  Firefox i Chromium przeszły (312 testów). Lokalnie nie da się tego odtworzyć (16 na 16 powtórzeń), więc przyczyna nie jest
+  potwierdzona; najbardziej prawdopodobna to wolna maszyna CI (uruchomienie trwało ok. 8–10 min zamiast 5–6).
+- Zmiany: te dwa testy mają potrojony limit czasu (`test.slow()`), a w CI każdy test ma jedną ponowną próbę; Playwright
+  oznacza wtedy test jako niestabilny (flaky) zamiast go ukrywać. Raport CI zapisuje nieudane testy jako publiczne adnotacje.
+
 ### 8. Czytelność kodu
 - **Prettier** (`.prettierrc.json`: 120 znaków w linii, apostrofy) sformatował cały kod JS, CSS, HTML, testy i skrypty.
   Linii dłuższych niż 200 znaków jest 41 zamiast 123 (zostały długie teksty komunikatów). `npm run format` formatuje,
