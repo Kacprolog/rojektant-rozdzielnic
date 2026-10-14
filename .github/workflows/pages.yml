@@ -1,4 +1,4 @@
-# Testy w 3 silnikach, a po sukcesie publikacja na GitHub Pages.
+# Testy w 4 silnikach (każdy na osobnej maszynie), a po sukcesie publikacja na GitHub Pages.
 # Wymaga jednorazowo: Settings → Pages → Source: „GitHub Actions”.
 name: Testy i publikacja
 
@@ -17,8 +17,14 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Każda przeglądarka na osobnej maszynie: równoległe testy czterech silników na jednej maszynie CI spowalniały WebKit
+  # (rysowanie programowe, bez akceleracji grafiki) tak, że testy przekraczały limit czasu.
   test:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [desktop, phone, safari, firefox]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -29,21 +35,23 @@ jobs:
       - run: npm run format:check
       # sprawdzanie typów (TypeScript w trybie checkJs, bez kompilacji; strona działa bez zmian)
       - run: npm run typecheck
-      - run: npx playwright install --with-deps chromium webkit firefox
+      - run: npx playwright install --with-deps ${{ matrix.project == 'safari' && 'webkit' || matrix.project == 'firefox' && 'firefox' || 'chromium' }}
       # reporter github zapisuje każdy nieudany test jako adnotację widoczną bez logowania
       - name: Testy
         run: |
-          if [[ "$GITHUB_REF" == refs/heads/ci-* ]]; then
+          if [[ "$GITHUB_REF" == refs/heads/ci-* && "${{ matrix.project }}" != safari ]]; then
+            echo "gałąź ci-*: tylko WebKit"
+          elif [[ "$GITHUB_REF" == refs/heads/ci-* ]]; then
             # eksperyment: pomiar czasu klatki w WebKit (scripts/ci-klatki.js), potem testy WebKit raz, bez ponownych prób
             node scripts/ci-klatki.js webkit
             npx playwright test --project=safari --retries=0 --reporter=github,line
           else
-            npx playwright test --reporter=github,line
+            npx playwright test --project=${{ matrix.project }} --reporter=github,line
           fi
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: playwright-wyniki
+          name: playwright-wyniki-${{ matrix.project }}
           path: test-results/
 
   deploy:

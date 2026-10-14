@@ -1423,19 +1423,19 @@ footer {
     1px 1px 0 var(--dev-edge),
     2px 2px 0 var(--dev-edge),
     3px 3px 0 var(--dev-edge),
-    7px 9px 12px rgba(0, 0, 0, 0.3);
+    6px 7px 4px rgba(0, 0, 0, 0.22); /* małe rozmycie: tanie w WebKit bez akceleracji */
 }
 .slot.sel .dev {
   box-shadow:
     0 0 0 2px var(--accent),
     3px 3px 0 var(--dev-edge),
-    8px 11px 16px rgba(0, 0, 0, 0.38);
+    6px 8px 5px rgba(0, 0, 0, 0.28);
 }
 .slot.over .dev {
   box-shadow:
     0 0 0 2px var(--crit),
     3px 3px 0 var(--dev-edge),
-    7px 9px 12px rgba(0, 0, 0, 0.3);
+    6px 7px 4px rgba(0, 0, 0, 0.22); /* małe rozmycie: tanie w WebKit bez akceleracji */
 }
 .trm {
   background: linear-gradient(180deg, rgba(0, 0, 0, 0.24), rgba(0, 0, 0, 0.05));

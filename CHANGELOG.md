@@ -2,6 +2,15 @@
 
 Każdy wpis odpowiada jednemu commitowi. Format: co zrobiono, dlaczego, jak sprawdzono.
 
+## 0.23.2 (14.10.2026) — CI: każda przeglądarka na osobnej maszynie
+
+- 0.23.1 na `main` nadal zatrzymało CI (3 testy Safari, 3 dopiero za drugim razem), choć sam WebKit na gałęzi testowej
+  przeszedł 94/94: na `main` cztery silniki testowały się równolegle na jednej maszynie i WebKit dostawał mniej mocy.
+  Zadanie testów ma teraz macierz `project` (desktop, phone, safari, firefox): każdy silnik na osobnej maszynie,
+  instalowana tylko jego przeglądarka, artefakty `playwright-wyniki-<projekt>`. Publikacja czeka na wszystkie.
+- Cień bryły aparatu z mniejszym rozmyciem (4–5 px zamiast 12–16 px). Lokalnie WebKit: klatka 25 ms (front), 26 ms
+  (okablowanie), prawie jak bez żadnych cieni (20 i 25 ms).
+
 ## 0.23.1 (14.10.2026) — szybsze rysowanie (publikacja nowego wyglądu)
 
 - Publikację 0.21–0.23 zatrzymało CI: w WebKit na Linuksie (bez akceleracji grafiki) klatka rysowała się ponad 2 s,
