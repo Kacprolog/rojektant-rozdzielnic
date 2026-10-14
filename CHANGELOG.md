@@ -58,6 +58,10 @@ Każdy punkt to osobny commit; numeracja jak w przeglądzie (HANDOFF.md → „Z
 - Przenoszenie aparatu palcem i przewijanie krótkim ruchem działały poprawnie także na prawdziwych zdarzeniach.
 - Nadal nie sprawdzono na fizycznym telefonie.
 
+### CI: gałęzie diagnostyczne
+- Push na gałąź `ci-*` uruchamia tylko testy WebKit (każdy 3 razy, bez ponownych prób) i niczego nie publikuje. Służy do
+  szukania przyczyny niestabilnych testów w Safari-WebKit na Linuksie.
+
 ### CI: dwa testy w WebKit na Linuksie
 - Publikacja 0.15.0 została zatrzymana przez CI: dwa najcięższe testy (okablowanie ręczne w powiększeniu; wszystkie
   zakładki, symulacja i wydruk) przekroczyły 30 s w WebKit na Linuksie, czekając, aż przycisk przestanie się przesuwać.

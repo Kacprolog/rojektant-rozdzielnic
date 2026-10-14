@@ -4,7 +4,8 @@ name: Testy i publikacja
 
 on:
   push:
-    branches: [main]
+    # gałęzie ci-* służą do eksperymentów diagnostycznych: tylko testy, bez publikacji (deploy wymaga main)
+    branches: [main, 'ci-*']
   pull_request:
   workflow_dispatch:
 
@@ -28,7 +29,14 @@ jobs:
       - run: npm run format:check
       - run: npx playwright install --with-deps chromium webkit firefox
       # reporter github zapisuje każdy nieudany test jako adnotację widoczną bez logowania
-      - run: npx playwright test --reporter=github,line
+      - name: Testy
+        run: |
+          if [[ "$GITHUB_REF" == refs/heads/ci-* ]]; then
+            # eksperyment: tylko WebKit, każdy test 3 razy, bez ponownych prób, żeby policzyć niestabilność
+            npx playwright test --project=safari --repeat-each=3 --retries=0 --reporter=github,line
+          else
+            npx playwright test --reporter=github,line
+          fi
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
