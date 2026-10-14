@@ -2,6 +2,24 @@
 
 Każdy wpis odpowiada jednemu commitowi. Format: co zrobiono, dlaczego, jak sprawdzono.
 
+## 0.17.0 (14.10.2026) — praca bez internetu i instalacja (PWA)
+
+- `manifest.webmanifest` (nazwa, język, tryb osobnego okna, ikony) i `sw.js` (service worker). Strategia „najpierw
+  sieć”: z internetem zawsze najnowsza wersja, bez internetu strona działa z kopii zapisanej przy poprzedniej wizycie.
+  Wybrana zamiast „najpierw kopia”, bo przy częstych wydaniach użytkownik nie utknie na starej wersji. Projekty były i są
+  w localStorage, więc offline nic nie ginie.
+- Service worker rejestrowany tylko przez http(s); otwarcie `index.html` z dysku działa jak dotąd.
+- Przycisk „Zainstaluj” w nagłówku: widoczny dopiero, gdy przeglądarka zgłosi możliwość instalacji (Chrome, Edge,
+  Opera; `beforeinstallprompt`). Na iPhonie: Udostępnij → „Do ekranu początkowego” (ikona `apple-touch-icon`).
+- Ikony: `icons/icon.svg` (trzy aparaty na szynie) i PNG 192/512, maskowalna 512 (z marginesem na przycięcie przez
+  Androida), 180 dla iOS. PNG generuje `node scripts/ikony.js`.
+- `scripts/serve.js`: typ `application/manifest+json`; CI kopiuje nowe pliki na stronę.
+- `playwright.config.js`: service worker domyślnie zablokowany w testach (`page.route()` nie widzi zapytań, które on
+  obsługuje; test odporności podmienia `render.js`). Test offline włącza go u siebie.
+- Testy `tests/pwa.spec.js` (4): lista plików service workera zawiera wszystko, co strona wczytuje (skrypty, style,
+  czcionki, ikony), i każdy plik istnieje; manifest; przycisk instalacji; start bez sieci po pierwszej wizycie (Chromium;
+  Playwright WebKit nie obsługuje trybu offline dla service workera).
+
 ## 0.16.0 (14.10.2026) — schemat jednokreskowy
 
 ### Schemat jednokreskowy (widok „Schemat” i strona wydruku)

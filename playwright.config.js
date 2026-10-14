@@ -5,7 +5,8 @@ module.exports = defineConfig({
   timeout: 30000,
   // W CI jedna ponowna próba: maszyny CI bywają wolne dla WebKit. Test, który przejdzie dopiero za drugim razem, raport oznacza jako „flaky”.
   retries: process.env.CI ? 1 : 0,
-  use: { baseURL: 'http://127.0.0.1:4174', trace: 'retain-on-failure' },
+  // Service worker zablokowany: page.route() nie widzi zapytań, które on obsługuje. Test PWA włącza go u siebie.
+  use: { baseURL: 'http://127.0.0.1:4174', trace: 'retain-on-failure', serviceWorkers: 'block' },
   // Osobny port i zawsze świeży serwer: testy nie mogą trafić w serwer uruchomiony z innej kopii projektu.
   webServer: { command: 'node scripts/serve.js 4174', url: 'http://127.0.0.1:4174', reuseExistingServer: false },
   projects: [

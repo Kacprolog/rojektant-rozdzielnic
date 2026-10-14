@@ -13,13 +13,13 @@ npm start            # serwer statyczny bez zależności: http://localhost:4173 
 npm install          # tylko dla testów (@playwright/test)
 npx playwright install chromium webkit   # raz, jeśli nie ma przeglądarek
 npm run format       # Prettier (CI sprawdza: npm run format:check)
-npm test             # 83 testy × 3 projekty: desktop 1600 px i telefon 390 px (Chromium), safari (WebKit)
+npm test             # 87 testów × 3 projekty: desktop 1600 px i telefon 390 px (Chromium), safari (WebKit)
 node scripts/podglad-druku.js            # PDF i zrzuty stron wydruku w test-results/druk/
 ```
 
 Firefox jest w konfiguracji tylko dla CI albo `PW_FIREFOX=1` (na komputerze użytkownika Firefox z Playwright nie startuje; użytkownik pracuje w Operze, czyli na silniku Chromium).
 
-`index.html` działa też po zwykłym otwarciu z dysku (`file://`): nie ma kroku budowania, modułów ES ani zależności w czasie działania. Strona nie pobiera nic z zewnątrz: czcionki (Barlow, Barlow Condensed, JetBrains Mono, licencja OFL) są w `fonts/`, opisane w `css/fonts.css`. Nowe pliki potrzebne stronie dopisz też do kroku kopiowania w `.github/workflows/pages.yml`.
+`index.html` działa też po zwykłym otwarciu z dysku (`file://`): nie ma kroku budowania, modułów ES ani zależności w czasie działania. Strona nie pobiera nic z zewnątrz: czcionki (Barlow, Barlow Condensed, JetBrains Mono, licencja OFL) są w `fonts/`, opisane w `css/fonts.css`. Nowe pliki potrzebne stronie dopisz też do kroku kopiowania w `.github/workflows/pages.yml` i do `ASSETS` w `sw.js` (praca offline; test to sprawdza). Zmieniając pliki strony, podnieś wersję w `CACHE` w `sw.js`, żeby stara kopia została usunięta.
 
 ## Struktura
 
@@ -34,6 +34,7 @@ js/render.js        render(), renderTop/Enc/Lib/Board/Tabs/Panel, panele: aparat
 js/wiring.js        terms(), buildConns(), drawWires() (routing SVG), panelKable(), materiały przewodów
 js/sim.js           symulacja: simCalc() (kto ma napięcie), dźwignie, test RCD, awarie, pasek renderSim()
 js/schemat.js       schemat jednokreskowy: schemGroups() (kolumny), schemSvg() (widok „Schemat” i strona wydruku)
+sw.js               service worker (offline, „najpierw sieć”); lista ASSETS; manifest.webmanifest, icons/ (scripts/ikony.js)
 js/app.js           akcje (dodaj/przenieś/usuń/rozłóż fazy/kopiuj), plik projektu, lista projektów, ask(), zdarzenia, boot()
 scripts/serve.js    serwer statyczny (Node, bez zależności)
 scripts/podglad-druku.js   PDF i zrzuty stron wydruku (Playwright)
@@ -48,6 +49,7 @@ tests/naprawy.spec.js       naprawy z kontroli, pasek szybkiej edycji
 tests/symulacja.spec.js     symulacja, awarie, przeciąganie przewodów
 tests/p0.spec.js    plik projektu, lista projektów, cofanie, druk
 tests/schemat.spec.js       schemat jednokreskowy
+tests/pwa.spec.js           manifest, lista plików service workera, instalacja, start bez sieci
 .github/workflows/pages.yml   CI: testy w 3 silnikach, potem publikacja na GitHub Pages
 ```
 

@@ -26,6 +26,7 @@ Fronty aparatów pięciu producentów (rysunki własne, uproszczone):
 | Telefon i tablet | Przytrzymaj aparat palcem i przeciągnij go na nowe miejsce; przewody ciągnie się od zacisku do zacisku |
 | Szybka edycja | Kliknij aparat w widoku frontu: pod nim pojawia się pasek z fazą, prądem − / +, charakterystyką, przesuwaniem, kopią i usunięciem |
 | Okablowanie | Przełącznik „Front / Okablowanie / Schemat” nad obudową; tryb „Automatyczne” rysuje przewody sam |
+| Bez internetu, jako aplikacja | Po pierwszej wizycie strona działa offline. W Chrome, Edge i Operze przycisk „Zainstaluj” dodaje ją jako osobną aplikację; na iPhonie: Udostępnij → „Do ekranu początkowego” |
 | Schemat jednokreskowy | Przycisk „Schemat” nad obudową: schemat rysowany z projektu (zasilanie, rozłącznik, różnicówki, obwody z kablami i mocą); kliknij obwód, żeby go edytować. Jest też na wydruku |
 | Własne przewody | W okablowaniu wybierz „Ręczne”: przeciągnij przewód od zacisku do zacisku (zielone zaciski są poprawne, czerwone dadzą błąd) albo kliknij zacisk, potem drugi. Kliknij przewód i Delete, żeby usunąć. „Przejmij automatyczne” daje gotowy punkt wyjścia |
 | Edycja przewodu | Kliknij przewód w trybie ręcznym: przekrój, kolor izolacji, „Przepnij początek / koniec”, „Usuń przewód” |

@@ -56,7 +56,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       # Publikujemy tylko pliki aplikacji (z czcionkami i ich licencjami), bez testów, dokumentacji i narzędzi.
-      - run: mkdir _site && cp -r index.html css js fonts _site/
+      - run: mkdir _site && cp -r index.html manifest.webmanifest sw.js css js fonts icons _site/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

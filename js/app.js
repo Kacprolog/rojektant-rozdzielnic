@@ -1110,6 +1110,29 @@ $('#cYes').addEventListener('click', () => {
   if (fn) fn();
 });
 
+/* Praca offline i instalacja (PWA). Tylko przez http(s): z dysku (file://) service worker nie działa i nie jest potrzebny. */
+if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol))
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(err => console.warn('Praca offline niedostępna:', err));
+  });
+/* Przycisk „Zainstaluj” pokazujemy tylko, gdy przeglądarka zgłosi, że instalacja jest możliwa (Chromium: Chrome, Edge, Opera). */
+let installEv = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  installEv = e;
+  $('#bInstall').hidden = false;
+});
+$('#bInstall').addEventListener('click', () => {
+  if (!installEv) return;
+  installEv.prompt();
+  installEv = null;
+  $('#bInstall').hidden = true;
+});
+window.addEventListener('appinstalled', () => {
+  $('#bInstall').hidden = true;
+  toast('Zainstalowano. Projektant działa też bez internetu.');
+});
+
 function boot() {
   if (!load()) {
     sample();
