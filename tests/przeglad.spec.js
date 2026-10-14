@@ -63,3 +63,33 @@ test('na listwach każdy przewód ma własny zacisk, nawet przy wielu różnicó
   const fit = await page.evaluate(() => { const cab = document.querySelector('#board').getBoundingClientRect(); return [...document.querySelectorAll('svg.wires rect')].every(r => r.getBoundingClientRect().right <= cab.right + 1); });
   expect(fit).toBe(true);
 });
+
+test('projekty nie do wczytania: komunikat, pobranie, ponowna próba, usunięcie', async ({ page }) => {
+  const fs = require('fs');
+  await expect(page.locator('#badBox')).toBeHidden();
+  // Jeden wpis uszkodzony na stałe, drugi poprawny (np. naprawiony przez nowszą wersję aplikacji).
+  await page.evaluate(() => {
+    const j = JSON.parse(localStorage.getItem('rozdz-v2')), ok = JSON.parse(JSON.stringify(j.list[0]));
+    ok.id = 'p-ok'; ok.S.name = 'Odzyskany';
+    j.bad = [{ id: 'p-bad', S: { name: 'Zepsuty', rows: [['d999']] }, uid: 2 }, ok];
+    localStorage.setItem('rozdz-v2', JSON.stringify(j));
+  });
+  await page.reload();
+  await expect(page.locator('#badBox')).toContainText('Nie udało się wczytać: 2');
+
+  const [dl] = await Promise.all([page.waitForEvent('download'), page.click('[data-bad="dl"]')]);
+  expect(dl.suggestedFilename()).toBe('projekty-nie-do-wczytania.json');
+  const j = JSON.parse(fs.readFileSync(await dl.path(), 'utf8'));
+  expect(j.list.map(x => x.S.name)).toEqual(['Zepsuty', 'Odzyskany']);
+
+  await page.click('[data-bad="retry"]');
+  await expect(page.locator('.toast')).toContainText('Wczytano ponownie: 1; nadal nie do wczytania: 1');
+  await expect(page.locator('#projSel option')).toHaveCount(2);
+  await expect(page.locator('#badBox')).toContainText('Nie udało się wczytać: 1');
+
+  await page.click('[data-bad="del"]');
+  await expect(page.locator('#confirm')).toContainText('Najpierw możesz je pobrać');
+  await page.click('#cYes');
+  await expect(page.locator('#badBox')).toBeHidden();
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('rozdz-v2')).bad)).toEqual([]);
+});

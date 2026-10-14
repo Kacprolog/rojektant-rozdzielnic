@@ -363,3 +363,5 @@ svg.wires .rb{stroke:var(--accent);stroke-width:3;stroke-dasharray:6 4;stroke-li
 .slot.s-ctl .tag{box-shadow:inset 0 0 0 2px var(--accent)}
 /* Rysunek przewodów nie jest tekstem do zaznaczania: zaznaczanie przerywało przeciąganie przewodu w Safari. */
 svg.wires{-webkit-user-select:none;user-select:none}
+/* Projekty, których nie udało się wczytać */
+.badbox{display:inline-flex;flex-wrap:wrap;align-items:center;gap:6px;padding:2px 8px;border:1px solid var(--warn);border-radius:8px;background:var(--warn-bg)}

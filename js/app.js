@@ -55,6 +55,18 @@ $('#projSel').addEventListener('change',e=>{const p=PR.list.find(x=>x.id===e.tar
 $('#bNew').addEventListener('click',()=>{projAdd(blankS(),1);toast('Utworzono pusty projekt');});
 $('#bDup').addEventListener('click',projDup);
 $('#bDel').addEventListener('click',projDel);
+/* Projekty, których nie udało się wczytać: dane są zachowane w PR.bad. Można je pobrać, spróbować wczytać albo usunąć. */
+function badDownload(){const a=document.createElement('a'),url=URL.createObjectURL(new Blob([JSON.stringify({app:FILE_APP,kind:'projekty-nie-do-wczytania',saved:new Date().toISOString(),list:PR.bad},null,1)],{type:'application/json'}));
+  a.href=url;a.download='projekty-nie-do-wczytania.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);toast('Zapisano plik '+a.download);}
+function badRetry(){let ok=0;const keep=[];
+  PR.bad.forEach(x=>{if(!(x&&valid(x.S))){keep.push(x);return;}const prev=PR.cur;
+    try{projAdd(JSON.parse(JSON.stringify(x.S)),x.uid);ok++;}
+    catch(e){console.error(e);PR.list=PR.list.filter(y=>y.id!==PR.cur);keep.push(x);const back=PR.list.find(y=>y.id===prev)||PR.list[0];if(back)projUse(back);}});
+  PR.bad=keep;save();renderTop();toast(ok?'Wczytano ponownie: '+ok+(keep.length?'; nadal nie do wczytania: '+keep.length:''):'Nadal nie da się ich wczytać. Dane pozostają zachowane.');}
+$('#badBox').addEventListener('click',e=>{const b=e.target.closest('[data-bad]');if(!b)return;
+  if(b.dataset.bad==='dl')badDownload();
+  if(b.dataset.bad==='retry')badRetry();
+  if(b.dataset.bad==='del')ask('Usunąć projekty, których nie udało się wczytać ('+PR.bad.length+')? Tej operacji nie można cofnąć. Najpierw możesz je pobrać.','Usuń',()=>{PR.bad=[];save();renderTop();toast('Usunięto');});});
 /* Potwierdzenie na stronie zamiast confirm(): komunikat, etykieta przycisku, akcja. */
 let askFn=null;
 function ask(msg,yes,fn){$('#cMsg').textContent=msg;$('#cYes').textContent=yes;askFn=fn;$('#confirm').hidden=false;}

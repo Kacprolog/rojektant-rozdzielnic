@@ -17,6 +17,14 @@ Każdy punkt to osobny commit; numeracja jak w przeglądzie (HANDOFF.md → „Z
   sprawdzić w testach.
 - Testy `tests/przeglad.spec.js` (3); zrzut przy 6 różnicówkach i 4 RCBO sprawdzony wzrokowo.
 
+### 3. Projekty, których nie udało się wczytać
+- Gdy w pamięci przeglądarki są takie projekty (`PR.bad`), pasek projektu pokazuje ich liczbę i trzy przyciski:
+  „Pobierz” (plik `projekty-nie-do-wczytania.json` z pełnymi danymi), „Spróbuj wczytać” (np. po aktualizacji aplikacji;
+  projekt, który nadal się nie rysuje, wraca do zachowanych) i „Usuń” (z potwierdzeniem).
+- Ponowna próba jest tylko ręczna: automatyczna przy każdym starcie mogłaby w kółko dokładać przykład za projekt,
+  którego nie da się narysować.
+- Test w `tests/przeglad.spec.js`.
+
 ## 0.14.1 (13.10.2026) — poprawki z przeglądu całego kodu
 
 Przegląd objął `js/`, `css/`, `index.html`, `scripts/`, `tests/` i workflow. Każde znalezisko poniżej zostało najpierw
