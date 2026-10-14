@@ -156,8 +156,10 @@ test('projekt, którego nie da się narysować przy starcie, zostaje zachowany, 
   await page.route('**/js/render.js', async route => {
     const res = await route.fetch();
     let body = await res.text();
+    // wyrażenie regularne, bo formatowanie kodu może zmienić odstępy w nagłówku funkcji
+    if (!/function renderEnc\(\)\s*\{/.test(body)) throw new Error('nie znaleziono renderEnc w render.js');
     body = body.replace(
-      'function renderEnc(){',
+      /function renderEnc\(\)\s*\{/,
       'let __once=true;function renderEnc(){if(__once){__once=false;throw new Error("celowy błąd rysowania");}'
     );
     await route.fulfill({ response: res, body });
