@@ -48,6 +48,16 @@ Każdy punkt to osobny commit; numeracja jak w przeglądzie (HANDOFF.md → „Z
   wygląda tak samo bez internetu. Workflow kopiuje `fonts/` do publikacji; serwer deweloperski zna typ `font/woff2`.
 - Test: brak żądań poza własny serwer i dostępność trzech krojów z polskimi znakami; wygląd porównany na zrzucie.
 
+### 9. Dotyk na prawdziwych zdarzeniach przeglądarki — i błąd, który to ujawniło
+- Nowe testy w `tests/dotyk.spec.js` używają emulacji telefonu z ekranem dotykowym i zdarzeń dotyku wysyłanych przez
+  protokół DevTools Chromium (tak jak palec), a nie zdarzeń tworzonych w skrypcie strony. Tylko Chromium (Opera, Chrome).
+- **Naprawiony błąd:** ciągnięcie przewodu palcem w okablowaniu ręcznym nie działało na telefonie. Przeglądarka uznawała
+  gest za przewijanie i przerywała zdarzenia wskaźnika (`pointercancel`); reguła CSS `touch-action` nie działa na elementach
+  SVG. Teraz gest rozpoczęty na zacisku blokuje przewijanie (`touchmove` z `preventDefault`). Porównanie: bez poprawki test
+  nie przechodzi, z poprawką 10 na 10 prób.
+- Przenoszenie aparatu palcem i przewijanie krótkim ruchem działały poprawnie także na prawdziwych zdarzeniach.
+- Nadal nie sprawdzono na fizycznym telefonie.
+
 ## 0.14.1 (13.10.2026) — poprawki z przeglądu całego kodu
 
 Przegląd objął `js/`, `css/`, `index.html`, `scripts/`, `tests/` i workflow. Każde znalezisko poniżej zostało najpierw

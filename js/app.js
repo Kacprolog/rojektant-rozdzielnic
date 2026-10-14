@@ -194,6 +194,12 @@ $('#boardScroll').addEventListener('wheel',e=>{if(!e.ctrlKey)return;e.preventDef
 let tDrag=null;
 function dropDev(id,rail,x){dragInfo={id:id};const row=+rail.dataset.row,di=dropIndex(rail,x),fr=rowOf(id);S.rows[fr].splice(S.rows[fr].indexOf(id),1);
   const before=(row===fr?di.ids:S.rows[row])[di.idx],at=before?S.rows[row].indexOf(before):S.rows[row].length;S.rows[row].splice(at,0,id);S.active=row;S.sel=id;dragInfo=null;render();}
+/* Gest palcem rozpoczęty na zacisku (okablowanie ręczne) to ciągnięcie przewodu, a nie przewijanie: bez blokady przewijania
+   przeglądarka przerywa zdarzenia wskaźnika (pointercancel) i przewód nie powstaje. */
+let tWire=false;
+board.addEventListener('touchstart',e=>{tWire=S.wmode==='manual'&&!!(e.target.closest&&e.target.closest('[data-ep]'));},{passive:true});
+board.addEventListener('touchmove',e=>{if(tWire)e.preventDefault();},{passive:false});
+board.addEventListener('touchend',()=>{tWire=false;});
 board.addEventListener('touchstart',e=>{if(!COARSE||!e.touches||e.touches.length!==1||simOn())return;
   const s=e.target.closest&&e.target.closest('.slot');if(!s||e.target.closest('[data-q]')||e.target.closest('[data-ep]'))return;
   const t=e.touches[0];tDrag={id:s.dataset.id,x:t.clientX,y:t.clientY,on:false,rail:null,cx:0,

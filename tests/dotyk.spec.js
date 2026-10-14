@@ -119,3 +119,59 @@ test('przenoszenie aparatu palcem: przytrzymanie, linia upuszczenia, nowe miejsc
   await page.click('#bUndo');
   expect(await rowOfDev()).toBe(2);
 });
+
+// Prawdziwe zdarzenia dotyku przeglądarki (Chromium DevTools Protocol, emulacja telefonu z ekranem dotykowym),
+// a nie zdarzenia tworzone w skrypcie strony. Sprawdza ścieżkę, którą przechodzi palec na telefonie.
+test.describe('dotyk w emulacji telefonu', () => {
+  test.use({ hasTouch: true, isMobile: true, viewport: { width: 390, height: 844 } });
+  test.skip(({ browserName }) => browserName !== 'chromium', 'zdarzenia dotyku przez CDP są dostępne tylko w Chromium');
+
+  const touch = async (cdp, type, x, y) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x, y }] });
+  const center = async (page, sel) => { const l = page.locator(sel); await l.scrollIntoViewIfNeeded(); const b = await l.boundingBox(); return [b.x + b.width / 2, b.y + b.height / 2]; };
+
+  test('przytrzymanie i przeciągnięcie aparatu palcem przenosi go do innego rzędu', async ({ page }) => {
+    const cdp = await page.context().newCDPSession(page);
+    expect(await page.evaluate(() => [matchMedia('(pointer: coarse)').matches, COARSE])).toEqual([true, true]);
+    await expect(page.locator('#board .slot[draggable="true"]')).toHaveCount(0);
+    const id = await page.evaluate(() => Object.values(S.dev).find(d => d.name === 'Podgrzewacz wody').id);
+    const src = `#board .slot[data-id="${id}"] .rt`;
+    let [x, y] = await center(page, src);
+    await touch(cdp, 'touchStart', x, y);
+    await page.waitForTimeout(450);
+    await expect(page.locator(`#board .slot[data-id="${id}"]`)).toHaveClass(/lifting/);
+    const [bx, by] = await center(page, '#board .rail[data-row="0"] .blank');
+    for (let i = 1; i <= 6; i++) await touch(cdp, 'touchMove', x + (bx - x) * i / 6, y + (by - y) * i / 6);
+    await expect(page.locator('#board .rail[data-row="0"] .dropline')).toHaveCount(1);
+    await touch(cdp, 'touchEnd');
+    expect(await page.evaluate(i => S.rows.findIndex(r => r.includes(i)), id)).toBe(0);
+  });
+
+  test('krótki ruch palcem przewija stronę i niczego nie przenosi', async ({ page }) => {
+    const cdp = await page.context().newCDPSession(page);
+    const id = await page.evaluate(() => Object.values(S.dev).find(d => d.name === 'Podgrzewacz wody').id);
+    const [x, y] = await center(page, `#board .slot[data-id="${id}"] .rt`);
+    await touch(cdp, 'touchStart', x, y);
+    for (let i = 1; i <= 4; i++) await touch(cdp, 'touchMove', x, y - 30 * i);
+    await touch(cdp, 'touchEnd');
+    await page.waitForTimeout(200);
+    expect(await page.evaluate(i => S.rows.findIndex(r => r.includes(i)), id)).toBe(2);
+    await expect(page.locator('#board .slot.lifting')).toHaveCount(0);
+  });
+
+  test('przewód przeciągnięty palcem od zacisku do zacisku', async ({ page }) => {
+    const cdp = await page.context().newCDPSession(page);
+    await page.click('[data-view="wires"]');
+    await page.click('[data-wmode="manual"]');
+    const q = await page.evaluate(() => Object.values(S.dev).find(d => d.t === 'sw').id);
+    const a = `svg.wires [data-ep='${JSON.stringify({ k: 'wlz', ph: 'L1' })}']`, b = `svg.wires [data-ep='${JSON.stringify({ k: 'dev', id: q, side: 'top', i: 0 })}']`;
+    // oba zaciski są blisko siebie: przewijamy do pierwszego i bierzemy współrzędne obu bez kolejnego przewijania
+    await page.locator(a).evaluate(e => e.scrollIntoView({ block: 'start' }));
+    const box = async s => { const r = await page.locator(s).boundingBox(); return [r.x + r.width / 2, r.y + r.height / 2]; };
+    const [ax, ay] = await box(a), [bx, by] = await box(b);
+    await touch(cdp, 'touchStart', ax, ay);
+    for (let i = 1; i <= 8; i++) await touch(cdp, 'touchMove', ax + (bx - ax) * i / 8, ay + (by - ay) * i / 8);
+    await touch(cdp, 'touchEnd');
+    await expect(page.locator('.toast')).toHaveText('Dodano przewód');
+    expect(await page.evaluate(() => S.conn.length)).toBe(1);
+  });
+});
