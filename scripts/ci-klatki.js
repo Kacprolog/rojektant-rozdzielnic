@@ -5,9 +5,11 @@ const { spawn } = require('child_process');
 const path = require('path');
 const VARIANTS = {
   'bez zmian': '',
-  'bez cieni': '*{box-shadow:none !important}',
-  'obudowa bez cieni': '.cabinet{box-shadow:none !important}',
-  'karty bez cieni': '.card,.top,.side{box-shadow:none !important}'
+  'bez cieni CSS': '*{box-shadow:none !important}',
+  'przewody bez cienia': 'svg.wires .sh{display:none}',
+  'przewody bez połysku': 'svg.wires .hl{display:none}',
+  'przewody bez cienia i połysku': 'svg.wires .sh,svg.wires .hl{display:none}',
+  'bez przewodów': 'svg.wires{display:none}'
 };
 (async () => {
   const srv = spawn(process.execPath, [path.join(__dirname, 'serve.js'), '4196'], { stdio: 'ignore' });

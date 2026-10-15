@@ -2,6 +2,15 @@
 
 Każdy wpis odpowiada jednemu commitowi. Format: co zrobiono, dlaczego, jak sprawdzono.
 
+## 0.23.3 (15.10.2026) — CI: dłuższy limit czasu testów WebKit
+
+- 0.23.2 (WebKit na osobnej maszynie): 88 testów przeszło, 5 padło, 1 za drugim razem; wszystkie zgłoszenia to
+  przekroczenia limitu czasu w najcięższych testach okablowania, żadne nie jest błędem działania. WebKit w CI rysuje
+  klatkę widoku okablowania ok. 200–300 ms (lokalnie ok. 25 ms), więc każde kliknięcie czeka kilka sekund.
+- Pomiar kosztu warstw przewodów (): cień i połysk przewodów to ok. 2 ms na klatkę lokalnie,
+  dalsze odchudzanie wyglądu nie skróciłoby czasu wielokrotnie. Zamiast tego projekt  ma w CI limit 90 s na test
+  (lokalnie bez zmian, 30 s).
+
 ## 0.23.2 (14.10.2026) — CI: każda przeglądarka na osobnej maszynie
 
 - 0.23.1 na `main` nadal zatrzymało CI (3 testy Safari, 3 dopiero za drugim razem), choć sam WebKit na gałęzi testowej
